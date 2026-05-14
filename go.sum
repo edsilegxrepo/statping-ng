@@ -177,8 +177,9 @@ github.com/fatih/structs v1.1.0/go.mod h1:9NiDSp5zOcgEDl+j00MP/WkGVPOlPRLejGD8Ga
 github.com/flosch/pongo2 v0.0.0-20190707114632-bbf5a6c351f4/go.mod h1:T9YF2M40nIgbVgp3rreNmTged+9HrbNTIQf1PsaIiTA=
 github.com/foomo/simplecert v1.7.5 h1:5654G52nAaFGdIjQsjCbccqkQraN9oa2qvh4Ugtc+rM=
 github.com/foomo/simplecert v1.7.5/go.mod h1:RojYROT3nMm8GtJZAPUz0sM5YuSQ/6MIdZvtLTqsxbc=
-github.com/foomo/tlsconfig v0.0.0-20180418120404-b67861b076c9 h1:RPOsDNbnDUFaSt/3bCxUsaGCJsKqA6dGubevl20nE9g=
 github.com/foomo/tlsconfig v0.0.0-20180418120404-b67861b076c9/go.mod h1:OdiGKKgTAfMv7x9Hh9qYFueue77tr09LUAxwy2+M8wY=
+github.com/foomo/tlsconfig v1.0.1 h1:vcMVL+2DfcDach9TBnCPZUnae2RbOG6VdKvT2E7Opfo=
+github.com/foomo/tlsconfig v1.0.1/go.mod h1:Pj9jXflQwTYxDqCMX7SfkarmLkDtdwn4JCxpq8pvtzg=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
