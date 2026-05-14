@@ -1,11 +1,12 @@
 package groups
 
 import (
+	"sort"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
-	"sort"
 )
 
 var (
@@ -50,7 +51,7 @@ func (g *Group) AfterCreate() {
 
 func Find(id int64) (*Group, error) {
 	var group Group
-	q := db.Where("id = ?", id).Find(&group)
+	q := db.Where("id = ?", id).First(&group)
 	if q.Error() != nil {
 		return nil, errors.Missing(group, id)
 	}

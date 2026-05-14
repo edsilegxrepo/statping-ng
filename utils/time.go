@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/hako/durafmt"
 	"time"
+
+	"github.com/hako/durafmt"
 )
 
 // Now returns the UTC timestamp

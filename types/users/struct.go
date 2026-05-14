@@ -1,8 +1,9 @@
 package users
 
 import (
-	"github.com/statping-ng/statping-ng/types/null"
 	"time"
+
+	"github.com/statping-ng/statping-ng/types/null"
 )
 
 // User is the main struct for Users

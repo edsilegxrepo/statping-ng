@@ -3,12 +3,13 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
-	"math"
-	"sort"
 )
 
 var (
@@ -57,7 +58,9 @@ func (s *Service) BeforeUpdate() error {
 }
 
 func (s *Service) AfterFind() {
-	db.Model(s).Related(&s.Incidents).Related(&s.Messages).Related(&s.Checkins).Related(&s.Incidents)
+	db.Where("service = ?", s.Id).Find(&s.Incidents)
+	db.Where("service = ?", s.Id).Find(&s.Messages)
+	db.Where("service = ?", s.Id).Find(&s.Checkins)
 	metrics.Query("service", "find")
 }
 
@@ -146,15 +149,21 @@ func (s *Service) Delete() error {
 	if err := s.DeleteCheckins(); err != nil {
 		return err
 	}
-	db.Model(s).Association("Checkins").Clear()
+	if err := db.Model(s).Association("Checkins").Clear(); err != nil {
+		return err
+	}
 	if err := s.DeleteIncidents(); err != nil {
 		return err
 	}
-	db.Model(s).Association("Incidents").Clear()
+	if err := db.Model(s).Association("Incidents").Clear(); err != nil {
+		return err
+	}
 	if err := s.DeleteMessages(); err != nil {
 		return err
 	}
-	db.Model(s).Association("Messages").Clear()
+	if err := db.Model(s).Association("Messages").Clear(); err != nil {
+		return err
+	}
 
 	delete(allServices, s.Id)
 	q := db.Model(&Service{}).Delete(s)
@@ -167,8 +176,7 @@ func (s *Service) DeleteMessages() error {
 			return err
 		}
 	}
-	db.Model(s).Association("messages").Clear()
-	return nil
+	return db.Model(s).Association("messages").Clear()
 }
 
 func (s *Service) DeleteCheckins() error {
@@ -177,6 +185,5 @@ func (s *Service) DeleteCheckins() error {
 			return err
 		}
 	}
-	db.Model(s).Association("checkins").Clear()
-	return nil
+	return db.Model(s).Association("checkins").Clear()
 }

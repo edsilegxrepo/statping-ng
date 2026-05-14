@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"math"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/checkins"
@@ -9,8 +12,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/hits"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
-	"math"
-	"net/http"
 )
 
 type serviceOrder struct {
@@ -32,7 +33,7 @@ func findService(r *http.Request) (*services.Service, error) {
 }
 
 func reorderServiceHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	_ = r.ParseForm()
 	var newOrder []*serviceOrder
 	if err := DecodeJSON(r, &newOrder); err != nil {
 		sendErrorJson(err, w, r)
@@ -46,7 +47,10 @@ func reorderServiceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		service.Order = s.Order
-		service.Update()
+		if err := service.Update(); err != nil {
+			sendErrorJson(err, w, r)
+			return
+		}
 	}
 	returnJson(newOrder, w, r)
 }
@@ -331,7 +335,9 @@ func apiServiceFailuresHandler(r *http.Request) interface{} {
 	if err != nil {
 		return err
 	}
-	query.Find(&fails)
+	if err := query.Find(&fails); err != nil {
+		return err
+	}
 	return fails
 }
 
@@ -345,6 +351,8 @@ func apiServiceHitsHandler(r *http.Request) interface{} {
 	if err != nil {
 		return err
 	}
-	query.Find(&hts)
+	if err := query.Find(&hts); err != nil {
+		return err
+	}
 	return hts
 }

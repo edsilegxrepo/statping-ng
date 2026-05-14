@@ -3,18 +3,16 @@ package database
 import (
 	"errors"
 	"fmt"
-	"github.com/statping-ng/statping-ng/types"
-	"github.com/statping-ng/statping-ng/utils"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/statping-ng/statping-ng/types"
+	"github.com/statping-ng/statping-ng/utils"
 )
 
-type GroupBy struct {
-	db    Database
-	query *GroupQuery
-}
+type GroupBy struct{}
 
 type GroupByer interface {
 	ToTimeValue() (*TimeVar, error)
@@ -74,7 +72,7 @@ func (b *GroupQuery) GraphData(by By) ([]*TimeValue, error) {
 	b.db = b.db.MultipleSelects(
 		b.db.SelectByTime(b.Group),
 		by.String(),
-	).Group("timeframe").Order("timeframe", true)
+	).Group("timeframe").Order("timeframe")
 
 	caller, err := b.ToTimeValue()
 	if err != nil {
@@ -258,12 +256,7 @@ func ParseQueriesForTable(r *http.Request, o isObject, whereTable string) (*Grou
 	return query, nil
 }
 
-func parseForm(r *http.Request) url.Values {
-	r.ParseForm()
-	return r.PostForm
-}
-
 func parseGet(r *http.Request) url.Values {
-	r.ParseForm()
+	_ = r.ParseForm()
 	return r.Form
 }

@@ -2,6 +2,8 @@ package configs
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/checkins"
@@ -16,7 +18,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
 	"gopkg.in/yaml.v2"
-	"os"
 )
 
 type SamplerFunc func() error
@@ -55,20 +56,22 @@ func (d *DbConfig) Update() error {
 	if err != nil {
 		return err
 	}
-	defer config.Close()
+	defer func() { _ = config.Close() }()
 
-	data, err := yaml.Marshal(d)
+	data, err := yaml.Marshal(d) // #nosec G117
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
-	config.WriteString(string(data))
+	if _, err := config.WriteString(string(data)); err != nil {
+		return err
+	}
 	return nil
 }
 
 // DropDatabase will DROP each table Statping created
 func (d *DbConfig) DropDatabase() error {
-	var DbModels = []interface{}{&services.Service{}, &users.User{}, &hits.Hit{}, &failures.Failure{}, &messages.Message{}, &groups.Group{}, &checkins.Checkin{}, &checkins.CheckinHit{}, &notifications.Notification{}, &incidents.Incident{}, &incidents.IncidentUpdate{}}
+	DbModels := []interface{}{&services.Service{}, &users.User{}, &hits.Hit{}, &failures.Failure{}, &messages.Message{}, &groups.Group{}, &checkins.Checkin{}, &checkins.CheckinHit{}, &notifications.Notification{}, &incidents.Incident{}, &incidents.IncidentUpdate{}}
 	log.Infoln("Dropping Database Tables...")
 	for _, t := range DbModels {
 		if err := d.Db.DropTableIfExists(t); err != nil {
@@ -84,7 +87,9 @@ func (d *DbConfig) Close() {
 		return
 	}
 	if d.Db != nil {
-		d.Db.Close()
+		if err := d.Db.Close(); err != nil {
+			log.Error(err)
+		}
 	}
 }
 
@@ -92,16 +97,16 @@ func (d *DbConfig) Close() {
 func (d *DbConfig) CreateDatabase() error {
 	var err error
 
-	var DbModels = []interface{}{&services.Service{}, &users.User{}, &hits.Hit{}, &failures.Failure{}, &messages.Message{}, &groups.Group{}, &checkins.Checkin{}, &checkins.CheckinHit{}, &notifications.Notification{}, &incidents.Incident{}, &incidents.IncidentUpdate{}}
+	DbModels := []interface{}{&services.Service{}, &users.User{}, &hits.Hit{}, &failures.Failure{}, &messages.Message{}, &groups.Group{}, &checkins.Checkin{}, &checkins.CheckinHit{}, &notifications.Notification{}, &incidents.Incident{}, &incidents.IncidentUpdate{}}
 
 	log.Infoln("Creating Database Tables...")
 	for _, table := range DbModels {
-		if err := d.Db.CreateTable(table); err.Error() != nil {
-			return errors.Wrap(err.Error(), fmt.Sprintf("error creating '%T' table", table))
+		if err := d.Db.CreateTable(table).Error(); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("error creating '%T' table", table))
 		}
 	}
-	if err := d.Db.Table("core").CreateTable(&core.Core{}); err.Error() != nil {
-		return errors.Wrap(err.Error(), fmt.Sprintf("error creating 'core' table"))
+	if err := d.Db.Table("core").CreateTable(&core.Core{}).Error(); err != nil {
+		return errors.Wrap(err, "error creating 'core' table")
 	}
 	log.Infoln("Statping Database Created")
 

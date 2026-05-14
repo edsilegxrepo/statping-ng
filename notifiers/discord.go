@@ -21,24 +21,26 @@ type discord struct {
 	*notifications.Notification
 }
 
-var Discorder = &discord{&notifications.Notification{
-	Method:      "discord",
-	Title:       "Discord",
-	Description: "Send notifications to your discord channel using discord webhooks. Insert your discord channel Webhook URL to receive notifications. Based on the <a href=\"https://discordapp.com/developers/docs/resources/Webhook\">discord webhooker API</a>.",
-	Author:      "Hunter Long",
-	AuthorUrl:   "https://github.com/hunterlong",
-	Delay:       time.Duration(5 * time.Second),
-	Icon:        "fab fa-discord",
-	SuccessData: null.NewNullString(`{"content": "Your service '{{.Service.Name}}' is currently back online and was down for {{.Service.Downtime.Human}}."}`),
-	FailureData: null.NewNullString(`{"content": "Your service '{{.Service.Name}}' is has been failing for {{.Service.Downtime.Human}}! Reason: {{.Failure.Issue}}"}`),
-	DataType:    "json",
-	Limits:      60,
-	Form: []notifications.NotificationForm{{
-		Type:        "text",
-		Title:       "discord webhooker URL",
-		Placeholder: "https://discordapp.com/api/webhooks/****/*****",
-		DbField:     "host",
-	}}},
+var Discorder = &discord{
+	&notifications.Notification{
+		Method:      "discord",
+		Title:       "Discord",
+		Description: "Send notifications to your discord channel using discord webhooks. Insert your discord channel Webhook URL to receive notifications. Based on the <a href=\"https://discordapp.com/developers/docs/resources/Webhook\">discord webhooker API</a>.",
+		Author:      "Hunter Long",
+		AuthorUrl:   "https://github.com/hunterlong",
+		Delay:       time.Duration(5 * time.Second),
+		Icon:        "fab fa-discord",
+		SuccessData: null.NewNullString(`{"content": "Your service '{{.Service.Name}}' is currently back online and was down for {{.Service.Downtime.Human}}."}`),
+		FailureData: null.NewNullString(`{"content": "Your service '{{.Service.Name}}' is has been failing for {{.Service.Downtime.Human}}! Reason: {{.Failure.Issue}}"}`),
+		DataType:    "json",
+		Limits:      60,
+		Form: []notifications.NotificationForm{{
+			Type:        "text",
+			Title:       "discord webhooker URL",
+			Placeholder: "https://discordapp.com/api/webhooks/****/*****",
+			DbField:     "host",
+		}},
+	},
 }
 
 // Send will send a HTTP Post to the discord API. It accepts type: []byte

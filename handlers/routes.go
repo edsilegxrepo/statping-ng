@@ -59,7 +59,16 @@ func Router() *mux.Router {
 			r.HandleFunc("/debug/pprof/profile", pprof.Profile)
 			r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 			r.HandleFunc("/debug/pprof/trace", pprof.Trace)
-			http.ListenAndServe(":9090", r)
+			pprofSrv := &http.Server{
+				Addr:         ":9090",
+				Handler:      r,
+				WriteTimeout: timeout,
+				ReadTimeout:  timeout,
+				IdleTimeout:  timeout,
+			}
+			if err := pprofSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Error(err)
+			}
 			// pprof -http=:9000 http://localhost:9090/debug/pprof/heap?debug=1
 		}()
 	}

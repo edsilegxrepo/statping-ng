@@ -5,15 +5,16 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
-	"io"
-	"net/http"
-	"strings"
 )
 
 var (
@@ -39,7 +40,7 @@ func Gzip(handler http.Handler) http.Handler {
 		}
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
-		defer gz.Close()
+		defer func() { _ = gz.Close() }()
 		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
 		handler.ServeHTTP(gzw, r)
 	})
@@ -55,7 +56,7 @@ func basicAuthHandler(next http.Handler) http.Handler {
 			[]byte(authPass)) != 1 {
 			w.Header().Set("WWW-Authenticate", `Basic realm="statping"`)
 			w.WriteHeader(401)
-			w.Write([]byte("You are unauthorized to access the application.\n"))
+			_, _ = w.Write([]byte("You are unauthorized to access the application.\n"))
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -103,7 +104,7 @@ func scoped(handler func(r *http.Request) interface{}) http.Handler {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(scope{data: data, scope: ScopeName(r)})
+		_ = json.NewEncoder(w).Encode(scope{data: data, scope: ScopeName(r)})
 	})
 }
 

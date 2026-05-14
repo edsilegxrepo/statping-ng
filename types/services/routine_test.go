@@ -179,7 +179,7 @@ func grpcServer(port int, enableHealthCheck bool) *grpc.Server {
 		healthServer := health.NewServer()
 		healthServer.SetServingStatus("Test GRPC Service", healthpb.HealthCheckResponse_SERVING)
 		healthpb.RegisterHealthServer(server, healthServer)
-		go server.Serve(lis)
+		go func() { _ = server.Serve(lis) }()
 	}
 	return server
 }

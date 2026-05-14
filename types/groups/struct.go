@@ -1,8 +1,9 @@
 package groups
 
 import (
-	"github.com/statping-ng/statping-ng/types/null"
 	"time"
+
+	"github.com/statping-ng/statping-ng/types/null"
 )
 
 // Group is the main struct for Groups

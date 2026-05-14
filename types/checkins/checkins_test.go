@@ -1,13 +1,14 @@
 package checkins
 
 import (
+	"testing"
+	"time"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var testCheckin = &Checkin{
@@ -123,5 +124,4 @@ func TestInit(t *testing.T) {
 		assert.Nil(t, db.Close())
 		assert.Nil(t, dbHits.Close())
 	})
-
 }

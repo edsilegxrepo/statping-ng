@@ -1,21 +1,20 @@
 package source
 
 import (
+	"testing"
+
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-var (
-	dir string
-)
+var dir string
 
 func init() {
 	dir = utils.Directory
-	utils.InitLogs()
-	Assets()
-	utils.DeleteDirectory(dir + "/assets")
+	_ = utils.InitLogs()
+	_ = Assets()
+	_ = utils.DeleteDirectory(dir + "/assets")
 	dir = utils.Params.GetString("STATPING_DIR")
 }
 
@@ -102,7 +101,7 @@ func TestDeleteAssets(t *testing.T) {
 
 func ExampleSaveAsset() {
 	data := []byte("alert('helloooo')")
-	SaveAsset(data, "js/test.js")
+	_ = SaveAsset(data, "js/test.js")
 }
 
 func ExampleOpenAsset() {

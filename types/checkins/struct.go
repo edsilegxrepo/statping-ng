@@ -1,8 +1,9 @@
 package checkins
 
 import (
-	"github.com/statping-ng/statping-ng/types/failures"
 	"time"
+
+	"github.com/statping-ng/statping-ng/types/failures"
 )
 
 // Checkin struct will allow an application to send a recurring HTTP GET to confirm a service is online

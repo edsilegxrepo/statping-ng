@@ -2,14 +2,15 @@ package configs
 
 import (
 	"fmt"
-	"github.com/statping-ng/statping-ng/utils"
 	"os"
+
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 const latestMigration = 1583860000
 
 func init() {
-	os.Setenv("MIGRATION_ID", utils.ToString(latestMigration))
+	_ = os.Setenv("MIGRATION_ID", utils.ToString(latestMigration))
 }
 
 func (d *DbConfig) genericMigration(alterStr string, isPostgres bool) error {

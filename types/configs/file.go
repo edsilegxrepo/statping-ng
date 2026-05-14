@@ -1,11 +1,12 @@
 package configs
 
 import (
-	"github.com/pkg/errors"
-	"github.com/statping-ng/statping-ng/utils"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 var log = utils.Log.WithField("type", "configs")

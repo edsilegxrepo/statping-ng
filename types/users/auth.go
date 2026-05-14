@@ -2,8 +2,9 @@ package users
 
 import (
 	"fmt"
-	"github.com/statping-ng/statping-ng/utils"
 	"time"
+
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 // AuthUser will return the User and a boolean if authentication was correct.
@@ -16,7 +17,9 @@ func AuthUser(username, passwordHash string) (*User, bool) {
 	}
 	if utils.CheckHash(passwordHash, user.Password) {
 		user.UpdatedAt = time.Now().UTC()
-		user.Update()
+		if err := user.Update(); err != nil {
+			log.Error(err)
+		}
 		return user, true
 	}
 	return nil, false

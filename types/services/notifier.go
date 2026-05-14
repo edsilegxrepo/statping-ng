@@ -5,9 +5,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/notifications"
 )
 
-var (
-	allNotifiers = make(map[string]ServiceNotifier)
-)
+var allNotifiers = make(map[string]ServiceNotifier)
 
 func AllNotifiers() map[string]ServiceNotifier {
 	return allNotifiers

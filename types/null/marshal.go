@@ -3,6 +3,7 @@ package null
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	"gopkg.in/yaml.v2"
 )
 

@@ -2,8 +2,9 @@ package failures
 
 import (
 	"fmt"
-	"github.com/statping-ng/statping-ng/database"
 	"time"
+
+	"github.com/statping-ng/statping-ng/database"
 )
 
 type ColumnIDInterfacer interface {
@@ -49,9 +50,9 @@ func (f Failurer) Since(t time.Time) []*Failure {
 }
 
 func (f Failurer) Count() int {
-	var amount int
+	var amount int64
 	f.db.Count(&amount)
-	return amount
+	return int(amount)
 }
 
 func (f Failurer) DeleteAll() error {

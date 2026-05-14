@@ -17,7 +17,7 @@ func SetDB(database database.Database) {
 
 func Find(id int64) (*Message, error) {
 	var message Message
-	q := db.Where("id = ?", id).Find(&message)
+	q := db.Where("id = ?", id).First(&message)
 	if q.Error() != nil {
 		return nil, errors.Missing(message, id)
 	}

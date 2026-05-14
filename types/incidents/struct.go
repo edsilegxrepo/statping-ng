@@ -8,8 +8,8 @@ type Incident struct {
 	Title       string            `gorm:"column:title" json:"title,omitempty"`
 	Description string            `gorm:"column:description" json:"description,omitempty"`
 	ServiceId   int64             `gorm:"index;column:service" json:"service"`
-	CreatedAt   time.Time         `gorm:"column:created_at" json:"created_at" json:"created_at"`
-	UpdatedAt   time.Time         `gorm:"column:updated_at" json:"updated_at" json:"updated_at"`
+	CreatedAt   time.Time         `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt   time.Time         `gorm:"column:updated_at" json:"updated_at"`
 	Updates     []*IncidentUpdate `gorm:"foreignkey:incident;association_foreignkey:id" json:"updates,omitempty"`
 }
 
@@ -19,6 +19,6 @@ type IncidentUpdate struct {
 	IncidentId int64     `gorm:"index;column:incident" json:"-"`
 	Message    string    `gorm:"column:message" json:"message,omitempty"`
 	Type       string    `gorm:"column:type" json:"type,omitempty"`
-	CreatedAt  time.Time `gorm:"column:created_at" json:"created_at" json:"created_at"`
-	UpdatedAt  time.Time `gorm:"column:updated_at" json:"updated_at" json:"updated_at"`
+	CreatedAt  time.Time `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"column:updated_at" json:"updated_at"`
 }

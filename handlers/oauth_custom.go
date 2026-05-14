@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"golang.org/x/oauth2"
-	"net/http"
-	"strings"
 )
 
 func customOAuth(r *http.Request) (*oAuth, error) {

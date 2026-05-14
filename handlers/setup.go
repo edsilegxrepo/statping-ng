@@ -2,21 +2,22 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
+	"net/url"
+	"strconv"
+
 	"github.com/statping-ng/statping-ng/notifiers"
 	"github.com/statping-ng/statping-ng/types/configs"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
-	"net/http"
-	"net/url"
-	"strconv"
 )
 
 func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if core.App.Setup {
-		sendErrorJson(errors.New("Statping has already been setup"), w, r)
+		sendErrorJson(errors.New("statping has already been setup"), w, r)
 		return
 	}
 

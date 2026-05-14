@@ -31,43 +31,45 @@ func (t *twilio) Valid(values notifications.Values) error {
 	return nil
 }
 
-var Twilio = &twilio{&notifications.Notification{
-	Method:      "twilio",
-	Title:       "Twilio",
-	Description: "Receive SMS text messages directly to your cellphone when a service is offline. You can use a Twilio test account with limits. This notifier uses the <a href=\"https://www.twilio.com/docs/usage/api\">Twilio API</a>.",
-	Author:      "Hunter Long",
-	AuthorUrl:   "https://github.com/hunterlong",
-	Icon:        "far fa-comment-alt",
-	Delay:       time.Duration(10 * time.Second),
-	SuccessData: null.NewNullString("Your service '{{.Service.Name}}' is currently online!"),
-	FailureData: null.NewNullString("Your service '{{.Service.Name}}' is currently offline!"),
-	DataType:    "text",
-	Limits:      15,
-	Form: []notifications.NotificationForm{{
-		Type:        "text",
-		Title:       "Account SID",
-		Placeholder: "Insert your Twilio Account SID",
-		DbField:     "api_key",
-		Required:    true,
-	}, {
-		Type:        "text",
-		Title:       "Account Token",
-		Placeholder: "Insert your Twilio Account Token",
-		DbField:     "api_secret",
-		Required:    true,
-	}, {
-		Type:        "number",
-		Title:       "SMS to Phone Number",
-		Placeholder: "18555555555",
-		DbField:     "Var1",
-		Required:    true,
-	}, {
-		Type:        "number",
-		Title:       "From Phone Number",
-		Placeholder: "18555555555",
-		DbField:     "Var2",
-		Required:    true,
-	}}},
+var Twilio = &twilio{
+	&notifications.Notification{
+		Method:      "twilio",
+		Title:       "Twilio",
+		Description: "Receive SMS text messages directly to your cellphone when a service is offline. You can use a Twilio test account with limits. This notifier uses the <a href=\"https://www.twilio.com/docs/usage/api\">Twilio API</a>.",
+		Author:      "Hunter Long",
+		AuthorUrl:   "https://github.com/hunterlong",
+		Icon:        "far fa-comment-alt",
+		Delay:       time.Duration(10 * time.Second),
+		SuccessData: null.NewNullString("Your service '{{.Service.Name}}' is currently online!"),
+		FailureData: null.NewNullString("Your service '{{.Service.Name}}' is currently offline!"),
+		DataType:    "text",
+		Limits:      15,
+		Form: []notifications.NotificationForm{{
+			Type:        "text",
+			Title:       "Account SID",
+			Placeholder: "Insert your Twilio Account SID",
+			DbField:     "api_key",
+			Required:    true,
+		}, {
+			Type:        "text",
+			Title:       "Account Token",
+			Placeholder: "Insert your Twilio Account Token",
+			DbField:     "api_secret",
+			Required:    true,
+		}, {
+			Type:        "number",
+			Title:       "SMS to Phone Number",
+			Placeholder: "18555555555",
+			DbField:     "Var1",
+			Required:    true,
+		}, {
+			Type:        "number",
+			Title:       "From Phone Number",
+			Placeholder: "18555555555",
+			DbField:     "Var2",
+			Required:    true,
+		}},
+	},
 }
 
 // Send will send a HTTP Post to the Twilio SMS API. It accepts type: string
@@ -109,7 +111,7 @@ func (t *twilio) OnSuccess(s services.Service) (string, error) {
 
 // OnTest will test the Twilio SMS messaging
 func (t *twilio) OnTest() (string, error) {
-	msg := fmt.Sprintf("Testing the Twilio SMS Notifier")
+	msg := "Testing the Twilio SMS Notifier"
 	return t.sendMessage(msg)
 }
 
@@ -120,7 +122,7 @@ func (t *twilio) OnSave() (string, error) {
 
 func twilioSuccess(res []byte) (bool, twilioResponse) {
 	var obj twilioResponse
-	json.Unmarshal(res, &obj)
+	_ = json.Unmarshal(res, &obj)
 	if obj.Status == "queued" {
 		return true, obj
 	}
@@ -129,7 +131,7 @@ func twilioSuccess(res []byte) (bool, twilioResponse) {
 
 func twilioError(res []byte) twilioErrorObj {
 	var obj twilioErrorObj
-	json.Unmarshal(res, &obj)
+	_ = json.Unmarshal(res, &obj)
 	return obj
 }
 

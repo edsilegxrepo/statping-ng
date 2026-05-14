@@ -2,17 +2,18 @@ package utils
 
 import (
 	"fmt"
-	"github.com/fatih/structs"
-	"github.com/getsentry/sentry-go"
-	Logger "github.com/sirupsen/logrus"
-	"github.com/statping-ng/statping-ng/types/null"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fatih/structs"
+	"github.com/getsentry/sentry-go"
+	Logger "github.com/sirupsen/logrus"
+	"github.com/statping-ng/statping-ng/types/null"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -30,10 +31,9 @@ const (
 )
 
 func SentryInit(allow bool) {
-	allowReports = allow
+	allowReports = allow || Params.GetBool("ALLOW_REPORTS")
 	goEnv := Params.GetString("GO_ENV")
-	allowReports := Params.GetBool("ALLOW_REPORTS")
-	if allow || goEnv == "test" || allowReports {
+	if allowReports || goEnv == "test" {
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn:              errorReporter,
 			Environment:      goEnv,
@@ -65,13 +65,14 @@ func SentryLogEntry(entry *Logger.Entry) {
 	e.Message = entry.Message
 	e.Tags = sentryTags()
 	e.Release = Params.GetString("VERSION")
-	e.Contexts = entry.Data
+	if len(entry.Data) > 0 {
+		e.Contexts["logrus"] = sentry.Context(entry.Data)
+	}
 	sentry.CaptureEvent(e)
 }
 
 type hook struct {
 	Entries []Logger.Entry
-	mu      sync.RWMutex
 }
 
 func (t *hook) Fire(e *Logger.Entry) error {
@@ -103,7 +104,7 @@ func ToFields(d ...interface{}) map[string]interface{} {
 			continue
 		}
 		for _, f := range structs.Fields(v) {
-			if f.IsExported() && !f.IsZero() && f.Kind() != reflect.Ptr && f.Kind() != reflect.Slice && f.Kind() != reflect.Chan {
+			if f.IsExported() && !f.IsZero() && f.Kind() != reflect.Pointer && f.Kind() != reflect.Slice && f.Kind() != reflect.Chan {
 				field := strings.ToLower(trueType + "_" + f.Name())
 				fieldKey[field] = replaceVal(f.Value())
 			}
@@ -199,9 +200,9 @@ func checkVerboseMode() {
 // CloseLogs will close the log file correctly on shutdown
 func CloseLogs() {
 	if ljLogger != nil {
-		ljLogger.Rotate()
-		Log.Writer().Close()
-		ljLogger.Close()
+		_ = ljLogger.Rotate()
+		_ = Log.Writer().Close()
+		_ = ljLogger.Close()
 	}
 	sentry.Flush(5 * time.Second)
 }

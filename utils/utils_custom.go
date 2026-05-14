@@ -24,7 +24,7 @@ func DirWritable(path string) (bool, error) {
 		return false, errors.New("unable to get stat")
 	}
 
-	if uint32(os.Geteuid()) == stat.Uid {
+	if int(stat.Uid) == os.Geteuid() {
 		if info.Mode().Perm()&(1<<7) != 0 {
 			// owner matches and has write permissions
 			return true, nil
@@ -33,7 +33,7 @@ func DirWritable(path string) (bool, error) {
 		}
 	}
 
-	if uint32(os.Getegid()) == stat.Gid {
+	if int(stat.Gid) == os.Getegid() {
 		if info.Mode().Perm()&(1<<4) != 0 {
 			// group matches and has write permissions
 			return true, nil

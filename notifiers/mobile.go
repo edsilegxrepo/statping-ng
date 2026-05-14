@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/types/notifier"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
-	"time"
 )
 
 var _ notifier.Notifier = (*mobilePush)(nil)
@@ -26,29 +27,31 @@ func (m *mobilePush) Valid(values notifications.Values) error {
 	return nil
 }
 
-var Mobile = &mobilePush{&notifications.Notification{
-	Method: "mobile",
-	Title:  "Mobile",
-	Description: `Receive push notifications on your Mobile device using the Statping App. You can scan the Authentication QR Code found in Settings to get the Mobile app setup in seconds.
+var Mobile = &mobilePush{
+	&notifications.Notification{
+		Method: "mobile",
+		Title:  "Mobile",
+		Description: `Receive push notifications on your Mobile device using the Statping App. You can scan the Authentication QR Code found in Settings to get the Mobile app setup in seconds.
 				 <p align="center"><a href="https://play.google.com/store/apps/details?id=com.statping"><img src="https://img.cjx.io/google-play.svg"></a><a href="https://itunes.apple.com/us/app/apple-store/id1445513219"><img src="https://img.cjx.io/app-store-badge.svg"></a></p>`,
-	Author:    "Hunter Long",
-	AuthorUrl: "https://github.com/hunterlong",
-	Delay:     time.Duration(5 * time.Second),
-	Icon:      "fas fa-mobile-alt",
-	Limits:    30,
-	Form: []notifications.NotificationForm{{
-		Type:        "text",
-		Title:       "Device Identifiers",
-		Placeholder: "A list of your Mobile device push notification ID's.",
-		DbField:     "var1",
-		IsHidden:    true,
+		Author:    "Hunter Long",
+		AuthorUrl: "https://github.com/hunterlong",
+		Delay:     time.Duration(5 * time.Second),
+		Icon:      "fas fa-mobile-alt",
+		Limits:    30,
+		Form: []notifications.NotificationForm{
+			{
+				Type:        "text",
+				Title:       "Device Identifiers",
+				Placeholder: "A list of your Mobile device push notification ID's.",
+				DbField:     "var1",
+				IsHidden:    true,
+			},
+		},
 	},
-	}},
 }
 
 func dataJson(s services.Service, f failures.Failure) map[string]interface{} {
-	serviceId := "0"
-	serviceId = utils.ToString(s.Id)
+	serviceId := utils.ToString(s.Id)
 	online := "online"
 	if !s.Online {
 		online = "offline"
@@ -108,7 +111,7 @@ func (m *mobilePush) OnTest() (string, error) {
 		return string(body), err
 	} else {
 		firstLog := output.Logs[0].Error
-		return string(body), fmt.Errorf("Mobile Notification error: %v", firstLog)
+		return string(body), fmt.Errorf("mobile notification error: %v", firstLog)
 	}
 }
 

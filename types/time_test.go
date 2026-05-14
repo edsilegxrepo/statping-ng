@@ -2,14 +2,14 @@ package types
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFixedTime(t *testing.T) {
-
 	timeVal, err := time.Parse("2006-01-02T15:04:05Z", "2020-05-22T06:02:13Z")
 	require.Nil(t, err)
 
@@ -39,5 +39,4 @@ func TestFixedTime(t *testing.T) {
 		t.Logf("Testing is %v time converts to %v duration\n", e.Time.String(), e.Duration.String())
 		assert.Equal(t, e.Expected, FixedTime(e.Time, e.Duration), fmt.Sprintf("reformating for: %v %v", e.Time, e.Duration))
 	}
-
 }

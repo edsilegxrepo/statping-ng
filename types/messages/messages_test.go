@@ -1,12 +1,13 @@
 package messages
 
 import (
+	"testing"
+	"time"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var example = &Message{

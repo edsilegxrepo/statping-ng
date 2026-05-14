@@ -1,6 +1,8 @@
 package notifiers
 
 import (
+	"testing"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/failures"
@@ -10,7 +12,6 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var (
@@ -74,5 +75,4 @@ func TestPushoverNotifier(t *testing.T) {
 		_, err := Pushover.OnTest()
 		assert.Nil(t, err)
 	})
-
 }

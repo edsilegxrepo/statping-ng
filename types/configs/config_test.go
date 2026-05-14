@@ -1,14 +1,15 @@
 package configs
 
 import (
+	"testing"
+
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func init() {
-	utils.InitLogs()
+	_ = utils.InitLogs()
 }
 
 func TestSQLiteConfig(t *testing.T) {

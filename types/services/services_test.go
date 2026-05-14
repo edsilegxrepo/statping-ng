@@ -3,6 +3,11 @@ package services
 import (
 	"context"
 	"crypto/tls"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/checkins"
@@ -17,10 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/route_guide/routeguide"
-	"net"
-	"net/http"
-	"testing"
-	"time"
 )
 
 var example = &Service{
@@ -135,7 +136,7 @@ func TestStartExampleEndpoints(t *testing.T) {
 
 	h := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	}
 
 	r := mux.NewRouter()
@@ -152,8 +153,8 @@ func TestStartExampleEndpoints(t *testing.T) {
 	}(t)
 
 	tcpHandle := func(conn net.Conn) {
-		defer conn.Close()
-		conn.Write([]byte("ok"))
+		defer func() { _ = conn.Close() }()
+		_, _ = conn.Write([]byte("ok"))
 	}
 
 	// start TCP server
@@ -220,7 +221,6 @@ func startupDb(t *testing.T) {
 }
 
 func TestServices(t *testing.T) {
-
 	tlsCert := utils.Params.GetString("STATPING_DIR") + "/cert.pem"
 	tlsCertKey := utils.Params.GetString("STATPING_DIR") + "/key.pem"
 
@@ -560,7 +560,6 @@ func TestServices(t *testing.T) {
 	})
 
 	t.Run("Test Load services.yml", func(t *testing.T) {
-
 		file := `x-tcpservice: &tcpservice
   type: tcp
   check_interval: 60

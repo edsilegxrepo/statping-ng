@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"testing"
+
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/groups"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestUnAuthenticatedGroupRoutes(t *testing.T) {

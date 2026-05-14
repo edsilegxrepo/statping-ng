@@ -2,9 +2,10 @@ package checkins
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/utils"
-	"time"
 )
 
 var log = utils.Log.WithField("type", "checkin")

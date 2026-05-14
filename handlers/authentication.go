@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"crypto/subtle"
+	"net/http"
+	"strings"
+
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
-	"net/http"
-	"strings"
 )
 
 // hasSetupEnv checks to see if the GO_ENV is set to 'true'

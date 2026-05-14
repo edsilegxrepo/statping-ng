@@ -1,6 +1,9 @@
 package notifiers
 
 import (
+	"testing"
+	"time"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/failures"
@@ -10,13 +13,9 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
-var (
-	MATTERMOST_URL string
-)
+var MATTERMOST_URL string
 
 func TestMattermostNotifier(t *testing.T) {
 	err := utils.InitLogs()
@@ -66,5 +65,4 @@ func TestMattermostNotifier(t *testing.T) {
 		_, err := mattermoster.OnSuccess(services.Example(true))
 		assert.Nil(t, err)
 	})
-
 }

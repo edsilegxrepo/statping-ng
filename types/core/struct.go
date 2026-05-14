@@ -1,14 +1,13 @@
 package core
 
 import (
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/utils"
-	"time"
 )
 
-var (
-	App *Core
-)
+var App *Core
 
 func New(version, commit string) {
 	App = new(Core)

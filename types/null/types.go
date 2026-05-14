@@ -6,22 +6,22 @@ import (
 
 // NewNullString returns a sql.NullString for JSON parsing
 func NewNullString(s string) NullString {
-	return NullString{sql.NullString{s, true}}
+	return NullString{sql.NullString{String: s, Valid: true}}
 }
 
 // NewNullBool returns a sql.NullBool for JSON parsing
 func NewNullBool(s bool) NullBool {
-	return NullBool{sql.NullBool{s, true}}
+	return NullBool{sql.NullBool{Bool: s, Valid: true}}
 }
 
 // NewNullInt64 returns a sql.NullInt64 for JSON parsing
 func NewNullInt64(s int64) NullInt64 {
-	return NullInt64{sql.NullInt64{s, true}}
+	return NullInt64{sql.NullInt64{Int64: s, Valid: true}}
 }
 
 // NewNullFloat64 returns a sql.NullFloat64 for JSON parsing
 func NewNullFloat64(s float64) NullFloat64 {
-	return NullFloat64{sql.NullFloat64{s, true}}
+	return NullFloat64{sql.NullFloat64{Float64: s, Valid: true}}
 }
 
 // NullInt64 is an alias for sql.NullInt64 data type

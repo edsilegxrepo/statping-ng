@@ -1,8 +1,9 @@
 package checkins
 
 import (
-	"github.com/statping-ng/statping-ng/types/failures"
 	"time"
+
+	"github.com/statping-ng/statping-ng/types/failures"
 )
 
 func (c *Checkin) CreateFailure(f *failures.Failure) error {

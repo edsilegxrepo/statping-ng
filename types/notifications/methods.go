@@ -2,9 +2,10 @@ package notifications
 
 import (
 	"fmt"
-	"github.com/statping-ng/statping-ng/utils"
 	"strings"
 	"time"
+
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 func (n Notification) Name() string {

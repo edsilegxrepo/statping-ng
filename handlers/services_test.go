@@ -3,6 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http/httptest"
+	"testing"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/types"
 	"github.com/statping-ng/statping-ng/types/core"
@@ -10,9 +14,6 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http/httptest"
-	"testing"
-	"time"
 )
 
 func TestUnAuthenticatedServicesRoutes(t *testing.T) {

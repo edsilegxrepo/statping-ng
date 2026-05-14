@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/groups"
 	"github.com/statping-ng/statping-ng/utils"
-	"net/http"
 )
 
 func findGroup(r *http.Request) (*groups.Group, error) {
@@ -102,7 +103,7 @@ type groupOrder struct {
 }
 
 func apiGroupReorderHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	_ = r.ParseForm()
 	var newOrder []*groupOrder
 
 	if err := DecodeJSON(r, &newOrder); err != nil {

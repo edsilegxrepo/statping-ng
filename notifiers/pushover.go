@@ -32,46 +32,49 @@ func (t *pushover) Valid(values notifications.Values) error {
 	return nil
 }
 
-var Pushover = &pushover{&notifications.Notification{
-	Method:      "pushover",
-	Title:       "Pushover",
-	Description: "Use Pushover to receive push notifications. You will need to create a <a href=\"https://pushover.net/apps/build\">New Application</a> on Pushover before using this notifier.",
-	Author:      "Hunter Long",
-	AuthorUrl:   "https://github.com/hunterlong",
-	Icon:        "fa dot-circle",
-	Delay:       time.Duration(10 * time.Second),
-	Limits:      60,
-	SuccessData: null.NewNullString(`Your service '{{.Service.Name}}' is currently online!`),
-	FailureData: null.NewNullString(`Your service '{{.Service.Name}}' is currently offline!`),
-	DataType:    "text",
-	Form: []notifications.NotificationForm{{
-		Type:        "text",
-		Title:       "User Token",
-		Placeholder: "Insert your Pushover User Token",
-		DbField:     "api_key",
-		Required:    true,
-	}, {
-		Type:        "text",
-		Title:       "Application API Key",
-		Placeholder: "Create an Application and insert the API Key here",
-		DbField:     "api_secret",
-		Required:    true,
-	}, {
-		Type:        "list",
-		Title:       "Priority",
-		Placeholder: "Set the notification priority level",
-		DbField:     "Var1",
-		Required:    true,
-		ListOptions: []string{"Lowest", "Low", "Normal", "High", "Emergency"},
-	}, {
-		Type:        "list",
-		Title:       "Notification Sound",
-		Placeholder: "Choose a sound for this Pushover notification",
-		DbField:     "Var2",
-		Required:    true,
-		ListOptions: []string{"none", "pushover", "bike", "bugle", "cashregister", "classical", "cosmic", "falling", "gamelan", "incoming", "intermissioon", "magic", "mechanical", "painobar", "siren", "spacealarm", "tugboat", "alien", "climb", "persistent", "echo", "updown"},
+var Pushover = &pushover{
+	&notifications.Notification{
+		Method:      "pushover",
+		Title:       "Pushover",
+		Description: "Use Pushover to receive push notifications. You will need to create a <a href=\"https://pushover.net/apps/build\">New Application</a> on Pushover before using this notifier.",
+		Author:      "Hunter Long",
+		AuthorUrl:   "https://github.com/hunterlong",
+		Icon:        "fa dot-circle",
+		Delay:       time.Duration(10 * time.Second),
+		Limits:      60,
+		SuccessData: null.NewNullString(`Your service '{{.Service.Name}}' is currently online!`),
+		FailureData: null.NewNullString(`Your service '{{.Service.Name}}' is currently offline!`),
+		DataType:    "text",
+		Form: []notifications.NotificationForm{
+			{
+				Type:        "text",
+				Title:       "User Token",
+				Placeholder: "Insert your Pushover User Token",
+				DbField:     "api_key",
+				Required:    true,
+			}, {
+				Type:        "text",
+				Title:       "Application API Key",
+				Placeholder: "Create an Application and insert the API Key here",
+				DbField:     "api_secret",
+				Required:    true,
+			}, {
+				Type:        "list",
+				Title:       "Priority",
+				Placeholder: "Set the notification priority level",
+				DbField:     "Var1",
+				Required:    true,
+				ListOptions: []string{"Lowest", "Low", "Normal", "High", "Emergency"},
+			}, {
+				Type:        "list",
+				Title:       "Notification Sound",
+				Placeholder: "Choose a sound for this Pushover notification",
+				DbField:     "Var2",
+				Required:    true,
+				ListOptions: []string{"none", "pushover", "bike", "bugle", "cashregister", "classical", "cosmic", "falling", "gamelan", "incoming", "intermissioon", "magic", "mechanical", "painobar", "siren", "spacealarm", "tugboat", "alien", "climb", "persistent", "echo", "updown"},
+			},
+		},
 	},
-	}},
 }
 
 func priority(val string) string {

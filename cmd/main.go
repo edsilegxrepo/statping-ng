@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/handlers"
@@ -12,9 +16,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 var (
@@ -131,7 +132,7 @@ func mainProcess() error {
 		return err
 	}
 
-	services.LoadServicesYaml()
+	_, _ = services.LoadServicesYaml()
 
 	if err := handlers.RunHTTPServer(); err != nil {
 		log.Fatalln(err)

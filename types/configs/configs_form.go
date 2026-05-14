@@ -1,10 +1,11 @@
 package configs
 
 import (
-	"github.com/pkg/errors"
-	"github.com/statping-ng/statping-ng/utils"
 	"net/http"
 	"strconv"
+
+	"github.com/pkg/errors"
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 func LoadConfigForm(r *http.Request) (*DbConfig, error) {

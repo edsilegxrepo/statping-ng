@@ -1,23 +1,25 @@
+//go:build ignore
 // +build ignore
 
 package main
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/translate"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/translate"
 )
 
 var (
-	tr        *translate.Translate
+	tr        *translate.Client
 	awsKey    string
 	awsSecret string
 )
@@ -82,7 +84,7 @@ func main() {
 		time.Sleep(250 * time.Millisecond)
 	}
 
-	//CreateGo(translations)
+	// CreateGo(translations)
 
 	CreateJS("english", translations)
 	CreateJS("russian", translations)
@@ -97,14 +99,14 @@ func main() {
 }
 
 func Translate(val, language string) string {
-	input := &translate.TextInput{
+	input := &translate.TranslateTextInput{
 		SourceLanguageCode: aws.String("en"),
 		TargetLanguageCode: aws.String(language),
 		Text:               aws.String(val),
 	}
-	req, out := tr.TextRequest(input)
-	if err := req.Send(); err != nil {
-		panic(req.Error)
+	out, err := tr.TranslateText(context.Background(), input)
+	if err != nil {
+		panic(err)
 	}
 	return *out.TranslatedText
 }
@@ -193,7 +195,6 @@ func GoLine(lang string, t *Text) string {
 }
 
 func CreateGo(trs []*Text) {
-
 	data := `package utils
 
 var Language map[string]map[string]string
@@ -204,11 +205,10 @@ func init() {
 }
 `
 
-	ioutil.WriteFile("../utils/languages.go", []byte(data), os.ModePerm)
+	os.WriteFile("../utils/languages.go", []byte(data), os.ModePerm)
 }
 
 func CreateJS(name string, trs []*Text) {
-
 	data := "const " + name + " = {\n"
 
 	var allvars []string
@@ -220,18 +220,16 @@ func CreateJS(name string, trs []*Text) {
 
 	data += "\n}\n\nexport default " + name
 
-	ioutil.WriteFile("../frontend/src/languages/"+name+".js", []byte(data), os.ModePerm)
-
+	os.WriteFile("../frontend/src/languages/"+name+".js", []byte(data), os.ModePerm)
 }
 
 func InitAWS() {
-	creds := credentials.NewStaticCredentials(awsKey, awsSecret, "")
-	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String("us-west-2"),
-		Credentials: creds,
-	})
+	cfg, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion("us-west-2"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awsKey, awsSecret, "")),
+	)
 	if err != nil {
 		panic(err)
 	}
-	tr = translate.New(sess)
+	tr = translate.NewFromConfig(cfg)
 }

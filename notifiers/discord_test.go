@@ -1,6 +1,9 @@
 package notifiers
 
 import (
+	"testing"
+	"time"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/failures"
@@ -10,13 +13,9 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
-var (
-	DISCORD_URL string
-)
+var DISCORD_URL string
 
 func TestDiscordNotifier(t *testing.T) {
 	t.Parallel()
@@ -69,5 +68,4 @@ func TestDiscordNotifier(t *testing.T) {
 		_, err := Discorder.OnTest()
 		assert.Nil(t, err)
 	})
-
 }

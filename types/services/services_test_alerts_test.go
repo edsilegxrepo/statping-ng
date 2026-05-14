@@ -1,14 +1,15 @@
 package services
 
 import (
+	"testing"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestServiceNotifications(t *testing.T) {
@@ -260,7 +261,6 @@ func TestServiceNotifications(t *testing.T) {
 	t.Run("Test Close", func(t *testing.T) {
 		assert.Nil(t, db.Close())
 	})
-
 }
 
 func runNotifyTests(t *testing.T, notif *exampleNotifier, tests ...notifyTest) {

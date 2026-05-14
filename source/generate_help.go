@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -6,14 +7,15 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
 	"html/template"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
 )
 
 const wikiUrl = "https://github.com/statping-ng/statping-ng.wiki"
@@ -122,9 +124,9 @@ func main() {
 		}
 		if txt[0:1] == "#" {
 			newCate := &Category{
-				String: txt[2:len(txt)],
+				String: txt[2:],
 			}
-			if txt[2:len(txt)] == "Contact" || txt[2:len(txt)] == "Badges" {
+			if txt[2:] == "Contact" || txt[2:] == "Badges" {
 				continue
 			}
 			thisCategory = newCate
@@ -166,7 +168,7 @@ func main() {
 	temp.ExecuteTemplate(w, "wiki", Render{Categories: cats, Pages: pages, Home: home, Footer: footer, CreatedAt: time.Now().UTC()})
 
 	fmt.Println("Saving wiki page to: ./frontend/src/pages/Home.vue")
-	ioutil.WriteFile("../frontend/src/pages/Help.vue", w.Bytes(), os.FileMode(0755))
+	ioutil.WriteFile("../frontend/src/pages/Help.vue", w.Bytes(), os.FileMode(0o755))
 
 	fmt.Println("Deleting statping wiki repo")
 	os.RemoveAll("statping.wiki")

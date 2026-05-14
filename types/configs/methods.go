@@ -2,13 +2,14 @@ package configs
 
 import (
 	"fmt"
+
 	"github.com/statping-ng/statping-ng/utils"
 	"gopkg.in/yaml.v2"
 )
 
 // Save will initially create the config.yml file
 func (d *DbConfig) Save(directory string) error {
-	c, err := yaml.Marshal(d)
+	c, err := yaml.Marshal(d) // #nosec G117
 	if err != nil {
 		return err
 	}
@@ -41,7 +42,7 @@ func (d *DbConfig) Clean() *DbConfig {
 }
 
 func (d *DbConfig) ToYAML() []byte {
-	c, err := yaml.Marshal(d)
+	c, err := yaml.Marshal(d) // #nosec G117
 	if err != nil {
 		log.Errorln(err)
 		return nil
@@ -55,7 +56,6 @@ func (d *DbConfig) ConnectionString() string {
 
 	switch d.DbConn {
 	case "memory", ":memory:":
-		conn = "sqlite3"
 		d.DbConn = ":memory:"
 		return d.DbConn
 	case "sqlite", "sqlite3":

@@ -6,13 +6,14 @@ package source
 
 import (
 	"fmt"
-	"github.com/GeertJohan/go.rice"
-	"github.com/pkg/errors"
-	"github.com/statping-ng/statping-ng/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/GeertJohan/go.rice"
+	"github.com/pkg/errors"
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 var (
@@ -97,7 +98,7 @@ func UsingAssets(folder string) bool {
 				log.Warnln(err)
 			}
 			if err := CompileSASS(); err != nil {
-				//CopyToPublic(CssBox, folder+"/css", "base.css")
+				// CopyToPublic(CssBox, folder+"/css", "base.css")
 				log.Warn(errors.Wrap(err, "Default 'base.css' was insert because SASS did not work."))
 				return true
 			}
@@ -180,6 +181,9 @@ func CopyAllToPublic(box *rice.Box) error {
 	}
 
 	return box.Walk("/", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if info.Name() == "" {
 			return nil
 		}

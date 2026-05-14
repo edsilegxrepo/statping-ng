@@ -1,8 +1,9 @@
 package checkins
 
 import (
-	"github.com/statping-ng/statping-ng/utils"
 	"time"
+
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 func Samples() error {

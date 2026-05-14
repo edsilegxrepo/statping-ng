@@ -2,7 +2,8 @@ package configs
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/checkins"
@@ -17,7 +18,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
-	"time"
 )
 
 // initModels sets the database for each Statping type packages
@@ -42,7 +42,7 @@ func Connect(configs *DbConfig, retry bool) error {
 
 	dbSession, err := database.Openw(configs.DbConn, conn)
 	if err != nil {
-		log.Errorf(fmt.Sprintf("Database connection error %s", err))
+		log.Errorf("%s", fmt.Sprintf("Database connection error %s", err))
 		if retry {
 			log.Warnln(fmt.Sprintf("Database %s connection to '%s' is not available, trying again in 5 seconds...", configs.DbConn, configs.DbHost))
 			time.Sleep(5 * time.Second)
@@ -56,14 +56,14 @@ func Connect(configs *DbConfig, retry bool) error {
 
 	log.WithFields(utils.ToFields(dbSession)).Debugln("connected to database")
 
-	db := dbSession.DB()
+	db, _ := dbSession.DB()
 	db.SetMaxOpenConns(utils.Params.GetInt("MAX_OPEN_CONN"))
 	db.SetMaxIdleConns(utils.Params.GetInt("MAX_IDLE_CONN"))
 	db.SetConnMaxLifetime(utils.Params.GetDuration("MAX_LIFE_CONN"))
 
 	if db.Ping() == nil {
 		if utils.VerboseMode >= 4 {
-			dbSession.LogMode(true).Debug().SetLogger(gorm.Logger{log})
+			dbSession.LogMode(true)
 		}
 		log.Infoln(fmt.Sprintf("Database %s connection was successful.", configs.DbConn))
 	}

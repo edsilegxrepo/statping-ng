@@ -2,21 +2,20 @@ package main
 
 import (
 	"bytes"
+	"io"
+	"os"
+	"testing"
+
 	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"testing"
 )
 
-var (
-	dir string
-)
+var dir string
 
 func init() {
-	utils.InitLogs()
+	_ = utils.InitLogs()
 }
 
 func TestStatpingDirectory(t *testing.T) {
@@ -26,8 +25,8 @@ func TestStatpingDirectory(t *testing.T) {
 }
 
 func TestEnvCLI(t *testing.T) {
-	os.Setenv("API_SECRET", "demoapisecret123")
-	os.Setenv("SASS", "/usr/local/bin/sass")
+	_ = os.Setenv("API_SECRET", "demoapisecret123")
+	_ = os.Setenv("SASS", "/usr/local/bin/sass")
 
 	cmd := rootCmd
 	b := bytes.NewBufferString("")
@@ -35,7 +34,7 @@ func TestEnvCLI(t *testing.T) {
 	cmd.SetArgs([]string{"env"})
 	err := cmd.Execute()
 	require.Nil(t, err)
-	out, err := ioutil.ReadAll(b)
+	out, err := io.ReadAll(b)
 	require.Nil(t, err)
 	assert.Contains(t, string(out), VERSION)
 	assert.Contains(t, utils.Directory, string(out))
@@ -44,8 +43,8 @@ func TestEnvCLI(t *testing.T) {
 	assert.Contains(t, "STATPING_DIR="+dir, string(out))
 	assert.Contains(t, "SASS=/usr/local/bin/sass", string(out))
 
-	os.Unsetenv("API_SECRET")
-	os.Unsetenv("SASS")
+	_ = os.Unsetenv("API_SECRET")
+	_ = os.Unsetenv("SASS")
 }
 
 func TestVersionCLI(t *testing.T) {
@@ -55,7 +54,7 @@ func TestVersionCLI(t *testing.T) {
 	cmd.SetArgs([]string{"version"})
 	err := cmd.Execute()
 	require.Nil(t, err)
-	out, err := ioutil.ReadAll(b)
+	out, err := io.ReadAll(b)
 	require.Nil(t, err)
 	assert.Contains(t, VERSION, string(out))
 }
@@ -67,7 +66,7 @@ func TestAssetsCLI(t *testing.T) {
 	cmd.SetArgs([]string{"assets"})
 	err := cmd.Execute()
 	require.Nil(t, err)
-	out, err := ioutil.ReadAll(b)
+	out, err := io.ReadAll(b)
 	assert.Nil(t, err)
 	assert.Contains(t, string(out), VERSION)
 	for _, f := range source.RequiredFiles {
@@ -82,7 +81,7 @@ func TestUpdateCLI(t *testing.T) {
 	cmd.SetArgs([]string{"update"})
 	err := cmd.Execute()
 	require.Nil(t, err)
-	out, err := ioutil.ReadAll(b)
+	out, err := io.ReadAll(b)
 	require.Nil(t, err)
 	assert.Contains(t, string(out), VERSION)
 }
@@ -94,7 +93,7 @@ func TestHelpCLI(t *testing.T) {
 	cmd.SetArgs([]string{"help"})
 	err := cmd.Execute()
 	require.Nil(t, err)
-	out, err := ioutil.ReadAll(b)
+	out, err := io.ReadAll(b)
 	require.Nil(t, err)
 	assert.Contains(t, string(out), VERSION)
 }
@@ -109,7 +108,7 @@ func TestResetCLI(t *testing.T) {
 	cmd.SetArgs([]string{"reset"})
 	err = cmd.Execute()
 	require.Nil(t, err)
-	out, err := ioutil.ReadAll(b)
+	out, err := io.ReadAll(b)
 	require.Nil(t, err)
 	assert.Contains(t, string(out), VERSION)
 

@@ -4,9 +4,7 @@ import (
 	"github.com/statping-ng/statping-ng/database"
 )
 
-var (
-	db database.Database
-)
+var db database.Database
 
 func SetDB(database database.Database) {
 	db = database.Model(&Notification{})
@@ -36,7 +34,7 @@ func All() []*Notification {
 
 func Find(method string) (*Notification, error) {
 	var n Notification
-	q := db.Where("method = ?", method).Find(&n)
+	q := db.Where("method = ?", method).First(&n)
 	if q.Error() != nil {
 		return nil, q.Error()
 	}
@@ -45,7 +43,7 @@ func Find(method string) (*Notification, error) {
 
 func (n *Notification) Create() error {
 	var p Notification
-	q := db.Where("method = ?", n.Method).Find(&p)
+	q := db.Where("method = ?", n.Method).First(&p)
 	if q.RecordNotFound() {
 		log.Infof("Notifier '%s' was not found, adding into database...\n", n.Method)
 		if err := db.Create(n).Error(); err != nil {

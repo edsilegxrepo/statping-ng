@@ -1,15 +1,14 @@
 package notifications
 
 import (
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/utils"
-	"time"
 )
 
-var (
-	log = utils.Log.WithField("type", "notifier")
-)
+var log = utils.Log.WithField("type", "notifier")
 
 // Notification contains all the fields for a Statping Notifier.
 type Notification struct {
@@ -78,20 +77,6 @@ type NotificationForm struct {
 	Required    bool     `json:"required"`    // require this input on the html form
 	IsHidden    bool     `json:"hidden"`      // hide this form element from end user
 	ListOptions []string `json:"list_options,omitempty"`
-}
-
-type notificationHits struct {
-	OnSuccess         int64 `gorm:"-" json:"-"`
-	OnFailure         int64 `gorm:"-" json:"-"`
-	OnSave            int64 `gorm:"-" json:"-"`
-	OnNewService      int64 `gorm:"-" json:"-"`
-	OnUpdatedService  int64 `gorm:"-" json:"-"`
-	OnDeletedService  int64 `gorm:"-" json:"-"`
-	OnNewUser         int64 `gorm:"-" json:"-"`
-	OnUpdatedUser     int64 `gorm:"-" json:"-"`
-	OnDeletedUser     int64 `gorm:"-" json:"-"`
-	OnNewNotifier     int64 `gorm:"-" json:"-"`
-	OnUpdatedNotifier int64 `gorm:"-" json:"-"`
 }
 
 // NotificationOrder will reorder the services based on 'order_id' (Order)

@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUnAuthenticatedMessageRoutes(t *testing.T) {
@@ -47,7 +48,8 @@ func TestMessagesApiRoutes(t *testing.T) {
 			Method:           "GET",
 			ExpectedStatus:   200,
 			ExpectedContains: []string{`"title":"Routine Downtime"`},
-		}, {
+		},
+		{
 			Name:   "Statping Create Message",
 			URL:    "/api/messages",
 			Method: "POST",

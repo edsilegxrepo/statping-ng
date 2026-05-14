@@ -149,14 +149,16 @@ func TestApiNotifiersRoutes(t *testing.T) {
 			ResponseLen:    len(services.AllNotifiers()),
 			BeforeTest:     SetTestENV,
 			SecureRoute:    true,
-		}, {
+		},
+		{
 			Name:           "Statping Slack Notifier",
 			URL:            "/api/notifier/slack",
 			Method:         "GET",
 			ExpectedStatus: 200,
 			BeforeTest:     SetTestENV,
 			SecureRoute:    true,
-		}, {
+		},
+		{
 			Name:   "Statping Update Notifier",
 			URL:    "/api/notifier/slack",
 			Method: "POST",
@@ -169,7 +171,8 @@ func TestApiNotifiersRoutes(t *testing.T) {
 			ExpectedStatus: 200,
 			BeforeTest:     SetTestENV,
 			SecureRoute:    true,
-		}, {
+		},
+		{
 			Name:             "Statping Slack Notifier",
 			URL:              "/api/notifier/slack",
 			Method:           "GET",

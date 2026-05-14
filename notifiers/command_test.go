@@ -63,5 +63,4 @@ func TestCommandNotifier(t *testing.T) {
 		_, err := Command.OnTest()
 		assert.Nil(t, err)
 	})
-
 }

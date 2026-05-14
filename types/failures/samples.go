@@ -2,16 +2,14 @@ package failures
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types"
 	"github.com/statping-ng/statping-ng/utils"
-	gormbulk "github.com/t-tiger/gorm-bulk-insert/v2"
-	"time"
-	"math/rand"
 )
 
-var (
-	log = utils.Log.WithField("type", "failure")
-)
+var log = utils.Log.WithField("type", "failure")
 
 func Example() Failure {
 	return Failure{
@@ -33,7 +31,7 @@ func createFailuresForService(serviceID int64, start time.Time, end time.Time, c
 	currentTime := start
 	for currentTime.Before(end) {
 		// Randomly decide if an outage should occur
-		if rand.Float64() < chanceOfFailure {
+		if rand.Float64() < chanceOfFailure { // #nosec G404
 			// Determine random outage length
 			// This is so we can display all the different
 			// severities of outages
@@ -44,14 +42,14 @@ func createFailuresForService(serviceID int64, start time.Time, end time.Time, c
 				60 * types.Minute,
 				5 * types.Minute,
 			}
-			outageLength := outageLengths[rand.Intn(len(outageLengths))]
+			outageLength := outageLengths[rand.Intn(len(outageLengths))] // #nosec G404
 
 			// Simulate failures for the duration of the outage
 			outageEnd := currentTime.Add(outageLength)
 			// Initialize the current day and count of records.
 			currentDay := currentTime.Day()
 			dayRecordCount := 0
-			
+
 			for currentTime.Before(outageEnd) {
 				f1 := &Failure{
 					Service:   serviceID,
@@ -66,7 +64,7 @@ func createFailuresForService(serviceID int64, start time.Time, end time.Time, c
 				// Check if we have moved to the next day
 				if currentDay != currentTime.Day() {
 					// Log the number of failures created for the previous day
-					utils.Log.Infoln("Created", dayRecordCount, "Failures for Service", serviceID, "for day", currentTime.Add(-1 * time.Minute).UTC())
+					utils.Log.Infoln("Created", dayRecordCount, "Failures for Service", serviceID, "for day", currentTime.Add(-1*time.Minute).UTC())
 
 					// Reset for the new day
 					currentDay = currentTime.Day()
@@ -87,20 +85,20 @@ func createFailuresForService(serviceID int64, start time.Time, end time.Time, c
 
 func Samples() error {
 	utils.Log.Infoln("Inserting Sample Service Failures...")
-	endDate := utils.Now()                        // Up to current time
+	endDate := utils.Now() // Up to current time
 
 	chanceOfFailure := 0.0003 // very small chance of starting an outage at any given minute
 
 	// Only add failures to services 3 and 4
-	records_3 := createFailuresForService(3, utils.Now().Add(-60 * types.Day), endDate, chanceOfFailure)
+	records_3 := createFailuresForService(3, utils.Now().Add(-60*types.Day), endDate, chanceOfFailure)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 3", len(records_3)))
-	if err := gormbulk.BulkInsert(db.GormDB(), records_3, db.ChunkSize()); err != nil {
+	if err := db.GormDB().CreateInBatches(records_3, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
-	records_4 := createFailuresForService(4, utils.Now().Add(-90 * types.Day), endDate, chanceOfFailure)
+	records_4 := createFailuresForService(4, utils.Now().Add(-90*types.Day), endDate, chanceOfFailure)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 4", len(records_4)))
-	if err := gormbulk.BulkInsert(db.GormDB(), records_4, db.ChunkSize()); err != nil {
+	if err := db.GormDB().CreateInBatches(records_4, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}

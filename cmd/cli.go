@@ -4,6 +4,11 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/handlers"
 	"github.com/statping-ng/statping-ng/source"
@@ -11,15 +16,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
-)
-
-var (
-	importAll *bool
 )
 
 func assetsCli() error {
@@ -220,7 +216,7 @@ func onceCli() error {
 	if err := runOnce(); err != nil {
 		return err
 	}
-	//core.CloseDB()
+	// core.CloseDB()
 	fmt.Println("Check is complete.")
 	return nil
 }
@@ -231,7 +227,7 @@ func importCli(args []string) error {
 	if len(args) < 1 {
 		return errors.New("invalid command arguments")
 	}
-	if data, err = ioutil.ReadFile(args[0]); err != nil {
+	if data, err = os.ReadFile(args[0]); err != nil {
 		return err
 	}
 	var exportData handlers.ExportData
@@ -340,31 +336,11 @@ func importCli(args []string) error {
 }
 
 func ask(format string) bool {
-
-	fmt.Printf(fmt.Sprintf(format + " [y/N]: "))
+	fmt.Printf("%s", format+" [y/N]: ")
 	reader := bufio.NewReader(os.Stdin)
 	text, _ := reader.ReadString('\n')
-	text = strings.Replace(text, "\n", "", -1)
+	text = strings.ReplaceAll(text, "\n", "")
 	return strings.ToLower(text) == "y"
-}
-
-func updateDisplay() error {
-	gitCurrent, err := checkGithubUpdates()
-	if err != nil {
-		return errors.Wrap(err, "Issue connecting to https://github.com/statping-ng/statping-ng")
-	}
-	if gitCurrent.TagName == "" {
-		return nil
-	}
-	if len(gitCurrent.TagName) < 2 {
-		return nil
-	}
-	if VERSION != gitCurrent.TagName[1:] {
-		fmt.Printf("New Update %v Available!\n", gitCurrent.TagName[1:])
-		fmt.Printf("Update Command:\n")
-		fmt.Printf("curl -o- -L https://statping.com/install.sh | bash\n\n")
-	}
-	return nil
 }
 
 // runOnce will initialize the Statping application and check each service 1 time, will not run HTTP server
@@ -392,96 +368,6 @@ func runOnce() error {
 		srv.CheckService(true)
 	}
 	return nil
-}
-
-func checkGithubUpdates() (githubResponse, error) {
-	url := "https://api.github.com/repos/statping-ng/statping-ng/releases/latest"
-	contents, _, err := utils.HttpRequest(url, "GET", nil, nil, nil, time.Duration(2*time.Second), true, nil)
-	if err != nil {
-		return githubResponse{}, err
-	}
-	var gitResp githubResponse
-	err = json.Unmarshal(contents, &gitResp)
-	return gitResp, err
-}
-
-type githubResponse struct {
-	URL             string      `json:"url"`
-	AssetsURL       string      `json:"assets_url"`
-	UploadURL       string      `json:"upload_url"`
-	HTMLURL         string      `json:"html_url"`
-	ID              int         `json:"id"`
-	NodeID          string      `json:"node_id"`
-	TagName         string      `json:"tag_name"`
-	TargetCommitish string      `json:"target_commitish"`
-	Name            string      `json:"name"`
-	Draft           bool        `json:"draft"`
-	Author          gitAuthor   `json:"author"`
-	Prerelease      bool        `json:"prerelease"`
-	CreatedAt       time.Time   `json:"created_at"`
-	PublishedAt     time.Time   `json:"published_at"`
-	Assets          []gitAssets `json:"assets"`
-	TarballURL      string      `json:"tarball_url"`
-	ZipballURL      string      `json:"zipball_url"`
-	Body            string      `json:"body"`
-}
-
-type gitAuthor struct {
-	Login             string `json:"login"`
-	ID                int    `json:"id"`
-	NodeID            string `json:"node_id"`
-	AvatarURL         string `json:"avatar_url"`
-	GravatarID        string `json:"gravatar_id"`
-	URL               string `json:"url"`
-	HTMLURL           string `json:"html_url"`
-	FollowersURL      string `json:"followers_url"`
-	FollowingURL      string `json:"following_url"`
-	GistsURL          string `json:"gists_url"`
-	StarredURL        string `json:"starred_url"`
-	SubscriptionsURL  string `json:"subscriptions_url"`
-	OrganizationsURL  string `json:"organizations_url"`
-	ReposURL          string `json:"repos_url"`
-	EventsURL         string `json:"events_url"`
-	ReceivedEventsURL string `json:"received_events_url"`
-	Type              string `json:"type"`
-	SiteAdmin         bool   `json:"site_admin"`
-}
-
-type gitAssets struct {
-	URL                string      `json:"url"`
-	ID                 int         `json:"id"`
-	NodeID             string      `json:"node_id"`
-	Name               string      `json:"name"`
-	Label              string      `json:"label"`
-	Uploader           gitUploader `json:"uploader"`
-	ContentType        string      `json:"content_type"`
-	State              string      `json:"state"`
-	Size               int         `json:"size"`
-	DownloadCount      int         `json:"download_count"`
-	CreatedAt          time.Time   `json:"created_at"`
-	UpdatedAt          time.Time   `json:"updated_at"`
-	BrowserDownloadURL string      `json:"browser_download_url"`
-}
-
-type gitUploader struct {
-	Login             string `json:"login"`
-	ID                int    `json:"id"`
-	NodeID            string `json:"node_id"`
-	AvatarURL         string `json:"avatar_url"`
-	GravatarID        string `json:"gravatar_id"`
-	URL               string `json:"url"`
-	HTMLURL           string `json:"html_url"`
-	FollowersURL      string `json:"followers_url"`
-	FollowingURL      string `json:"following_url"`
-	GistsURL          string `json:"gists_url"`
-	StarredURL        string `json:"starred_url"`
-	SubscriptionsURL  string `json:"subscriptions_url"`
-	OrganizationsURL  string `json:"organizations_url"`
-	ReposURL          string `json:"repos_url"`
-	EventsURL         string `json:"events_url"`
-	ReceivedEventsURL string `json:"received_events_url"`
-	Type              string `json:"type"`
-	SiteAdmin         bool   `json:"site_admin"`
 }
 
 // ExportChartsJs renders the charts for the index page

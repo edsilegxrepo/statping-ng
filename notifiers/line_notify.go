@@ -2,14 +2,15 @@ package notifiers
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/types/notifier"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
-	"net/url"
-	"strings"
-	"time"
 )
 
 var _ notifier.Notifier = (*lineNotifier)(nil)
@@ -30,20 +31,22 @@ func (l *lineNotifier) Valid(values notifications.Values) error {
 	return nil
 }
 
-var LineNotify = &lineNotifier{&notifications.Notification{
-	Method:      lineNotifyMethod,
-	Title:       "LINE Notify",
-	Description: "LINE Notify will send notifications to your LINE Notify account when services are offline or online. Based on the <a href=\"https://notify-bot.line.me/doc/en/\">LINE Notify API</a>.",
-	Author:      "Kanin Peanviriyakulkit",
-	AuthorUrl:   "https://github.com/dogrocker",
-	Icon:        "far fa-bell",
-	Limits:      60,
-	Form: []notifications.NotificationForm{{
-		Type:        "text",
-		Title:       "Access Token",
-		Placeholder: "Insert your Line Notify Access Token here.",
-		DbField:     "api_secret",
-	}}},
+var LineNotify = &lineNotifier{
+	&notifications.Notification{
+		Method:      lineNotifyMethod,
+		Title:       "LINE Notify",
+		Description: "LINE Notify will send notifications to your LINE Notify account when services are offline or online. Based on the <a href=\"https://notify-bot.line.me/doc/en/\">LINE Notify API</a>.",
+		Author:      "Kanin Peanviriyakulkit",
+		AuthorUrl:   "https://github.com/dogrocker",
+		Icon:        "far fa-bell",
+		Limits:      60,
+		Form: []notifications.NotificationForm{{
+			Type:        "text",
+			Title:       "Access Token",
+			Placeholder: "Insert your Line Notify Access Token here.",
+			DbField:     "api_secret",
+		}},
+	},
 }
 
 // Send will send a HTTP Post with the Authorization to the notify-api.line.me server. It accepts type: string
@@ -71,7 +74,7 @@ func (l *lineNotifier) OnSuccess(s services.Service) (string, error) {
 
 // OnTest triggers when this notifier has been saved
 func (l *lineNotifier) OnTest() (string, error) {
-	msg := fmt.Sprintf("Testing if Line Notifier is working!")
+	msg := "Testing if Line Notifier is working!"
 	_, err := l.sendMessage(msg)
 	return msg, err
 }

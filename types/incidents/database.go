@@ -34,7 +34,7 @@ func (i *Incident) BeforeCreate() error {
 }
 
 func (i *Incident) AfterFind() {
-	db.Model(i).Related(&i.Updates).Order("id DESC")
+	db.Where("incident = ?", i.Id).Order("id DESC").Find(&i.Updates)
 	metrics.Query("incident", "find")
 }
 
@@ -83,13 +83,13 @@ func (i *IncidentUpdate) AfterDelete() {
 
 func FindUpdate(uid int64) (*IncidentUpdate, error) {
 	var update IncidentUpdate
-	q := dbUpdate.Where("id = ?", uid).Find(&update)
+	q := dbUpdate.Where("id = ?", uid).First(&update)
 	return &update, q.Error()
 }
 
 func Find(id int64) (*Incident, error) {
 	var incident Incident
-	q := db.Where("id = ?", id).Find(&incident)
+	q := db.Where("id = ?", id).First(&incident)
 	return &incident, q.Error()
 }
 

@@ -72,5 +72,4 @@ func TestAmazonSNSNotifier(t *testing.T) {
 		_, err := AmazonSNS.OnTest()
 		assert.Nil(t, err)
 	})
-
 }

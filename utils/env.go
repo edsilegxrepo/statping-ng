@@ -1,15 +1,14 @@
 package utils
 
 import (
-	"github.com/spf13/viper"
-	"io/ioutil"
+	"io"
 	"os"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
-var (
-	Params *viper.Viper
-)
+var Params *viper.Viper
 
 func InitEnvs() {
 	if Params != nil {
@@ -72,19 +71,19 @@ func InitEnvs() {
 	}
 
 	Directory = Params.GetString("STATPING_DIR")
-	//Params.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	// Params.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	Params.SetConfigName("config")
 	Params.SetConfigType("yml")
 	Params.AddConfigPath(Directory)
-	Params.ReadInConfig()
+	_ = Params.ReadInConfig()
 
 	Params.AddConfigPath(Directory)
 	Params.SetConfigFile(".env")
-	Params.ReadInConfig()
+	_ = Params.ReadInConfig()
 
 	// check if logs are disabled
 	if Params.GetBool("DISABLE_LOGS") {
-		Log.Out = ioutil.Discard
+		Log.Out = io.Discard
 		return
 	}
 	Log.Debugln("current working directory: ", Directory)

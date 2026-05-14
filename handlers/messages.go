@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/messages"
 	"github.com/statping-ng/statping-ng/utils"
-	"net/http"
 )
 
 func findMessage(r *http.Request) (*messages.Message, int64, error) {

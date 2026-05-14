@@ -45,11 +45,11 @@ func SafeJson(val reflect.Value, scope string) map[string]interface{} {
 	thisData := make(map[string]interface{})
 	if val.Kind() == reflect.Interface && !val.IsNil() {
 		elm := val.Elem()
-		if elm.Kind() == reflect.Ptr && !elm.IsNil() && elm.Elem().Kind() == reflect.Ptr {
+		if elm.Kind() == reflect.Pointer && !elm.IsNil() && elm.Elem().Kind() == reflect.Pointer {
 			val = elm
 		}
 	}
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 

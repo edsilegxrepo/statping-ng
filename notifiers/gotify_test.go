@@ -77,5 +77,4 @@ func TestGotifyNotifier(t *testing.T) {
 		_, err := Gotify.OnTest()
 		assert.Nil(t, err)
 	})
-
 }

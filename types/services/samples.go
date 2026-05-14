@@ -1,9 +1,10 @@
 package services
 
 import (
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/utils"
-	"time"
 )
 
 func Example(online bool) Service {

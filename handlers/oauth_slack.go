@@ -3,14 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/slack"
-	"net/http"
-	"strings"
-	"time"
 )
 
 func slackOAuth(r *http.Request) (*oAuth, error) {
@@ -63,10 +64,10 @@ func validateSlack(id slackIdentity) bool {
 	if auth.SlackUsers != "" {
 		users := strings.Split(auth.SlackUsers, ",")
 		for _, u := range users {
-			if strings.ToLower(u) == strings.ToLower(id.User.Email) {
+			if strings.EqualFold(u, id.User.Email) {
 				return true
 			}
-			if strings.ToLower(u) == strings.ToLower(id.User.Name) {
+			if strings.EqualFold(u, id.User.Name) {
 				return true
 			}
 		}

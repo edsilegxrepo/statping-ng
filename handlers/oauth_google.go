@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"net/http"
-	"strings"
-	"time"
 )
 
 func googleOAuth(r *http.Request) (*oAuth, error) {
@@ -57,10 +58,10 @@ func validateGoogle(info googleUserInfo) bool {
 	if auth.GoogleUsers != "" {
 		users := strings.Split(auth.GoogleUsers, ",")
 		for _, u := range users {
-			if strings.ToLower(info.Email) == strings.ToLower(u) {
+			if strings.EqualFold(info.Email, u) {
 				return true
 			}
-			if strings.ToLower(info.Hd) == strings.ToLower(u) {
+			if strings.EqualFold(info.Hd, u) {
 				return true
 			}
 		}

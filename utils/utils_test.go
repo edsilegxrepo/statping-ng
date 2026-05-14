@@ -118,12 +118,6 @@ func TestStringInt(t *testing.T) {
 	assert.Equal(t, "1", ToString("1"))
 }
 
-func ExampleStringInt() {
-	amount := "42"
-	fmt.Print(ToString(amount))
-	// Output: 42
-}
-
 func TestHashPassword(t *testing.T) {
 	pass := HashPassword("password123")
 	assert.Equal(t, 60, len(pass))
@@ -180,7 +174,7 @@ func TestHttpRequest(t *testing.T) {
 		assert.Equal(t, req.Header["Aaa"], []string{"bbbb="})
 		assert.Equal(t, req.Header["Ccc"], []string{"ddd"})
 		// Send response to be tested
-		rw.Write([]byte(`OK`))
+		_, _ = rw.Write([]byte(`OK`))
 	}))
 	// Close the server when test finishes
 	defer server.Close()

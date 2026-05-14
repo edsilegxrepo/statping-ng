@@ -1,12 +1,12 @@
 package services
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -20,6 +20,13 @@ import (
 )
 
 const limitedFailures = 25
+
+func (s Service) Hash() string {
+	format := fmt.Sprintf("name:%sdomain:%sport:%dtype:%smethod:%s", s.Name, s.Domain, s.Port, s.Type, s.Method)
+	h := sha256.New()
+	h.Write([]byte(format))
+	return hex.EncodeToString(h.Sum(nil))
+}
 
 func (s *Service) LoadTLSCert() (config *tls.Config, err error) {
 	config, err = s.configureTLS()
@@ -53,7 +60,7 @@ func (s *Service) LoadTLSCert() (config *tls.Config, err error) {
 
 	// create Root CA pool or use Root CA provided
 	rootCA := s.TLSCertRoot.String
-	caCert, err := ioutil.ReadFile(rootCA)
+	caCert, err := os.ReadFile(rootCA) // #nosec G304
 	if err != nil {
 		return nil, errors.Wrap(err, "issue reading root CA file: "+rootCA)
 	}
@@ -229,13 +236,6 @@ func (s *Service) IsRunning() bool {
 	}
 }
 
-func (s Service) Hash() string {
-	format := fmt.Sprintf("name:%sdomain:%sport:%dtype:%smethod:%s", s.Name, s.Domain, s.Port, s.Type, s.Method)
-	h := sha1.New()
-	h.Write([]byte(format))
-	return hex.EncodeToString(h.Sum(nil))
-}
-
 // SelectAllServices returns a slice of *core.Service to be store on []*core.Services
 // should only be called once on startup.
 func SelectAllServices(start bool) (map[int64]*Service, error) {
@@ -322,11 +322,11 @@ func (s *Service) OnlineSince(ago time.Time) float32 {
 
 	// If we have a huge amount of data points, use a more precise number
 	if hitsCount > 100000 {
-		amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.3f", avg), 10)
+		amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.3f", avg), 64)
 		s.Online24Hours = float32(amount)
 		return s.Online24Hours
 	} else {
-		amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.2f", avg), 10)
+		amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.2f", avg), 64)
 		s.Online24Hours = float32(amount)
 		return s.Online24Hours
 	}

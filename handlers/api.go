@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/statping-ng/statping-ng/types/checkins"
 	"github.com/statping-ng/statping-ng/types/configs"
 	"github.com/statping-ng/statping-ng/types/core"
@@ -14,8 +16,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
-	"net/http"
-	"time"
 )
 
 type apiResponse struct {
@@ -108,12 +108,6 @@ func apiCoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	returnJson(core.App, w, r)
-}
-
-type cacheJson struct {
-	URL        string    `json:"url"`
-	Expiration time.Time `json:"expiration"`
-	Size       int       `json:"size"`
 }
 
 func sendErrorJson(err error, w http.ResponseWriter, r *http.Request) {

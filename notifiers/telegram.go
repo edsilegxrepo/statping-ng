@@ -30,33 +30,35 @@ func (t *telegram) Valid(values notifications.Values) error {
 	return nil
 }
 
-var Telegram = &telegram{&notifications.Notification{
-	Method:      "telegram",
-	Title:       "Telegram",
-	Description: "Receive notifications on your Telegram channel when a service has an issue. You must get a Telegram API token from the /botfather. Review the <a target=\"_blank\" href=\"http://techthoughts.info/how-to-create-a-telegram-bot-and-send-messages-via-api\">Telegram API Tutorial</a> to learn how to generate a new API Token.",
-	Author:      "Hunter Long",
-	AuthorUrl:   "https://github.com/hunterlong",
-	Icon:        "fab fa-telegram-plane",
-	Delay:       time.Duration(5 * time.Second),
-	SuccessData: null.NewNullString("Your service '{{.Service.Name}}' is currently online!"),
-	FailureData: null.NewNullString("Your service '{{.Service.Name}}' is currently offline!"),
-	DataType:    "text",
-	Limits:      60,
-	Form: []notifications.NotificationForm{{
-		Type:        "text",
-		Title:       "Telegram API Token",
-		Placeholder: "383810182:EEx829dtCeufeQYXG7CUdiQopqdmmxBPO7-s",
-		SmallText:   "Enter the API Token given to you from the /botfather chat.",
-		DbField:     "api_secret",
-		Required:    true,
-	}, {
-		Type:        "text",
-		Title:       "Channel",
-		Placeholder: "@statping_channel/-123123512312",
-		SmallText:   "Insert your Telegram Channel including the @ symbol. The bot will need to be an administrator of this channel. You can also supply a chat_id.",
-		DbField:     "var1",
-		Required:    true,
-	}}},
+var Telegram = &telegram{
+	&notifications.Notification{
+		Method:      "telegram",
+		Title:       "Telegram",
+		Description: "Receive notifications on your Telegram channel when a service has an issue. You must get a Telegram API token from the /botfather. Review the <a target=\"_blank\" href=\"http://techthoughts.info/how-to-create-a-telegram-bot-and-send-messages-via-api\">Telegram API Tutorial</a> to learn how to generate a new API Token.",
+		Author:      "Hunter Long",
+		AuthorUrl:   "https://github.com/hunterlong",
+		Icon:        "fab fa-telegram-plane",
+		Delay:       time.Duration(5 * time.Second),
+		SuccessData: null.NewNullString("Your service '{{.Service.Name}}' is currently online!"),
+		FailureData: null.NewNullString("Your service '{{.Service.Name}}' is currently offline!"),
+		DataType:    "text",
+		Limits:      60,
+		Form: []notifications.NotificationForm{{
+			Type:        "text",
+			Title:       "Telegram API Token",
+			Placeholder: "383810182:EEx829dtCeufeQYXG7CUdiQopqdmmxBPO7-s",
+			SmallText:   "Enter the API Token given to you from the /botfather chat.",
+			DbField:     "api_secret",
+			Required:    true,
+		}, {
+			Type:        "text",
+			Title:       "Channel",
+			Placeholder: "@statping_channel/-123123512312",
+			SmallText:   "Insert your Telegram Channel including the @ symbol. The bot will need to be an administrator of this channel. You can also supply a chat_id.",
+			DbField:     "var1",
+			Required:    true,
+		}},
+	},
 }
 
 // Send will send a HTTP Post to the Telegram API. It accepts type: string
@@ -92,19 +94,19 @@ func (t *telegram) OnSuccess(s services.Service) (string, error) {
 
 // OnTest will test the Twilio SMS messaging
 func (t *telegram) OnTest() (string, error) {
-	msg := fmt.Sprintf("Testing the Telegram Notifier on your Statping server")
+	msg := "Testing the Telegram Notifier on your Statping server"
 	return t.sendMessage(msg)
 }
 
 // OnSave will trigger when this notifier is saved
 func (t *telegram) OnSave() (string, error) {
-	msg := fmt.Sprintf("The Telegram Notifier on your Statping server was just saved")
+	msg := "The Telegram Notifier on your Statping server was just saved"
 	return t.sendMessage(msg)
 }
 
 func telegramSuccess(res []byte) (bool, telegramResponse) {
 	var obj telegramResponse
-	json.Unmarshal(res, &obj)
+	_ = json.Unmarshal(res, &obj)
 	if obj.Ok {
 		return true, obj
 	}
@@ -113,7 +115,7 @@ func telegramSuccess(res []byte) (bool, telegramResponse) {
 
 func telegramError(res []byte) telegramErrorObj {
 	var obj telegramErrorObj
-	json.Unmarshal(res, &obj)
+	_ = json.Unmarshal(res, &obj)
 	return obj
 }
 

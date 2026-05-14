@@ -24,6 +24,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/emersion/go-imap/client"
 	"github.com/statping-ng/statping-ng/types/failures"
@@ -60,7 +61,7 @@ CheckLoop:
 			if !s.Online {
 				s.SleepDuration = s.Duration()
 			} else {
-				s.SleepDuration = s.Checkpoint.Sub(time.Now())
+				s.SleepDuration = time.Until(s.Checkpoint)
 			}
 		}
 	}
@@ -81,7 +82,7 @@ func runCmd(s *Service, cmdConfig *CmdConfig, cmdResult *CmdResult) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, cmdConfig.Cmd, cmdConfig.Args...)
+	cmd := exec.CommandContext(ctx, cmdConfig.Cmd, cmdConfig.Args...) // #nosec G204
 	if cmdConfig.Dir != "" {
 		cmd.Dir = cmdConfig.Dir
 	}
@@ -143,7 +144,7 @@ func CheckCmd(s *Service, record bool) (*Service, error) {
 		if record {
 			RecordFailure(s, fmt.Sprintf("Command execution error: %v", cmdResult.errMsg), "cmd")
 		}
-		return s, errors.New(fmt.Sprintf("command execution error: %v", cmdResult.errMsg))
+		return s, fmt.Errorf("command execution error: %v", cmdResult.errMsg)
 	}
 
 	cmdResultBytes, err := json.Marshal(cmdResult)
@@ -304,7 +305,7 @@ func CheckGrpc(s *Service, record bool) (*Service, error) {
 	}
 
 	// Connect to grpc service without TLS certs.
-	grpcOption := grpc.WithInsecure()
+	grpcOption := grpc.WithTransportCredentials(insecure.NewCredentials())
 
 	// Check if TLS is enabled
 	// Upgrade GRPC connection if using TLS
@@ -330,6 +331,7 @@ func CheckGrpc(s *Service, record bool) (*Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
+	//nolint:staticcheck // DialContext is used to maintain original blocking behavior for service checks
 	conn, err := grpc.DialContext(ctx, domain, grpcOption, grpc.WithBlock())
 	if err != nil {
 		if record {
@@ -427,7 +429,7 @@ func CheckTcp(s *Service, record bool) (*Service, error) {
 			}
 			return s, err
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 	} else {
 		// test TCP connection if TLS Certificate was set
 		dialer := &net.Dialer{
@@ -441,7 +443,7 @@ func CheckTcp(s *Service, record bool) (*Service, error) {
 			}
 			return s, err
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 	}
 
 	s.Latency = utils.Now().Sub(t1).Microseconds()
@@ -516,7 +518,7 @@ func CheckSmtp(s *Service, record bool) (*Service, error) {
 			}
 			return s, err
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		c, err = smtp.NewClient(conn, s.Domain)
 		if err != nil {
 			if record {
@@ -533,7 +535,7 @@ func CheckSmtp(s *Service, record bool) (*Service, error) {
 			}
 			return s, err
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		c, err = smtp.NewClient(conn, s.Domain)
 		if err != nil {
 			if record {
@@ -646,7 +648,7 @@ func CheckImap(s *Service, record bool) (*Service, error) {
 			return s, err
 		}
 	}
-	defer conn.Logout()
+	defer func() { _ = conn.Logout() }()
 
 	// Auth
 	if s.Port != 143 {
@@ -851,18 +853,18 @@ func RecordFailure(s *Service, issue, reason string) {
 func (s *Service) CheckService(record bool) {
 	switch s.Type {
 	case "cmd":
-		CheckCmd(s, record)
+		_, _ = CheckCmd(s, record)
 	case "http":
-		CheckHttp(s, record)
+		_, _ = CheckHttp(s, record)
 	case "tcp", "udp":
-		CheckTcp(s, record)
+		_, _ = CheckTcp(s, record)
 	case "grpc":
-		CheckGrpc(s, record)
+		_, _ = CheckGrpc(s, record)
 	case "icmp":
-		CheckIcmp(s, record)
+		_, _ = CheckIcmp(s, record)
 	case "smtp":
-		CheckSmtp(s, record)
+		_, _ = CheckSmtp(s, record)
 	case "imap":
-		CheckImap(s, record)
+		_, _ = CheckImap(s, record)
 	}
 }

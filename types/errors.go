@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/pkg/errors"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -31,8 +32,7 @@ var (
 	ErrorJSONParse = returnErrCode("could not parse JSON request", http.StatusBadRequest)
 )
 
-type Errorer interface {
-}
+type Errorer interface{}
 
 type Error struct {
 	err  error

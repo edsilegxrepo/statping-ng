@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -17,14 +17,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ping/ping"
+	"github.com/go-ping/ping" //nolint:staticcheck
 	"github.com/statping-ng/statping-ng/types/metrics"
 )
 
-var (
-	// Directory returns the current path or the STATPING_DIR environment variable
-	Directory string
-)
+// Directory returns the current path or the STATPING_DIR environment variable
+var Directory string
 
 func NotNumber(val string) bool {
 	_, err := strconv.ParseInt(val, 10, 64)
@@ -53,6 +51,9 @@ func ToInt(s interface{}) int64 {
 	case int64:
 		return v
 	case uint:
+		if v > math.MaxInt64 {
+			return math.MaxInt64
+		}
 		return int64(v)
 	default:
 		return 0
@@ -83,7 +84,7 @@ func ToString(s interface{}) string {
 //
 //	in, out, err := Command("sass assets/scss assets/css/base.css")
 func Command(name string, args ...string) (string, string, error) {
-	testCmd := exec.Command(name, args...)
+	testCmd := exec.Command(name, args...) // #nosec G204
 	var stdout, stderr []byte
 	var errStdout, errStderr error
 	stdoutIn, _ := testCmd.StdoutPipe()
@@ -121,7 +122,7 @@ func Command(name string, args ...string) (string, string, error) {
 // copyAndCapture will read a terminal command into bytes
 func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
 	var out []byte
-	buf := make([]byte, 1024, 1024)
+	buf := make([]byte, 1024)
 	for {
 		n, err := r.Read(buf[:])
 		if n > 0 {
@@ -222,7 +223,7 @@ func HttpRequest(endpoint, method string, contentType interface{}, headers []str
 
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: !verifySSL,
+			InsecureSkipVerify: !verifySSL, // #nosec G402
 			ServerName:         verifyHost,
 			Renegotiation:      tls.RenegotiateOnceAsClient,
 		},
@@ -254,8 +255,8 @@ func HttpRequest(endpoint, method string, contentType interface{}, headers []str
 	if resp, err = client.Do(req); err != nil {
 		return nil, resp, err
 	}
-	defer resp.Body.Close()
-	contents, err := ioutil.ReadAll(resp.Body)
+	defer func() { _ = resp.Body.Close() }()
+	contents, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -269,7 +270,6 @@ func HttpRequest(endpoint, method string, contentType interface{}, headers []str
 
 func Ping(address string, secondsTimeout int) (int64, error) {
 	ping, err := ping.NewPinger(address)
-
 	if err != nil {
 		return 0, err
 	}

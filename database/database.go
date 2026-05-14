@@ -2,16 +2,19 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"github.com/statping-ng/statping-ng/types/metrics"
-	"github.com/statping-ng/statping-ng/utils"
 	"strings"
 	"time"
 
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/statping-ng/statping-ng/types/metrics"
+	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/driver/sqlserver"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var database Database
@@ -19,29 +22,23 @@ var database Database
 // Database is an interface which DB implements
 type Database interface {
 	Close() error
-	DB() *sql.DB
+	DB() (*sql.DB, error)
 	New() Database
-	NewScope(value interface{}) *gorm.Scope
-	CommonDB() gorm.SQLCommon
-	Callback() *gorm.Callback
-	SetLogger(l gorm.Logger)
+	SetLogger(l logger.Interface)
 	LogMode(enable bool) Database
-	SingularTable(enable bool)
 	Where(query interface{}, args ...interface{}) Database
 	Or(query interface{}, args ...interface{}) Database
 	Not(query interface{}, args ...interface{}) Database
 	Limit(value int) Database
 	Offset(value int) Database
-	Order(value string, reorder ...bool) Database
+	Order(value interface{}) Database
 	Select(query interface{}, args ...interface{}) Database
 	Omit(columns ...string) Database
-	Group(query string) Database
-	Having(query string, values ...interface{}) Database
+	Group(name string) Database
+	Having(query interface{}, args ...interface{}) Database
 	Joins(query string, args ...interface{}) Database
 	Scopes(funcs ...func(*gorm.DB) *gorm.DB) Database
 	Unscoped() Database
-	Attrs(attrs ...interface{}) Database
-	Assign(attrs ...interface{}) Database
 	First(out interface{}, where ...interface{}) Database
 	Last(out interface{}, where ...interface{}) Database
 	Find(out interface{}, where ...interface{}) Database
@@ -50,12 +47,9 @@ type Database interface {
 	Rows() (*sql.Rows, error)
 	ScanRows(rows *sql.Rows, result interface{}) error
 	Pluck(column string, value interface{}) Database
-	Count(value interface{}) Database
-	Related(value interface{}, foreignKeys ...string) Database
-	FirstOrInit(out interface{}, where ...interface{}) Database
-	FirstOrCreate(out interface{}, where ...interface{}) Database
+	Count(value *int64) Database
 	Update(attrs ...interface{}) Database
-	Updates(values interface{}, ignoreProtectedAttrs ...bool) Database
+	Updates(values interface{}) Database
 	UpdateColumn(attrs ...interface{}) Database
 	UpdateColumns(values interface{}) Database
 	Save(value interface{}) Database
@@ -69,27 +63,21 @@ type Database interface {
 	Begin() Database
 	Commit() Database
 	Rollback() Database
-	NewRecord(value interface{}) bool
 	RecordNotFound() bool
+	HasTable(value interface{}) bool
+	AutoMigrate(values ...interface{}) Database
+	Association(column string) *gorm.Association
+	Preload(query string, args ...interface{}) Database
+	Set(name string, value interface{}) Database
+	Get(name string) (value interface{}, ok bool)
+	AddError(err error) error
+
+	// migration tools (v1 compatibility)
 	CreateTable(values ...interface{}) Database
 	DropTable(values ...interface{}) Database
 	DropTableIfExists(values ...interface{}) Database
-	HasTable(value interface{}) bool
-	AutoMigrate(values ...interface{}) Database
-	ModifyColumn(column string, typ string) Database
-	DropColumn(column string) Database
-	AddIndex(indexName string, column ...string) Database
-	AddUniqueIndex(indexName string, column ...string) Database
-	RemoveIndex(indexName string) Database
-	AddForeignKey(field string, dest string, onDelete string, onUpdate string) Database
-	Association(column string) *gorm.Association
-	Preload(column string, conditions ...interface{}) Database
-	Set(name string, value interface{}) Database
-	InstantSet(name string, value interface{}) Database
-	Get(name string) (value interface{}, ok bool)
-	SetJoinTableHandler(source interface{}, column string, handler gorm.JoinTableHandlerInterface)
-	AddError(err error) error
-	GetErrors() (errors []error)
+	AddIndex(indexName string, columns ...string) Database
+	AddUniqueIndex(indexName string, columns ...string) Database
 
 	// extra
 	Error() error
@@ -110,7 +98,7 @@ type Database interface {
 }
 
 func (it *Db) ChunkSize() int {
-	switch it.Database.Dialect().GetName() {
+	switch it.Type {
 	case "mysql":
 		return 3000
 	case "postgres":
@@ -122,11 +110,12 @@ func (it *Db) ChunkSize() int {
 
 func Routine() {
 	for {
-		if database.DB() == nil {
+		sqlDB, err := database.DB()
+		if err != nil || sqlDB == nil {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		metrics.CollectDatabase(database.DB().Stats())
+		metrics.CollectDatabase(sqlDB.Stats())
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -136,7 +125,7 @@ func (it *Db) GormDB() *gorm.DB {
 }
 
 func (it *Db) DbType() string {
-	return it.Database.Dialect().GetName()
+	return it.Type
 }
 
 func Close(db Database) error {
@@ -163,7 +152,11 @@ func Available(db Database) bool {
 	if db == nil {
 		return false
 	}
-	if err := db.DB().Ping(); err != nil {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return false
+	}
+	if err := sqlDB.Ping(); err != nil {
 		return false
 	}
 	return true
@@ -182,13 +175,28 @@ type Db struct {
 
 // Openw is a drop-in replacement for Open()
 func Openw(dialect string, args ...interface{}) (db Database, err error) {
-	gorm.NowFunc = func() time.Time {
-		return utils.Now()
-	}
 	if dialect == "sqlite" {
 		dialect = "sqlite3"
 	}
-	gormdb, err := gorm.Open(dialect, args...)
+	dsn := args[0].(string)
+	var dialector gorm.Dialector
+
+	switch dialect {
+	case "mysql":
+		dialector = mysql.Open(dsn)
+	case "postgres":
+		dialector = postgres.Open(dsn)
+	case "sqlite3":
+		dialector = sqlite.Open(dsn)
+	case "mssql":
+		dialector = sqlserver.Open(dsn)
+	}
+
+	gormdb, err := gorm.Open(dialector, &gorm.Config{
+		NowFunc: func() time.Time {
+			return utils.Now()
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -227,132 +235,124 @@ func OpenTester() (Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	newDb.DB().SetMaxOpenConns(1)
+	sqlDB, _ := newDb.DB()
+	sqlDB.SetMaxOpenConns(1)
 	if testDB != "sqlite3" {
-		newDb.DB().SetMaxOpenConns(25)
+		sqlDB.SetMaxOpenConns(25)
 	}
 	return newDb, err
 }
 
 // Wrap wraps gorm.DB in an interface
+func (it *Db) wrap(db *gorm.DB) Database {
+	return &Db{
+		Database: db,
+		Type:     it.Type,
+		ReadOnly: it.ReadOnly,
+	}
+}
+
 func Wrap(db *gorm.DB) Database {
 	return &Db{
 		Database: db,
-		Type:     db.Dialect().GetName(),
+		Type:     db.Name(),
 		ReadOnly: utils.Params.GetBool("READ_ONLY"),
 	}
 }
 
 func (it *Db) Close() error {
-	return it.Database.Close()
+	sqlDB, err := it.Database.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }
 
-func (it *Db) DB() *sql.DB {
+func (it *Db) DB() (*sql.DB, error) {
 	return it.Database.DB()
 }
 
 func (it *Db) New() Database {
-	return Wrap(it.Database.New())
+	return it.wrap(it.Database.Session(&gorm.Session{}))
 }
 
-func (it *Db) NewScope(value interface{}) *gorm.Scope {
-	return it.Database.NewScope(value)
-}
-
-func (it *Db) CommonDB() gorm.SQLCommon {
-	return it.Database.CommonDB()
-}
-
-func (it *Db) Callback() *gorm.Callback {
-	return it.Database.Callback()
-}
-
-func (it *Db) SetLogger(log gorm.Logger) {
-	it.Database.SetLogger(log)
+func (it *Db) SetLogger(log logger.Interface) {
+	it.Database.Logger = log
 }
 
 func (it *Db) LogMode(enable bool) Database {
-	return Wrap(it.Database.LogMode(enable))
-}
-
-func (it *Db) SingularTable(enable bool) {
-	it.Database.SingularTable(enable)
+	if enable {
+		return it.wrap(it.Database.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Info)}))
+	}
+	return it.wrap(it.Database.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)}))
 }
 
 func (it *Db) Where(query interface{}, args ...interface{}) Database {
-	return Wrap(it.Database.Where(query, args...))
+	return it.wrap(it.Database.Where(query, args...))
 }
 
 func (it *Db) Or(query interface{}, args ...interface{}) Database {
-	return Wrap(it.Database.Or(query, args...))
+	return it.wrap(it.Database.Or(query, args...))
 }
 
 func (it *Db) Not(query interface{}, args ...interface{}) Database {
-	return Wrap(it.Database.Not(query, args...))
+	return it.wrap(it.Database.Not(query, args...))
 }
 
 func (it *Db) Limit(value int) Database {
-	return Wrap(it.Database.Limit(value))
+	return it.wrap(it.Database.Limit(value))
 }
 
 func (it *Db) Offset(value int) Database {
-	return Wrap(it.Database.Offset(value))
+	return it.wrap(it.Database.Offset(value))
 }
 
-func (it *Db) Order(value string, reorder ...bool) Database {
-	return Wrap(it.Database.Order(value, reorder...))
+func (it *Db) Order(value interface{}) Database {
+	return it.wrap(it.Database.Order(value))
 }
 
 func (it *Db) Select(query interface{}, args ...interface{}) Database {
-	return Wrap(it.Database.Select(query, args...))
+	return it.wrap(it.Database.Select(query, args...))
 }
 
 func (it *Db) Omit(columns ...string) Database {
-	return Wrap(it.Database.Omit(columns...))
+	return it.wrap(it.Database.Omit(columns...))
 }
 
-func (it *Db) Group(query string) Database {
-	return Wrap(it.Database.Group(query))
+func (it *Db) Group(name string) Database {
+	return it.wrap(it.Database.Group(name))
 }
 
-func (it *Db) Having(query string, values ...interface{}) Database {
-	return Wrap(it.Database.Having(query, values...))
+func (it *Db) Having(query interface{}, args ...interface{}) Database {
+	return it.wrap(it.Database.Having(query, args...))
 }
 
 func (it *Db) Joins(query string, args ...interface{}) Database {
-	return Wrap(it.Database.Joins(query, args...))
+	return it.wrap(it.Database.Joins(query, args...))
 }
 
 func (it *Db) Scopes(funcs ...func(*gorm.DB) *gorm.DB) Database {
-	return Wrap(it.Database.Scopes(funcs...))
+	return it.wrap(it.Database.Scopes(funcs...))
 }
 
 func (it *Db) Unscoped() Database {
-	return Wrap(it.Database.Unscoped())
-}
-
-func (it *Db) Attrs(attrs ...interface{}) Database {
-	return Wrap(it.Database.Attrs(attrs...))
-}
-
-func (it *Db) Assign(attrs ...interface{}) Database {
-	return Wrap(it.Database.Assign(attrs...))
+	return it.wrap(it.Database.Unscoped())
 }
 
 func (it *Db) First(out interface{}, where ...interface{}) Database {
-	return Wrap(it.Database.First(out, where...))
+	return it.wrap(it.Database.First(out, where...))
 }
 
 func (it *Db) Last(out interface{}, where ...interface{}) Database {
-	return Wrap(it.Database.Last(out, where...))
+	return it.wrap(it.Database.Last(out, where...))
 }
 
 func (it *Db) Find(out interface{}, where ...interface{}) Database {
-	return Wrap(it.Database.Find(out, where...))
+	return it.wrap(it.Database.Find(out, where...))
 }
 
 func (it *Db) Scan(dest interface{}) Database {
-	return Wrap(it.Database.Scan(dest))
+	return it.wrap(it.Database.Scan(dest))
 }
 
 func (it *Db) Row() *sql.Row {
@@ -371,96 +371,89 @@ func (it *Db) Pluck(column string, value interface{}) Database {
 	return Wrap(it.Database.Pluck(column, value))
 }
 
-func (it *Db) Count(value interface{}) Database {
+func (it *Db) Count(value *int64) Database {
 	return Wrap(it.Database.Count(value))
-}
-
-func (it *Db) Related(value interface{}, foreignKeys ...string) Database {
-	return Wrap(it.Database.Related(value, foreignKeys...))
-}
-
-func (it *Db) FirstOrInit(out interface{}, where ...interface{}) Database {
-	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
-	}
-	return Wrap(it.Database.FirstOrInit(out, where...))
-}
-
-func (it *Db) FirstOrCreate(out interface{}, where ...interface{}) Database {
-	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
-	}
-	return Wrap(it.Database.FirstOrCreate(out, where...))
 }
 
 func (it *Db) Update(attrs ...interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.Update(attrs...))
+	if len(attrs) == 1 {
+		return Wrap(it.Database.Updates(attrs[0]))
+	}
+	if len(attrs) == 2 {
+		if col, ok := attrs[0].(string); ok {
+			return Wrap(it.Database.Update(col, attrs[1]))
+		}
+	}
+	return it
 }
 
-func (it *Db) Updates(values interface{}, ignoreProtectedAttrs ...bool) Database {
-	return Wrap(it.Database.Updates(values, ignoreProtectedAttrs...))
+func (it *Db) Updates(values interface{}) Database {
+	if it.ReadOnly {
+		return it
+	}
+	return it.wrap(it.Database.Updates(values))
 }
 
 func (it *Db) UpdateColumn(attrs ...interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.UpdateColumn(attrs...))
+	if len(attrs) == 1 {
+		return it.wrap(it.Database.UpdateColumns(attrs[0]))
+	}
+	if len(attrs) == 2 {
+		if col, ok := attrs[0].(string); ok {
+			return it.wrap(it.Database.UpdateColumn(col, attrs[1]))
+		}
+	}
+	return it
 }
 
 func (it *Db) UpdateColumns(values interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.UpdateColumns(values))
+	return it.wrap(it.Database.UpdateColumns(values))
 }
 
 func (it *Db) Save(value interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.Save(value))
+	return it.wrap(it.Database.Save(value))
 }
 
 func (it *Db) Create(value interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.Create(value))
+	return it.wrap(it.Database.Create(value))
 }
 
 func (it *Db) Delete(value interface{}, where ...interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.Delete(value, where...))
+	return it.wrap(it.Database.Delete(value, where...))
 }
 
 func (it *Db) Raw(sql string, values ...interface{}) Database {
-	return Wrap(it.Database.Raw(sql, values...))
+	return it.wrap(it.Database.Raw(sql, values...))
 }
 
 func (it *Db) Exec(sql string, values ...interface{}) Database {
-	return Wrap(it.Database.Exec(sql, values...))
+	return it.wrap(it.Database.Exec(sql, values...))
 }
 
 func (it *Db) Model(value interface{}) Database {
-	return Wrap(it.Database.Model(value))
+	return it.wrap(it.Database.Model(value))
 }
 
 func (it *Db) Table(name string) Database {
-	return Wrap(it.Database.Table(name))
+	return it.wrap(it.Database.Table(name))
 }
 
 func (it *Db) Debug() Database {
@@ -469,150 +462,127 @@ func (it *Db) Debug() Database {
 
 func (it *Db) Begin() Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
 	return Wrap(it.Database.Begin())
 }
 
 func (it *Db) Commit() Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
 	return Wrap(it.Database.Commit())
 }
 
 func (it *Db) Rollback() Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
 	return Wrap(it.Database.Rollback())
 }
 
-func (it *Db) NewRecord(value interface{}) bool {
-	return it.Database.NewRecord(value)
-}
-
 func (it *Db) RecordNotFound() bool {
-	return it.Database.RecordNotFound()
-}
-
-func (it *Db) CreateTable(values ...interface{}) Database {
-	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
-	}
-	return Wrap(it.Database.CreateTable(values...))
-}
-
-func (it *Db) DropTable(values ...interface{}) Database {
-	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
-	}
-	return Wrap(it.Database.DropTable(values...))
-}
-
-func (it *Db) DropTableIfExists(values ...interface{}) Database {
-	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
-	}
-	return Wrap(it.Database.DropTableIfExists(values...))
+	return errors.Is(it.Database.Error, gorm.ErrRecordNotFound)
 }
 
 func (it *Db) HasTable(value interface{}) bool {
-	return it.Database.HasTable(value)
+	return it.Database.Migrator().HasTable(value)
 }
 
 func (it *Db) AutoMigrate(values ...interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.AutoMigrate(values...))
+	if err := it.Database.AutoMigrate(values...); err != nil {
+		it.Database.Error = err
+	}
+	return it
 }
 
-func (it *Db) ModifyColumn(column string, typ string) Database {
+func (it *Db) CreateTable(values ...interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.ModifyColumn(column, typ))
+	if err := it.Database.Migrator().CreateTable(values...); err != nil {
+		it.Database.Error = err
+	}
+	return it
 }
 
-func (it *Db) DropColumn(column string) Database {
+func (it *Db) DropTable(values ...interface{}) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.DropColumn(column))
+	if err := it.Database.Migrator().DropTable(values...); err != nil {
+		it.Database.Error = err
+	}
+	return it
+}
+
+func (it *Db) DropTableIfExists(values ...interface{}) Database {
+	if it.ReadOnly {
+		return it
+	}
+	for _, v := range values {
+		if err := it.Database.Migrator().DropTable(v); err != nil {
+			it.Database.Error = err
+		}
+	}
+	return it
 }
 
 func (it *Db) AddIndex(indexName string, columns ...string) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.AddIndex(indexName, columns...))
+	if len(columns) > 0 {
+		table := it.Database.Statement.Table
+		if table == "" && it.Database.Statement.Model != nil {
+			stmt := &gorm.Statement{DB: it.Database, ConnPool: it.Database.ConnPool, Context: it.Database.Statement.Context}
+			if err := stmt.Parse(it.Database.Statement.Model); err == nil {
+				table = stmt.Table
+			}
+		}
+		if table != "" {
+			sql := fmt.Sprintf("CREATE INDEX %s ON %s (%s)", indexName, table, strings.Join(columns, ", "))
+			it.Database.Exec(sql)
+			return it
+		}
+	}
+	if err := it.Database.Migrator().CreateIndex(it.Database.Statement.Model, indexName); err != nil {
+		it.Database.Error = err
+	}
+	return it
 }
 
 func (it *Db) AddUniqueIndex(indexName string, columns ...string) Database {
 	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+		return it
 	}
-	return Wrap(it.Database.AddUniqueIndex(indexName, columns...))
-}
-
-func (it *Db) RemoveIndex(indexName string) Database {
-	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
+	if err := it.Database.Migrator().CreateIndex(it.Database.Statement.Model, indexName); err != nil {
+		it.Database.Error = err
 	}
-	return Wrap(it.Database.RemoveIndex(indexName))
+	return it
 }
 
 func (it *Db) Association(column string) *gorm.Association {
 	return it.Database.Association(column)
 }
 
-func (it *Db) Preload(column string, conditions ...interface{}) Database {
-	return Wrap(it.Database.Preload(column, conditions...))
+func (it *Db) Preload(query string, args ...interface{}) Database {
+	return it.wrap(it.Database.Preload(query, args...))
 }
 
 func (it *Db) Set(name string, value interface{}) Database {
-	return Wrap(it.Database.Set(name, value))
-}
-
-func (it *Db) InstantSet(name string, value interface{}) Database {
-	return Wrap(it.Database.InstantSet(name, value))
+	return it.wrap(it.Database.Set(name, value))
 }
 
 func (it *Db) Get(name string) (interface{}, bool) {
 	return it.Database.Get(name)
 }
 
-func (it *Db) SetJoinTableHandler(source interface{}, column string, handler gorm.JoinTableHandlerInterface) {
-	it.Database.SetJoinTableHandler(source, column, handler)
-}
-
-func (it *Db) AddForeignKey(field string, dest string, onDelete string, onUpdate string) Database {
-	if it.ReadOnly {
-		it.Database.Error = nil
-		return Wrap(it.Database)
-	}
-	return Wrap(it.Database.AddForeignKey(field, dest, onDelete, onUpdate))
-}
-
 func (it *Db) AddError(err error) error {
 	return it.Database.AddError(err)
-}
-
-func (it *Db) GetErrors() (errors []error) {
-	return it.Database.GetErrors()
 }
 
 func (it *Db) RowsAffected() int64 {
@@ -624,31 +594,13 @@ func (it *Db) Error() error {
 }
 
 func (it *Db) Status() int {
-	switch it.Database.Error {
-	case gorm.ErrRecordNotFound:
+	if errors.Is(it.Database.Error, gorm.ErrRecordNotFound) {
 		return 404
-	case gorm.ErrCantStartTransaction:
-		return 422
-	case gorm.ErrInvalidSQL:
-		return 500
-	case gorm.ErrUnaddressable:
-		return 500
-	default:
+	}
+	if it.Database.Error != nil {
 		return 500
 	}
-}
-
-func (it *Db) Loggable() bool {
-	switch it.Database.Error {
-	case gorm.ErrCantStartTransaction:
-		return true
-	case gorm.ErrInvalidSQL:
-		return true
-	case gorm.ErrUnaddressable:
-		return true
-	default:
-		return false
-	}
+	return 200
 }
 
 func (it *Db) Since(ago time.Time) Database {

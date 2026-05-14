@@ -26,7 +26,6 @@ func FixedTime(t time.Time, d time.Duration) string {
 }
 
 func durationStr(d time.Duration) string {
-
 	switch m := d.Seconds(); {
 
 	case m >= Month.Seconds():

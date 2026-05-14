@@ -1,10 +1,11 @@
 package failures
 
 import (
+	"testing"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestInit(t *testing.T) {

@@ -21,9 +21,9 @@ func (h CheckinHitters) First() *CheckinHit {
 }
 
 func (h CheckinHitters) Count() int {
-	var count int
+	var count int64
 	h.db.Count(&count)
-	return count
+	return int(count)
 }
 
 func (h CheckinHitters) Since(t time.Time) CheckinHitters {

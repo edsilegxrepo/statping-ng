@@ -2,8 +2,9 @@ package hits
 
 import (
 	"fmt"
-	"github.com/statping-ng/statping-ng/database"
 	"time"
+
+	"github.com/statping-ng/statping-ng/database"
 )
 
 type ColumnIDInterfacer interface {
@@ -49,9 +50,9 @@ func (h Hitters) LastAmount(amount int) []*Hit {
 }
 
 func (h Hitters) Count() int {
-	var count int
+	var count int64
 	h.db.Count(&count)
-	return count
+	return int(count)
 }
 
 func (h Hitters) DeleteAll() error {

@@ -33,19 +33,19 @@ func (u *User) AfterDelete() {
 
 func Find(id int64) (*User, error) {
 	var user User
-	q := db.Where("id = ?", id).Find(&user)
+	q := db.Where("id = ?", id).First(&user)
 	return &user, q.Error()
 }
 
 func FindByUsername(username string) (*User, error) {
 	var user User
-	q := db.Where("username = ?", username).Find(&user)
+	q := db.Where("username = ?", username).First(&user)
 	return &user, q.Error()
 }
 
 func FindByAPIKey(key string) (*User, error) {
 	var user User
-	q := db.Where("api_key = ?", key).Find(&user)
+	q := db.Where("api_key = ?", key).First(&user)
 	return &user, q.Error()
 }
 

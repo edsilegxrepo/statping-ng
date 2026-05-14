@@ -1,6 +1,9 @@
 package notifiers
 
 import (
+	"strings"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/types/notifications"
@@ -8,8 +11,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
-	"strings"
-	"time"
 )
 
 var _ notifier.Notifier = (*commandLine)(nil)

@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
-	"net/http"
-	"strings"
-	"time"
 )
 
 func githubOAuth(r *http.Request) (*oAuth, error) {
@@ -94,7 +95,7 @@ func validateGithub(ghUser githubUser, orgs []githubOrgs) bool {
 	if auth.GithubUsers != "" {
 		users := strings.Split(auth.GithubUsers, ",")
 		for _, u := range users {
-			if strings.ToLower(ghUser.Login) == strings.ToLower(u) {
+			if strings.EqualFold(ghUser.Login, u) {
 				return true
 			}
 		}
@@ -103,7 +104,7 @@ func validateGithub(ghUser githubUser, orgs []githubOrgs) bool {
 		orgsAllowed := strings.Split(auth.GithubOrgs, ",")
 		for _, o := range orgsAllowed {
 			for _, org := range orgs {
-				if strings.ToLower(o) == strings.ToLower(org.Login) {
+				if strings.EqualFold(o, org.Login) {
 					return true
 				}
 			}

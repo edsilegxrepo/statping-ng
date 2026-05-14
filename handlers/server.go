@@ -3,11 +3,12 @@ package handlers
 import (
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/foomo/simplecert"
 	"github.com/foomo/tlsconfig"
 	"github.com/statping-ng/statping-ng/utils"
-	"net/http"
-	"strings"
 )
 
 func startServer(host string) error {
@@ -63,7 +64,18 @@ func letsEncryptCert() (*tls.Config, error) {
 
 func startLetsEncryptServer(ip string) error {
 	log.Infoln("Starting LetEncrypt redirect server on port 80")
-	go http.ListenAndServe(":80", http.HandlerFunc(simplecert.Redirect))
+	redirectSrv := &http.Server{
+		Addr:         ":80",
+		Handler:      http.HandlerFunc(simplecert.Redirect),
+		WriteTimeout: timeout,
+		ReadTimeout:  timeout,
+		IdleTimeout:  timeout,
+	}
+	go func() {
+		if err := redirectSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Error(err)
+		}
+	}()
 
 	cfg, err := letsEncryptCert()
 	if err != nil {
@@ -90,8 +102,8 @@ func startSSLServer(ip string) error {
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
 	}
 	srv := &http.Server{

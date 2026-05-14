@@ -74,10 +74,7 @@ func IsReadAuthenticated(r *http.Request) bool {
 		return true
 	}
 	_, err := getJwtToken(r)
-	if err == nil {
-		return true
-	}
-	return false
+	return err == nil
 }
 
 // IsFullAuthenticated returns true if the HTTP request is authenticated. You can set the environment variable GO_ENV=test
@@ -132,14 +129,8 @@ func IsUser(r *http.Request) bool {
 	if ok := hasSetupEnv(); ok {
 		return true
 	}
-	tk, err := getJwtToken(r)
-	if err != nil {
-		return false
-	}
-	if err := tk.Valid(); err != nil {
-		return false
-	}
-	return true
+	_, err := getJwtToken(r)
+	return err == nil
 }
 
 func loadTemplate(w http.ResponseWriter, r *http.Request) (*template.Template, error) {
@@ -205,23 +196,20 @@ func returnJson(d interface{}, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if e, ok := d.(errors.Error); ok {
 		w.WriteHeader(e.Status())
-		json.NewEncoder(w).Encode(e)
+		if err := json.NewEncoder(w).Encode(e); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 	if e, ok := d.(error); ok {
 		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(errors.New(e.Error()))
+		if err := json.NewEncoder(w).Encode(errors.New(e.Error())); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(d)
-}
-
-// error404Handler is a HTTP handler for 404 error pages
-func error404Handler(w http.ResponseWriter, r *http.Request) {
-	if usingSSL {
-		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+	if err := json.NewEncoder(w).Encode(d); err != nil {
+		log.Error(err)
 	}
-	w.WriteHeader(http.StatusNotFound)
-	ExecuteResponse(w, r, "base.gohtml", nil, nil)
 }

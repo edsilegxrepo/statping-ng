@@ -71,5 +71,4 @@ func TestWebhookNotifier(t *testing.T) {
 		err := Webhook.Send(fullMsg)
 		assert.Nil(t, err)
 	})
-
 }

@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/statping-ng/statping-ng/utils"
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 var rootCmd = &cobra.Command{
@@ -37,9 +38,8 @@ var updateCmd = &cobra.Command{
 		}
 
 		ree := bytes.NewBuffer(nil)
-
-		c1 := exec.Command(curl, "-o-", "-L", "https://statping.com/install.sh")
-		c2 := exec.Command(bash)
+		c1 := exec.Command(curl, "-o-", "-L", "https://statping.com/install.sh") // #nosec G204
+		c2 := exec.Command(bash)                                                 // #nosec G204
 
 		r, w := io.Pipe()
 		c1.Stdout = w
@@ -48,12 +48,22 @@ var updateCmd = &cobra.Command{
 		var b2 bytes.Buffer
 		c2.Stdout = &b2
 
-		c1.Start()
-		c2.Start()
-		c1.Wait()
-		w.Close()
-		c2.Wait()
-		io.Copy(ree, &b2)
+		if err := c1.Start(); err != nil {
+			return err
+		}
+		if err := c2.Start(); err != nil {
+			return err
+		}
+		if err := c1.Wait(); err != nil {
+			return err
+		}
+		_ = w.Close()
+		if err := c2.Wait(); err != nil {
+			return err
+		}
+		if _, err := io.Copy(ree, &b2); err != nil {
+			return err
+		}
 
 		log.Infoln(ree.String())
 		os.Exit(0)

@@ -3,7 +3,7 @@ package notifiers
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -38,41 +38,43 @@ var Webhook = &webhooker{&notifications.Notification{
 	FailureData: null.NewNullString(`{"id": "{{.Service.Id}}", "online": false}`),
 	DataType:    "json",
 	Limits:      180,
-	Form: []notifications.NotificationForm{{
-		Type:        "text",
-		Title:       "HTTP Endpoint",
-		Placeholder: "http://webhookurl.com/JW2MCP4SKQP",
-		SmallText:   "Insert the URL for your HTTP Requests.",
-		DbField:     "Host",
-		Required:    true,
-	}, {
-		Type:        "list",
-		Title:       "HTTP Method",
-		Placeholder: "POST",
-		SmallText:   "Choose a HTTP method for example: GET, POST, DELETE, or PATCH.",
-		DbField:     "Var1",
-		Required:    true,
-		ListOptions: []string{"GET", "POST", "PATCH", "DELETE"},
-	}, {
-		Type:        "text",
-		Title:       "Content Type",
-		Placeholder: `application/json`,
-		SmallText:   "Optional content type for example: application/json or text/plain",
-		DbField:     "api_key",
-	}, {
-		Type:        "text",
-		Title:       "Header",
-		Placeholder: "Authorization=Token12345",
-		SmallText:   "Optional Headers for request use format: KEY=Value,Key=Value",
-		DbField:     "api_secret",
+	Form: []notifications.NotificationForm{
+		{
+			Type:        "text",
+			Title:       "HTTP Endpoint",
+			Placeholder: "http://webhookurl.com/JW2MCP4SKQP",
+			SmallText:   "Insert the URL for your HTTP Requests.",
+			DbField:     "Host",
+			Required:    true,
+		}, {
+			Type:        "list",
+			Title:       "HTTP Method",
+			Placeholder: "POST",
+			SmallText:   "Choose a HTTP method for example: GET, POST, DELETE, or PATCH.",
+			DbField:     "Var1",
+			Required:    true,
+			ListOptions: []string{"GET", "POST", "PATCH", "DELETE"},
+		}, {
+			Type:        "text",
+			Title:       "Content Type",
+			Placeholder: `application/json`,
+			SmallText:   "Optional content type for example: application/json or text/plain",
+			DbField:     "api_key",
+		}, {
+			Type:        "text",
+			Title:       "Header",
+			Placeholder: "Authorization=Token12345",
+			SmallText:   "Optional Headers for request use format: KEY=Value,Key=Value",
+			DbField:     "api_secret",
+		},
 	},
-	}}}
+}}
 
 // Send will send a HTTP Post to the webhooker API. It accepts type: string
 func (w *webhooker) Send(msg interface{}) error {
 	resp, err := w.sendHttpWebhook(msg.(string))
 	if err == nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 	return err
 }
@@ -137,8 +139,8 @@ func (w *webhooker) OnTest() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	content, err := ioutil.ReadAll(resp.Body)
+	defer func() { _ = resp.Body.Close() }()
+	content, err := io.ReadAll(resp.Body)
 	out := fmt.Sprintf("Webhook notifier received: '%v'", string(content))
 	utils.Log.Infoln(out)
 	return out, err
@@ -151,8 +153,8 @@ func (w *webhooker) OnFailure(s services.Service, f failures.Failure) (string, e
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	content, err := ioutil.ReadAll(resp.Body)
+	defer func() { _ = resp.Body.Close() }()
+	content, err := io.ReadAll(resp.Body)
 	return string(content), err
 }
 
@@ -163,8 +165,8 @@ func (w *webhooker) OnSuccess(s services.Service) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	content, err := ioutil.ReadAll(resp.Body)
+	defer func() { _ = resp.Body.Close() }()
+	content, err := io.ReadAll(resp.Body)
 	return string(content), err
 }
 

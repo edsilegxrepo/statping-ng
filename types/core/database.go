@@ -32,16 +32,17 @@ func (c *Core) AfterFind() {
 
 func Select() (*Core, error) {
 	var c Core
-	if err := db.DB().Ping(); err != nil {
+	sqlDB, err := db.DB()
+	if err != nil || sqlDB.Ping() != nil {
 		return nil, errors.New("database has not been initiated yet.")
 	}
 	exists := db.HasTable("core")
 	if !exists {
 		return nil, errors.New("core database has not been setup yet.")
 	}
-	q := db.Find(&c)
+	q := db.First(&c)
 	if q.Error() != nil {
-		return nil, db.Error()
+		return nil, q.Error()
 	}
 	App = &c
 

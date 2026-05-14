@@ -6,8 +6,10 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
-var db database.Database
-var dbHits database.Database
+var (
+	db     database.Database
+	dbHits database.Database
+)
 
 func SetDB(database database.Database) {
 	db = database.Model(&Checkin{})
@@ -25,13 +27,13 @@ func (c *Checkin) AfterFind() {
 
 func Find(id int64) (*Checkin, error) {
 	var checkin Checkin
-	q := db.Where("id = ?", id).Find(&checkin)
+	q := db.Where("id = ?", id).First(&checkin)
 	return &checkin, q.Error()
 }
 
 func FindByAPI(key string) (*Checkin, error) {
 	var checkin Checkin
-	q := db.Where("api_key = ?", key).Find(&checkin)
+	q := db.Where("api_key = ?", key).First(&checkin)
 	return &checkin, q.Error()
 }
 

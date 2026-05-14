@@ -35,7 +35,7 @@ func NewPerlinRandSource(alpha, beta float64, n int, source rand.Source) *Perlin
 	p.beta = beta
 	p.n = n
 
-	r := rand.New(source)
+	r := rand.New(source) // #nosec G404
 
 	for i = 0; i < B; i++ {
 		p.p[i] = i

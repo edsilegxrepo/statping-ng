@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"net/url"
+	"testing"
+
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/url"
-	"testing"
 )
 
 func TestUnAuthenticatedUserRoutes(t *testing.T) {
@@ -82,7 +83,8 @@ func TestApiUsersRoutes(t *testing.T) {
 			ExpectedStatus: 200,
 			ResponseLen:    1,
 			BeforeTest:     SetTestENV,
-		}, {
+		},
+		{
 			Name:        "Statping Create User",
 			URL:         "/api/users",
 			HttpHeaders: []string{"Content-Type=application/json"},
@@ -95,22 +97,26 @@ func TestApiUsersRoutes(t *testing.T) {
 				}`,
 			ExpectedStatus:   200,
 			ExpectedContains: []string{Success, MethodCreate},
-		}, {
+		},
+		{
 			Name:           "Statping View User",
 			URL:            "/api/users/1",
 			Method:         "GET",
 			ExpectedStatus: 200,
-		}, {
+		},
+		{
 			Name:           "Statping Incorrect User ID",
 			URL:            "/api/users/NOinteger",
 			Method:         "GET",
 			ExpectedStatus: 422,
-		}, {
+		},
+		{
 			Name:           "Statping Missing User",
 			URL:            "/api/users/9393939393",
 			Method:         "GET",
 			ExpectedStatus: 404,
-		}, {
+		},
+		{
 			Name:   "Statping Update User",
 			URL:    "/api/users/1",
 			Method: "POST",
@@ -122,13 +128,15 @@ func TestApiUsersRoutes(t *testing.T) {
 				}`,
 			ExpectedStatus:   200,
 			ExpectedContains: []string{Success, MethodUpdate},
-		}, {
+		},
+		{
 			Name:             "Statping Delete User",
 			URL:              "/api/users/2",
 			Method:           "DELETE",
 			ExpectedStatus:   200,
 			ExpectedContains: []string{Success, MethodDelete},
-		}, {
+		},
+		{
 			Name:             "Statping Login User",
 			URL:              "/api/login",
 			Method:           "POST",
@@ -136,7 +144,8 @@ func TestApiUsersRoutes(t *testing.T) {
 			ExpectedContains: []string{`"token"`},
 			ExpectedStatus:   200,
 			HttpHeaders:      []string{"Content-Type=application/x-www-form-urlencoded"},
-		}, {
+		},
+		{
 			Name:             "Statping Bad Login User",
 			URL:              "/api/login",
 			Method:           "POST",
@@ -144,12 +153,14 @@ func TestApiUsersRoutes(t *testing.T) {
 			ExpectedContains: []string{`incorrect authentication`},
 			ExpectedStatus:   200,
 			HttpHeaders:      []string{"Content-Type=application/x-www-form-urlencoded"},
-		}, {
+		},
+		{
 			Name:           "Statping Logout",
 			URL:            "/api/logout",
 			Method:         "GET",
 			ExpectedStatus: 200,
-		}, {
+		},
+		{
 			Name:             "Incorrect JSON POST",
 			URL:              "/api/users",
 			Body:             BadJSON,

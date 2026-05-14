@@ -1,9 +1,16 @@
 package handlers
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/pkg/errors"
 	_ "github.com/statping-ng/statping-ng/notifiers"
 	"github.com/statping-ng/statping-ng/source"
@@ -16,31 +23,22 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"strings"
-	"testing"
-	"time"
 )
 
-var (
-	dir string
-)
+var dir string
 
 func init() {
-	utils.InitLogs()
-	source.Assets()
+	_ = utils.InitLogs()
+	_ = source.Assets()
 	dir = utils.Directory
 	core.New("test", "testcommithere")
 }
 
 func TestFailedHTTPServer(t *testing.T) {
 	var err error
-	go func(err error) {
-		err = RunHTTPServer()
-	}(err)
+	go func() {
+		_ = RunHTTPServer()
+	}()
 	go func() {
 		time.Sleep(3 * time.Second)
 		StopHTTPServer(nil)
@@ -106,7 +104,7 @@ func TestSetupRoutes(t *testing.T) {
 			URL:    "/api/setup",
 			Method: "POST",
 			Body:   form.Encode(),
-			//ExpectedStatus: 200,
+			// ExpectedStatus: 200,
 			HttpHeaders:   []string{"Content-Type=application/x-www-form-urlencoded"},
 			ExpectedFiles: []string{utils.Directory + "/config.yml"},
 			FuncTest: func(t *testing.T) error {
@@ -303,7 +301,7 @@ func RunHTTPTest(test HTTPTest, t *testing.T) (string, *testing.T, error) {
 	if err != nil {
 		return "", t, logTest(t, err)
 	}
-	defer rr.Result().Body.Close()
+	defer func() { _ = rr.Result().Body.Close() }()
 
 	if test.ExpectedStatus != 0 {
 		if test.ExpectedStatus != rr.Result().StatusCode {
@@ -312,7 +310,7 @@ func RunHTTPTest(test HTTPTest, t *testing.T) (string, *testing.T, error) {
 		}
 	}
 
-	body, err := ioutil.ReadAll(rr.Result().Body)
+	body, err := io.ReadAll(rr.Result().Body)
 	if err != nil {
 		assert.Nil(t, err)
 		return "", t, logTest(t, err)
@@ -397,11 +395,6 @@ func StopServices(t *testing.T) error {
 		s.Close()
 	}
 	return nil
-}
-
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
 var (

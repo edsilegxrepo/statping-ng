@@ -1,6 +1,9 @@
 package notifiers
 
 import (
+	"testing"
+	"time"
+
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/failures"
@@ -10,8 +13,6 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var (
@@ -94,5 +95,4 @@ func TestEmailNotifier(t *testing.T) {
 		_, err := email.OnTest()
 		assert.Nil(t, err)
 	})
-
 }

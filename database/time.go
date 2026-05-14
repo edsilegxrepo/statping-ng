@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-type TimeGroup interface {
-}
+type TimeGroup interface{}
 
 func (it *Db) ParseTime(t string) (time.Time, error) {
 	switch it.Type {

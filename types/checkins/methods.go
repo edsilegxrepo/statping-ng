@@ -2,8 +2,9 @@ package checkins
 
 import (
 	"fmt"
-	"github.com/statping-ng/statping-ng/utils"
 	"time"
+
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 func (c *Checkin) Expected() time.Duration {

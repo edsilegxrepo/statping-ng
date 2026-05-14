@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/services"
-	"net/http"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {

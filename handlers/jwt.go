@@ -1,27 +1,31 @@
 package handlers
 
 import (
-	"github.com/golang-jwt/jwt"
-	"github.com/pkg/errors"
-	"github.com/statping-ng/statping-ng/types/users"
 	"net/http"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/pkg/errors"
+	"github.com/statping-ng/statping-ng/types/users"
 )
 
 type JwtClaim struct {
 	Username string `json:"username"`
 	Admin    bool   `json:"admin"`
 	Scopes   string `json:"scopes"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 func removeJwtToken(w http.ResponseWriter) {
 	c := http.Cookie{
-		Name:   cookieName,
-		Value:  "",
-		MaxAge: -1,
-		Path:   "/",
-	}
+		Name:     cookieName,
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   usingSSL,
+		SameSite: http.SameSiteLaxMode,
+	} // #nosec G124
 	http.SetCookie(w, &c)
 }
 
@@ -31,9 +35,10 @@ func setJwtToken(user *users.User, w http.ResponseWriter) (JwtClaim, string) {
 		Username: user.Username,
 		Admin:    user.Admin.Bool,
 		Scopes:   user.Scopes,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		}}
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaim)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
@@ -42,12 +47,15 @@ func setJwtToken(user *users.User, w http.ResponseWriter) (JwtClaim, string) {
 	user.Token = tokenString
 	// set cookies
 	http.SetCookie(w, &http.Cookie{
-		Name:    cookieName,
-		Value:   tokenString,
-		Expires: expirationTime,
-		MaxAge:  int(time.Duration(72 * time.Hour).Seconds()),
-		Path:    "/",
-	})
+		Name:     cookieName,
+		Value:    tokenString,
+		Expires:  expirationTime,
+		MaxAge:   int(time.Duration(72 * time.Hour).Seconds()),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   usingSSL,
+		SameSite: http.SameSiteLaxMode,
+	}) // #nosec G124
 	return jwtClaim, tokenString
 }
 
@@ -56,7 +64,6 @@ func parseToken(token string) (JwtClaim, error) {
 	tkn, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
 	})
-
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
 			return JwtClaim{}, err

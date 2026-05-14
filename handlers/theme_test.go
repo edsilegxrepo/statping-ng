@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"testing"
+
 	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestUnAuthenticatedThemeRoutes(t *testing.T) {

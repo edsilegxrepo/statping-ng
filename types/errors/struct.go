@@ -5,11 +5,10 @@ import (
 )
 
 type appError struct {
-	Err      string `json:"error"`
-	Code     int    `json:"-"`
-	DbCode   int    `json:"code,omitempty"`
-	Id       int64  `json:"id,omitempty"`
-	loggable bool   `json:"-"`
+	Err    string `json:"error"`
+	Code   int    `json:"-"`
+	DbCode int    `json:"code,omitempty"`
+	Id     int64  `json:"id,omitempty"`
 }
 
 type Error interface {

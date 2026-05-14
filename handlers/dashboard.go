@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+
 	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/types/checkins"
 	"github.com/statping-ng/statping-ng/types/configs"
@@ -17,10 +21,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
 	"gopkg.in/yaml.v2"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
 )
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +96,7 @@ func apiThemeSaveHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(err, w, r)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	fmt.Println(themes.Variables)
 
@@ -200,12 +200,12 @@ func ExportSettings() (*ExportData, error) {
 }
 
 func settingsImportHandler(w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var exportData *ExportData
 	if err := json.Unmarshal(data, &exportData); err != nil {
@@ -266,12 +266,12 @@ func settingsImportHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func configsSaveHandler(w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	var cfg *configs.DbConfig
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
@@ -300,7 +300,7 @@ func configsViewHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(err, w, r)
 		return
 	}
-	w.Write(db.Clean().ToYAML())
+	_, _ = w.Write(db.Clean().ToYAML())
 }
 
 func settingsExportHandler(w http.ResponseWriter, r *http.Request) {
@@ -316,14 +316,14 @@ func settingsExportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Length", utils.ToString(len(exported.JSON())))
 
-	io.Copy(w, file)
+	_, _ = io.Copy(w, file)
 }
 
 func logsLineHandler(w http.ResponseWriter, r *http.Request) {
 	if lastLine := utils.GetLastLine(); lastLine != nil {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(lastLine.FormatForHtml()))
+		_, _ = w.Write([]byte(lastLine.FormatForHtml()))
 	}
 }
 

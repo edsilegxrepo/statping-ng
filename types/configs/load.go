@@ -2,9 +2,10 @@ package configs
 
 import (
 	"errors"
+	"os"
+
 	"github.com/statping-ng/statping-ng/utils"
 	"gopkg.in/yaml.v2"
-	"os"
 )
 
 func Save() error {
@@ -50,7 +51,7 @@ func LoadConfigs(cfgFile string) (*DbConfig, error) {
 	log.Infof("Attempting to read config file at: %s", cfgFile)
 	p.SetConfigFile(cfgFile)
 	p.SetConfigType("yaml")
-	p.ReadInConfig()
+	_ = p.ReadInConfig()
 
 	db := new(DbConfig)
 	content, err := utils.OpenFile(cfgFile)
@@ -129,7 +130,7 @@ func LoadConfigs(cfgFile string) (*DbConfig, error) {
 	log.WithFields(utils.ToFields(configs)).Debugln("read config file: " + cfgFile)
 
 	if configs.DbConn == "" {
-		return configs, errors.New("Starting in setup mode")
+		return configs, errors.New("starting in setup mode")
 	}
 	return configs, nil
 }

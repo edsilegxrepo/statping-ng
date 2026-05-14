@@ -1,11 +1,11 @@
 package utils
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+
 	"golang.org/x/crypto/bcrypt"
-	"math/rand"
-	"time"
 )
 
 // HashPassword returns the bcrypt hash of a password string
@@ -20,27 +20,31 @@ func CheckHash(password, hash string) bool {
 	return err == nil
 }
 
-// NewSHA1Hash returns a random SHA1 hash based on a specific length
+// NewSHA256Hash returns a random SHA256 hash
 func NewSHA256Hash() string {
-	d := make([]byte, 10)
-	rand.Seed(Now().UnixNano())
-	rand.Read(d)
+	d := make([]byte, 32)
+	if _, err := rand.Read(d); err != nil {
+		return ""
+	}
 	return fmt.Sprintf("%x", sha256.Sum256(d))
 }
 
-// NewSHA1Hash returns a random SHA1 hash based on a specific length
+// Sha256Hash returns a SHA256 hash of a string
 func Sha256Hash(val string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(val)))
 }
 
-var characterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var characterRunes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-// RandomString generates a random string of n length
+// RandomString generates a random string of n length using crypto/rand
 func RandomString(n int) string {
-	b := make([]rune, n)
-	rand.Seed(time.Now().UnixNano())
-	for i := range b {
-		b[i] = characterRunes[rand.Intn(len(characterRunes))]
+	res := make([]byte, n)
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return ""
 	}
-	return string(b)
+	for i := range b {
+		res[i] = characterRunes[int(b[i])%len(characterRunes)]
+	}
+	return string(res)
 }

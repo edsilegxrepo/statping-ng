@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -12,8 +13,10 @@ import (
 	"strings"
 )
 
-const replace = `this\.version = "[0-9]\.[0-9]{2}\.[0-9]{2}";`
-const replaceCommit = `this\.commit = \"[a-z0-9]{40}\"\;`
+const (
+	replace       = `this\.version = "[0-9]\.[0-9]{2}\.[0-9]{2}";`
+	replaceCommit = `this\.commit = \"[a-z0-9]{40}\"\;`
+)
 
 func main() {
 	fmt.Println("RUNNING: ./source/generate_version.go")
@@ -37,5 +40,5 @@ func main() {
 	newApiFile = cRex.ReplaceAllString(newApiFile, replaceCommitWith)
 
 	fmt.Printf("Setting version %s to frontend/src/API.js\n", string(version))
-	ioutil.WriteFile("../frontend/src/API.js", []byte(newApiFile), os.FileMode(0755))
+	ioutil.WriteFile("../frontend/src/API.js", []byte(newApiFile), os.FileMode(0o755))
 }

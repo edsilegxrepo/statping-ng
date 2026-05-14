@@ -2,13 +2,14 @@ package configs
 
 import (
 	"fmt"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/utils"
+	_ "gorm.io/driver/mysql"
+	_ "gorm.io/driver/postgres"
 
 	"github.com/statping-ng/statping-ng/types/checkins"
 	"github.com/statping-ng/statping-ng/types/core"
@@ -95,16 +96,16 @@ func (d *DbConfig) BackupAssets() error {
 		if err := utils.RenameDirectory(utils.Directory+"/assets", utils.Directory+"/assets_backup"); err != nil {
 			return err
 		}
-		log.Infof("Old assets are now stored in: " + utils.Directory + "/assets_backup")
+		log.Infof("%s", "Old assets are now stored in: "+utils.Directory+"/assets_backup")
 	}
 	return nil
 }
 
-//MigrateDatabase will migrate the database structure to current version.
-//This function will NOT remove previous records, tables or columns from the database.
-//If this function has an issue, it will ROLLBACK to the previous state.
+// MigrateDatabase will migrate the database structure to current version.
+// This function will NOT remove previous records, tables or columns from the database.
+// If this function has an issue, it will ROLLBACK to the previous state.
 func (d *DbConfig) MigrateDatabase() error {
-	var DbModels = []interface{}{&services.Service{}, &users.User{}, &hits.Hit{}, &failures.Failure{}, &messages.Message{}, &groups.Group{}, &checkins.Checkin{}, &checkins.CheckinHit{}, &notifications.Notification{}, &incidents.Incident{}, &incidents.IncidentUpdate{}}
+	DbModels := []interface{}{&services.Service{}, &users.User{}, &hits.Hit{}, &failures.Failure{}, &messages.Message{}, &groups.Group{}, &checkins.Checkin{}, &checkins.CheckinHit{}, &notifications.Notification{}, &incidents.Incident{}, &incidents.IncidentUpdate{}}
 
 	log.Infoln("Migrating Database Tables...")
 	tx := d.Db.Begin()
@@ -122,10 +123,10 @@ func (d *DbConfig) MigrateDatabase() error {
 	}
 
 	log.Infof("Migrating App to version: %s (%s)", utils.Params.GetString("VERSION"), utils.Params.GetString("COMMIT"))
-	if err := tx.Table("core").AutoMigrate(&core.Core{}); err.Error() != nil {
+	if err := tx.Table("core").AutoMigrate(&core.Core{}).Error(); err != nil {
 		tx.Rollback()
-		log.Errorln(fmt.Sprintf("Statping Database could not be migrated: %v", tx.Error()))
-		return tx.Error()
+		log.Errorln(fmt.Sprintf("Statping Database could not be migrated: %v", err))
+		return err
 	}
 
 	if err := tx.Commit().Error(); err != nil {
