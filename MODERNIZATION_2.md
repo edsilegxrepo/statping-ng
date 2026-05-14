@@ -71,7 +71,13 @@ A comprehensive code audit was performed to resolve technical debt and security 
     - Fixed duplicate struct tags, invalid `bitSize` arguments in `ParseFloat`, and inconsistent error string capitalization.
 - **Cleanliness**: Pruned all unused imports and standardized the entire codebase using `gofumpt`.
 
-## 5. Final Verification
-- **Compilation**: Successfully produced a production binary using the GORM v2 stack.
-- **Dependency Audit**: Verified a clean, synchronized graph via `go mod tidy`.
+## 5. Dependency Anchoring (tools.go)
+
+To maintain a synchronized and clean module graph, we implemented the **`tools.go`** pattern. This anchors build-time dependencies that are not directly imported by the application binary (e.g., generator scripts) within the module graph.
+- **Purpose**: Prevents `go mod tidy` from pruning essential build-time libraries such as `minify`, `markdown`, and the `aws-translate` generator.
+- **Implementation**: Created a build-tagged `tools.go` in the repository root to ensure these modules are tracked in `go.mod` and `go.sum`.
+
+## 6. Final Verification
+- **Compilation**: Successfully produced a production binary using the GORM v2 and AWS v2 stacks.
+- **Dependency Audit**: Verified a clean, synchronized graph via `go mod tidy` and `go mod verify`.
 - **Binary Status**: Production-ready and verified with `statping version`.
