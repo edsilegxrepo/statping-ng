@@ -1,0 +1,1693 @@
+From 7c6c0f6c99c22e9aed4629a530df2f683ec1c7f8 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Wed, 13 Dec 2023 21:24:18 -0700
+Subject: [PATCH 01/17] Add dev getting started docs
+
+---
+ dev/README.md | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/dev/README.md b/dev/README.md
+index e69de29bb..82bb45ce4 100644
+--- a/dev/README.md
++++ b/dev/README.md
+@@ -0,0 +1,20 @@
++# Getting started Developing
++Thank you for working on Statping! Lets get your dev environment up and running so you can start contributing right away.
++
++## Prerequisites
++Install Docker Desktop on your computer.
++
++## Start Dev Server
++We use Docker Compose for our development environment, this will allow you to not have to worry about installing anything on your computer, and everything will "just work". 
++
++The quickest way to start is to use the "lite" Docker Compose setup.
++
++1. Start Docker Desktop
++2. Start the dev server by running:
++
++```shell
++cd dev
++docker compose -f docker-compose.lite.yml up
++```
++
++3. Go to: http://localhost:8585
+
+From b2d7e6127ef715be55581f5395c7c0ea7d5ff969 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Wed, 13 Dec 2023 21:24:30 -0700
+Subject: [PATCH 02/17] Use correct docker image repository
+
+---
+ dev/docker-compose.lite.yml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dev/docker-compose.lite.yml b/dev/docker-compose.lite.yml
+index 66b9c85eb..47811614d 100644
+--- a/dev/docker-compose.lite.yml
++++ b/dev/docker-compose.lite.yml
+@@ -4,7 +4,7 @@ services:
+ 
+   statping_dev:
+     container_name: statping_dev
+-    image: statping-ng/statping-ng:dev
++    image: adamboutcher/statping-ng:dev
+     restart: on-failure
+     volumes:
+       - ./cmd:/go/src/github.com/statping-ng/statping-ng/cmd/
+
+From 2bebfade62f87a5c47e683f611621c6272bbef14 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Thu, 14 Dec 2023 23:11:26 -0700
+Subject: [PATCH 03/17] UI: Display how severe an outage is in day view
+
+---
+ frontend/src/assets/scss/layout.scss          | 34 ++++++++++++++---
+ frontend/src/assets/scss/variables.scss       |  7 +++-
+ .../components/Index/GroupServiceFailures.vue | 38 ++++++++++++++-----
+ 3 files changed, 63 insertions(+), 16 deletions(-)
+
+diff --git a/frontend/src/assets/scss/layout.scss b/frontend/src/assets/scss/layout.scss
+index 59b82352f..0995bc9c9 100644
+--- a/frontend/src/assets/scss/layout.scss
++++ b/frontend/src/assets/scss/layout.scss
+@@ -46,15 +46,39 @@ A {
+ }
+ 
+ .day-success:HOVER {
+-  background-color: lighten($day-success-background, 2%) !important;
++  background-color: lighten($day-success-background, 5%) !important;
+ }
+ 
+-.day-error {
+-  background-color: $day-error-background;
++.day-minor-outage {
++  background-color: $day-minor-outage-background;
+ }
+ 
+-.day-error:HOVER {
+-  background-color: lighten($day-error-background, 2%) !important;
++.day-minor-outage:HOVER {
++  background-color: lighten($day-minor-outage-background, 5%) !important;
++}
++
++.day-moderate-outage {
++  background-color: $day-moderate-outage-background;
++}
++
++.day-moderate-outage:HOVER {
++  background-color: lighten($day-moderate-outage-background, 5%) !important;
++}
++
++.day-major-outage {
++  background-color: $day-major-outage-background;
++}
++
++.day-major-outage:HOVER {
++  background-color: lighten($day-major-outage-background, 5%) !important;
++}
++
++.day-critical-outage {
++  background-color: $day-critical-outage-background;
++}
++
++.day-critical-outage:HOVER {
++  background-color: lighten($day-critical-outage-background, 5%) !important;
+ }
+ 
+ .contain-card {
+diff --git a/frontend/src/assets/scss/variables.scss b/frontend/src/assets/scss/variables.scss
+index 959218cdb..11aeacde4 100644
+--- a/frontend/src/assets/scss/variables.scss
++++ b/frontend/src/assets/scss/variables.scss
+@@ -15,8 +15,11 @@ $navbar-background: #ffffff;
+ $input-background: #fdfdfd;
+ $input-color: #4e4e4e;
+ $input-border: 1px solid #c9c9c9;
+-$day-success-background: #e9e9e9;
+-$day-error-background: #d50a0a;
++$day-success-background: #4CAF50;
++$day-minor-outage-background: #98EE99;
++$day-moderate-outage-background: #FFEB3B;
++$day-major-outage-background: #FF9800;
++$day-critical-outage-background: #F44336;
+ 
+ /*    Status Container   */
+ $card-background: #fcfcfc;
+diff --git a/frontend/src/components/Index/GroupServiceFailures.vue b/frontend/src/components/Index/GroupServiceFailures.vue
+index f6927dbd0..cf805731d 100644
+--- a/frontend/src/components/Index/GroupServiceFailures.vue
++++ b/frontend/src/components/Index/GroupServiceFailures.vue
+@@ -8,7 +8,7 @@
+       <transition name="fade">
+         <div v-if="loaded">
+         <div class="d-flex mt-3">
+-            <div class="flex-fill service_day" v-for="(d, index) in failureData" @mouseover="mouseover(d)" @mouseout="mouseout" :class="{'day-error': d.amount > 0, 'day-success': d.amount === 0}">
++            <div class="flex-fill service_day" v-for="(d, index) in failureData" @mouseover="mouseover(d)" @mouseout="mouseout" :class="getDayClass(d)">
+                 <span v-if="d.amount !== 0" class="d-none d-md-block text-center small"></span>
+             </div>
+         </div>
+@@ -69,22 +69,42 @@ export default {
+       mouseout() {
+         this.hover_text = ""
+       },
+-    mouseover(e) {
+-      let txt = `${e.amount} Failures`
+-      if (e.amount === 0) {
+-        txt = `No Issues`
+-      }
+-      this.hover_text = `${e.date.toLocaleDateString()} - ${txt}`
+-    },
++      mouseover(e) {
++        let txt = `${e.amount} Failures`
++        if (e.amount === 0) {
++          txt = `No Issues`
++        }
++        this.hover_text = `${e.date.toLocaleDateString()} - ${txt}`
++      },
+       async lastDaysFailures() {
+         const start = this.beginningOf('day', this.nowSubtract(86400 * 90))
+         const end = this.endOf('tomorrow')
+         const data = await Api.service_failures_data(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true)
++        console.log(data)
+         data.forEach((d) => {
+           let date = this.parseISO(d.timeframe)
+           this.failureData.push({month: date.getMonth(), day: date.getDate(), date: date, amount: d.amount})
+         })
+-      }
++      },
++      getDayClass(data) {
++        if (data.amount === 0) {
++          return 'day-success';
++        } else {
++          // Determine the severity and return the corresponding class
++          // Here you need to add your logic to determine the severity
++          // For example, if severity is based on `data.duration`:
++          const outageSeverity = data.amount; // You'll need to add duration to your data model
++          if (outageSeverity < 30) {
++            return 'day-minor-outage'; // Light green
++          } else if (outageSeverity < 120) {
++            return 'day-moderate-outage'; // Yellow
++          } else if (outageSeverity < 240) {
++            return 'day-major-outage'; // Orange
++          } else {
++            return 'day-critical-outage'; // Red
++          }
++        }
++      },
+     }
+ }
+ </script>
+
+From dd9b25322c7aeca5468b10e915489296252584ae Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Thu, 14 Dec 2023 23:13:03 -0700
+Subject: [PATCH 04/17] Go: Add failure samples for outage severities
+
+---
+ types/failures/samples.go | 77 +++++++++++++++++++++++----------------
+ 1 file changed, 45 insertions(+), 32 deletions(-)
+
+diff --git a/types/failures/samples.go b/types/failures/samples.go
+index dd43e9061..c7dbe59d9 100644
+--- a/types/failures/samples.go
++++ b/types/failures/samples.go
+@@ -6,6 +6,7 @@ import (
+ 	"github.com/statping-ng/statping-ng/utils"
+ 	gormbulk "github.com/t-tiger/gorm-bulk-insert/v2"
+ 	"time"
++	"math/rand"
+ )
+ 
+ var (
+@@ -27,47 +28,59 @@ func Example() Failure {
+ 	}
+ }
+ 
+-func Samples() error {
+-	log.Infoln("Inserting Sample Service Failures...")
+-	createdAt := utils.Now().Add(-3 * types.Day)
++func createFailuresForService(serviceID int64, start time.Time, end time.Time, chanceOfFailure float64) []interface{} {
++	var records []interface{}
++	currentTime := start
++	for currentTime.Before(end) {
++		// Randomly decide if an outage should occur
++		if rand.Float64() < chanceOfFailure {
++			// Determine random outage length
++			// This is so we can display all the different
++			// severities of outages
++			outageLengths := []time.Duration{
++				4 * types.Day,
++				24 * types.Hour,
++				3 * types.Hour,
++				60 * types.Minute,
++			}
++			outageLength := outageLengths[rand.Intn(len(outageLengths))]
+ 
+-	for i := int64(1); i <= 4; i++ {
+-		f1 := &Failure{
+-			Service:   i,
+-			Issue:     "Server failure",
+-			Reason:    "lookup",
+-			CreatedAt: utils.Now().Add(-time.Duration(3*i) * 86400),
+-		}
+-		if err := f1.Create(); err != nil {
+-			return err
++			// Simulate failures for the duration of the outage
++			outageEnd := currentTime.Add(outageLength)
++			for currentTime.Before(outageEnd) {
++				f1 := &Failure{
++					Service:   serviceID,
++					Issue:     "Server failure",
++					Reason:    "lookup",
++					CreatedAt: currentTime.UTC(),
++				}
++				records = append(records, f1)
++				currentTime = currentTime.Add(5 * time.Minute) // simulate the next ping after 5 minutes
++			}
++		} else {
++			currentTime = currentTime.Add(5 * time.Minute) // No outage, move to the next minute
+ 		}
++	}
++	return records
++}
+ 
+-		f2 := &Failure{
+-			Service:   i,
+-			Issue:     "Regex failed to match the response",
+-			Reason:    "regex",
+-			CreatedAt: utils.Now().Add(-time.Duration(5*i) * 12400),
+-		}
+-		if err := f2.Create(); err != nil {
+-			return err
+-		}
++func Samples() error {
++	utils.Log.Infoln("Inserting Sample Service Failures...")
++	createdAt := utils.Now().Add(-90 * types.Day) // Start from 90 days ago
++	endDate := utils.Now()                        // Up to current time
+ 
+-		log.Infoln(fmt.Sprintf("Adding %v Failure records to service", 400))
++	chanceOfFailure := 0.0002 // very small chance of starting an outage at any given minute
++
++	// Only add failures to services 3 and 4
++	for i := int64(3); i <= 4; i++ {
++		records := createFailuresForService(i, createdAt, endDate, chanceOfFailure)
++		utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service %d", len(records), i))
+ 
+-		var records []interface{}
+-		for fi := 0.; fi <= float64(400); fi++ {
+-			failure := &Failure{
+-				Service:   i,
+-				Issue:     "testing right here",
+-				CreatedAt: createdAt.UTC(),
+-			}
+-			records = append(records, failure)
+-			createdAt = createdAt.Add(35 * time.Minute)
+-		}
+ 		if err := gormbulk.BulkInsert(db.GormDB(), records, db.ChunkSize()); err != nil {
+ 			log.Error(err)
+ 			return err
+ 		}
+ 	}
++
+ 	return nil
+ }
+
+From 634ab25763c35a828f832cb7c17af21bd89ee2d7 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Thu, 14 Dec 2023 23:14:04 -0700
+Subject: [PATCH 05/17] Docker: Fix Dev Dockerfile/Compose!
+
+---
+ dev/Dockerfile.dev          | 65 +++++++++++++++++++++++++++----------
+ dev/README.md               |  4 +--
+ dev/dev-env.sh              |  9 +++--
+ dev/docker-compose.lite.yml | 24 +++++++-------
+ 4 files changed, 69 insertions(+), 33 deletions(-)
+
+diff --git a/dev/Dockerfile.dev b/dev/Dockerfile.dev
+index 1ecddfaf5..2983ed3a4 100644
+--- a/dev/Dockerfile.dev
++++ b/dev/Dockerfile.dev
+@@ -1,36 +1,65 @@
+-FROM golang:1.13.5-alpine
++# use Node v16 
++# since in node v17 certain hash functions that the frontend uses somewhere
++# were deprecated, breaking the build.
++
++FROM node:16.14.0-alpine AS node
++
++FROM golang:1.20.0-alpine
++
++# Copy in specific node and npm binaries :)
++COPY --from=node /usr/lib /usr/lib
++COPY --from=node /usr/local/lib /usr/local/lib
++COPY --from=node /usr/local/include /usr/local/include
++COPY --from=node /usr/local/bin /usr/local/bin
++
+ LABEL maintainer="Hunter Long (https://github.com/hunterlong)"
+ ARG VERSION
+-RUN apk add --update --no-cache libstdc++ gcc g++ make git ca-certificates linux-headers wget curl jq libsass nodejs nodejs-npm
+-RUN npm install -g yarn
++RUN apk add --update --no-cache libstdc++ gcc g++ make git autoconf \
++    libtool ca-certificates linux-headers wget curl jq && \
++    update-ca-certificates
+ 
+-RUN curl -L -s https://assets.statping.com/sass -o /usr/local/bin/sass && \
+-    chmod +x /usr/local/bin/sass
++WORKDIR /go/src/github.com/statping-ng/statping-ng
++ADD frontend/package.json frontend/yarn.lock ./frontend/
+ 
+-WORKDIR /go/src/github.com/statping/statping
++RUN npm install -g yarn --force
++RUN cd frontend && yarn install --pure-lockfile --network-timeout 1000000 && yarn cache clean
+ 
+-ADD go.mod go.sum version.txt ./
++ADD source/ ./source/
++ADD frontend/ ./frontend/
++RUN mkdir source/dist
++RUN cd frontend && ls && yarn build && cp -R dist/ ../source/dist/
+ 
+-RUN go mod download
++WORKDIR /root
++RUN git clone --depth 1 --branch 3.6.2 https://github.com/sass/sassc.git
++RUN . sassc/script/bootstrap && make -C sassc -j4
++RUN mv /root/sassc/bin/sassc /usr/local/bin/sassc && chmod +x /usr/local/bin/sassc
+ 
+-RUN go get github.com/stretchr/testify/... && \
+-	go get github.com/GeertJohan/go.rice/rice && \
+-	go get github.com/cortesi/modd/cmd/modd
++WORKDIR /go/src/github.com/statping-ng/statping-ng
++ENV GOPATH /go
++ENV PATH $GOPATH/bin:$PATH
+ 
+-ADD frontend/package.json frontend/yarn.lock ./frontend/
++ADD go.mod go.sum ./
+ 
+-RUN cd frontend && yarn install --pure-lockfile --network-timeout 1000000 && yarn cache clean
++RUN go mod download
++
++ENV GO111MODULE on
++ENV CGO_ENABLED 1
++
++RUN go install github.com/GeertJohan/go.rice/rice@latest && \
++	go install github.com/cortesi/modd/cmd/modd@latest
+ 
+ ENV IS_DOCKER=true
+-ENV STATPING_DIR=/go/src/github.com/statping/statping
++ENV STATPING_DIR=/go/src/github.com/statping-ng/statping-ng
+ 
+ EXPOSE 8585
+ EXPOSE 8888
+ 
+-RUN cd frontend && yarn build && cp -R dist ../source/
++RUN cd source && rice embed-go
+ 
+-RUN pwd && ls
++ADD dev/dev-env.sh /root/dev-env.sh
+ 
+-COPY . .
++RUN pwd && ls
++ADD dev ./dev
+ 
+-CMD dev/dev-env.sh
++#ENTRYPOINT ["tail", "-f", "/dev/null"]
++ENTRYPOINT ["/root/dev-env.sh"]
+diff --git a/dev/README.md b/dev/README.md
+index 82bb45ce4..bb458528b 100644
+--- a/dev/README.md
++++ b/dev/README.md
+@@ -13,8 +13,8 @@ The quickest way to start is to use the "lite" Docker Compose setup.
+ 2. Start the dev server by running:
+ 
+ ```shell
+-cd dev
+-docker compose -f docker-compose.lite.yml up
++cd statping-ng # go into the root folder, it's important you run it in there.
++docker compose -f dev/docker-compose.lite.yml up
+ ```
+ 
+ 3. Go to: http://localhost:8585
+diff --git a/dev/dev-env.sh b/dev/dev-env.sh
+index ea8725864..ce3f20361 100755
+--- a/dev/dev-env.sh
++++ b/dev/dev-env.sh
+@@ -3,9 +3,14 @@
+ echo "Starting!"
+ 
+ echo "Serving Vue frontend first..."
++# cd /go/src/github.com/statping-ng/statping-ng
++cd frontend && npm run dev &
+ 
+-cd frontend && yarn serve &
++cd /go/src/github.com/statping-ng/statping-ng modd
++cd source
++mkdir -p dist
++cp -R ../frontend/dist ./dist
+ 
+ echo "Now serving Vue, lets build the golang backend now..."
+-
++cd /go/src/github.com/statping-ng/statping-ng
+ modd -f dev/modd.conf
+diff --git a/dev/docker-compose.lite.yml b/dev/docker-compose.lite.yml
+index 47811614d..fe829d66c 100644
+--- a/dev/docker-compose.lite.yml
++++ b/dev/docker-compose.lite.yml
+@@ -4,19 +4,21 @@ services:
+ 
+   statping_dev:
+     container_name: statping_dev
+-    image: adamboutcher/statping-ng:dev
++    build:
++      context: ../
++      dockerfile: dev/Dockerfile.dev
+     restart: on-failure
+     volumes:
+-      - ./cmd:/go/src/github.com/statping-ng/statping-ng/cmd/
+-      - ./core:/go/src/github.com/statping-ng/statping-ng/core/
+-      - ./database:/go/src/github.com/statping-ng/statping-ng/database/
+-      - ./dev:/go/src/github.com/statping-ng/statping-ng/dev/
+-      - ./frontend:/go/src/github.com/statping-ng/statping-ng/frontend/
+-      - ./handlers:/go/src/github.com/statping-ng/statping-ng/handlers/
+-      - ./notifiers:/go/src/github.com/statping-ng/statping-ng/notifiers/
+-      - ./source:/go/src/github.com/statping-ng/statping-ng/source/
+-      - ./types:/go/src/github.com/statping-ng/statping-ng/types/
+-      - ./utils:/go/src/github.com/statping-ng/statping-ng/utils/
++      - ../cmd:/go/src/github.com/statping-ng/statping-ng/cmd/
++      - ../core:/go/src/github.com/statping-ng/statping-ng/core/
++      - ../database:/go/src/github.com/statping-ng/statping-ng/database/
++      - ../dev:/go/src/github.com/statping-ng/statping-ng/dev/
++      - ../frontend:/go/src/github.com/statping-ng/statping-ng/frontend/
++      - ../handlers:/go/src/github.com/statping-ng/statping-ng/handlers/
++      - ../notifiers:/go/src/github.com/statping-ng/statping-ng/notifiers/
++      - ../source:/go/src/github.com/statping-ng/statping-ng/source/
++      - ../types:/go/src/github.com/statping-ng/statping-ng/types/
++      - ../utils:/go/src/github.com/statping-ng/statping-ng/utils/
+     environment:
+       DB_CONN: sqlite
+       API_SECRET: exampleapisecret
+
+From de14588e44769b5ac692ac76977af8e19a5f685e Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Fri, 15 Dec 2023 01:29:04 -0700
+Subject: [PATCH 06/17] Show if service was online or offline in day cell
+
+---
+ frontend/src/assets/scss/layout.scss          |   8 ++
+ frontend/src/assets/scss/variables.scss       |   1 +
+ .../components/Index/GroupServiceFailures.vue | 106 ++++++++++++++----
+ 3 files changed, 95 insertions(+), 20 deletions(-)
+
+diff --git a/frontend/src/assets/scss/layout.scss b/frontend/src/assets/scss/layout.scss
+index 0995bc9c9..c8e4a5d4a 100644
+--- a/frontend/src/assets/scss/layout.scss
++++ b/frontend/src/assets/scss/layout.scss
+@@ -41,6 +41,14 @@ A {
+   color: lighten($text-color, 30%) !important;
+ }
+ 
++.day-no-data {
++  background-color: $day-no-data-background;
++}
++
++.day-no-data:HOVER {
++  background-color: lighten($day-no-data-background, 5%) !important;
++}
++
+ .day-success {
+   background-color: $day-success-background;
+ }
+diff --git a/frontend/src/assets/scss/variables.scss b/frontend/src/assets/scss/variables.scss
+index 11aeacde4..6f43cbd38 100644
+--- a/frontend/src/assets/scss/variables.scss
++++ b/frontend/src/assets/scss/variables.scss
+@@ -15,6 +15,7 @@ $navbar-background: #ffffff;
+ $input-background: #fdfdfd;
+ $input-color: #4e4e4e;
+ $input-border: 1px solid #c9c9c9;
++$day-no-data-background: #e9e9e9;
+ $day-success-background: #4CAF50;
+ $day-minor-outage-background: #98EE99;
+ $day-moderate-outage-background: #FFEB3B;
+diff --git a/frontend/src/components/Index/GroupServiceFailures.vue b/frontend/src/components/Index/GroupServiceFailures.vue
+index cf805731d..6378aa3cc 100644
+--- a/frontend/src/components/Index/GroupServiceFailures.vue
++++ b/frontend/src/components/Index/GroupServiceFailures.vue
+@@ -15,7 +15,7 @@
+         <div class="row mt-2">
+           <div class="col-12 no-select">
+             <p class="divided">
+-              <span class="font-2 text-muted">90 {{$t('days_ago')}}</span>
++              <span class="font-2 text-muted">{{this.days_to_show}} {{$t('days_ago')}}</span>
+               <span class="divider"></span>
+               <span class="text-center font-2" :class="{'text-muted': service.online, 'text-danger': !service.online}">{{service_txt}}</span>
+               <span class="divider"></span>
+@@ -43,6 +43,14 @@ export default {
+           hover_text: "",
+           loaded: false,
+           visible: false,
++          days_to_show: 90,
++          // Maximum number before showing the next category
++          outageSeverity: {
++            minor: { start: 1, end: 30 },
++            moderate: { start: 30, end: 120 },
++            major: { start: 120, end: 240 },
++            critical: { start: 240 }
++          }
+         }
+     },
+   props: {
+@@ -74,33 +82,91 @@ export default {
+         if (e.amount === 0) {
+           txt = `No Issues`
+         }
+-        this.hover_text = `${e.date.toLocaleDateString()} - ${txt}`
++        this.hover_text = `${e.date.toUTCString().replace(" 00:00:00 GMT", "")} - ${txt}`
+       },
+       async lastDaysFailures() {
+-        const start = this.beginningOf('day', this.nowSubtract(86400 * 90))
+-        const end = this.endOf('tomorrow')
+-        const data = await Api.service_failures_data(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true)
+-        console.log(data)
+-        data.forEach((d) => {
+-          let date = this.parseISO(d.timeframe)
+-          this.failureData.push({month: date.getMonth(), day: date.getDate(), date: date, amount: d.amount})
+-        })
++        const start = this.beginningOf('day', this.nowSubtract(86400 * this.days_to_show))
++        const end = this.endOf('today')
++        // Call both endpoints
++        const failuresPromise = Api.service_failures_data(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true);
++        const hitsPromise = Api.service_hits(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true);
++
++        // Wait for both promises to resolve
++        const [failuresData, hitsData] = await Promise.all([failuresPromise, hitsPromise]);
++
++        // Merge the data
++        const mergedData = this.mergeData(failuresData, hitsData);
++
++        if (this.service.id === 3) { console.log(mergedData) }
++
++        mergedData.forEach((d) => {
++          let date = new Date(d.timeframe);
++          // Throw out data for "tomorrow" since we attempt to pull extra data that doesn't exist.
++          if ((this.toUnix(date) * 1000) > Date.now()) { 
++            // console.log(this.toUnix(date) * 1000)
++            // console.log(Date.now())
++            return 
++          }
++          
++          // console.log(date)
++          this.failureData.push({
++            month: date.getUTCMonth() + 1,
++            day: date.getUTCDate(),
++            date: date,
++            amount: d.amount,
++            hits: d.hits || 0
++          });
++        });
++
++        // Only show the last configured number of days
++        this.failureData.slice(-this.days_to_show);
++
++        // console.log(JSON.stringify(this.failureData, null, 4));
++        if (this.service.id === 3) { console.log(this.failureData) }
++      },
++      mergeData(failuresData, hitsData) {
++        const dataMap = new Map();
++        
++        // Process hits data
++        hitsData.forEach(d => {
++          // console.log(d);
++          let date = this.parseISO(d.timeframe);
++          dataMap.set(d.timeframe, { hits: d.amount, amount: 0, date: d.timeframe });
++        });
++        
++        // Process failures data
++        failuresData.forEach(d => {
++          // console.log(d);
++          let date = this.parseISO(d.timeframe);
++
++          let data = dataMap.get(d.timeframe) || { hits: 0, amount: 0, date: d.timeframe };
++          data.amount = d.amount;
++          dataMap.set(d.timeframe, data);
++        });
++        
++        // Convert map to array
++        return Array.from(dataMap, ([date, data]) => ({ ...data, timeframe: date }));
+       },
+       getDayClass(data) {
+-        if (data.amount === 0) {
++        // No data points for day
++        if (data.amount === 0 && data.hits === 0) {
++          return 'day-no-data';
++        } 
++        // No failures for day
++        else if (data.amount === 0 && data.hits > 0) {
+           return 'day-success';
+-        } else {
+-          // Determine the severity and return the corresponding class
+-          // Here you need to add your logic to determine the severity
+-          // For example, if severity is based on `data.duration`:
+-          const outageSeverity = data.amount; // You'll need to add duration to your data model
+-          if (outageSeverity < 30) {
++        } 
++        // Some failures for the day
++        else {
++          // Determine the severity and return the corresponding color class
++          const outageSeverity = data.amount;
++          if (outageSeverity >= this.outageSeverity.minor.start && outageSeverity < this.outageSeverity.minor.end) {
+             return 'day-minor-outage'; // Light green
+-          } else if (outageSeverity < 120) {
++          } else if (outageSeverity >= this.outageSeverity.moderate.start && outageSeverity < this.outageSeverity.moderate.end) {
+             return 'day-moderate-outage'; // Yellow
+-          } else if (outageSeverity < 240) {
++          } else if (outageSeverity >= this.outageSeverity.major.start && outageSeverity < this.outageSeverity.major.end) {
+             return 'day-major-outage'; // Orange
+-          } else {
++          } else if (outageSeverity >= this.outageSeverity.critical.start) {
+             return 'day-critical-outage'; // Red
+           }
+         }
+
+From 1312098c2ed9eae063dcbbc2efa275499393e65c Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Fri, 15 Dec 2023 01:30:17 -0700
+Subject: [PATCH 07/17] Go: Generate sample success hits going back up to 90
+ days
+
+---
+ types/failures/samples.go | 22 ++++++++++--------
+ types/hits/samples.go     | 49 ++++++++++++++++++++++++++++++++-------
+ 2 files changed, 52 insertions(+), 19 deletions(-)
+
+diff --git a/types/failures/samples.go b/types/failures/samples.go
+index c7dbe59d9..475a33b27 100644
+--- a/types/failures/samples.go
++++ b/types/failures/samples.go
+@@ -66,20 +66,22 @@ func createFailuresForService(serviceID int64, start time.Time, end time.Time, c
+ 
+ func Samples() error {
+ 	utils.Log.Infoln("Inserting Sample Service Failures...")
+-	createdAt := utils.Now().Add(-90 * types.Day) // Start from 90 days ago
+ 	endDate := utils.Now()                        // Up to current time
+ 
+-	chanceOfFailure := 0.0002 // very small chance of starting an outage at any given minute
++	chanceOfFailure := 0.0003 // very small chance of starting an outage at any given minute
+ 
+ 	// Only add failures to services 3 and 4
+-	for i := int64(3); i <= 4; i++ {
+-		records := createFailuresForService(i, createdAt, endDate, chanceOfFailure)
+-		utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service %d", len(records), i))
+-
+-		if err := gormbulk.BulkInsert(db.GormDB(), records, db.ChunkSize()); err != nil {
+-			log.Error(err)
+-			return err
+-		}
++	records_3 := createFailuresForService(3, utils.Now().Add(-60 * types.Day), endDate, chanceOfFailure)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 3", len(records_3)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_3, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
++	}
++	records_4 := createFailuresForService(4, utils.Now().Add(-90 * types.Day), endDate, chanceOfFailure)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 4", len(records_4)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_4, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
+ 	}
+ 
+ 	return nil
+diff --git a/types/hits/samples.go b/types/hits/samples.go
+index d9393fe1f..1dce17af3 100644
+--- a/types/hits/samples.go
++++ b/types/hits/samples.go
+@@ -15,20 +15,51 @@ var SampleHits = 99900.
+ 
+ func Samples() error {
+ 	log.Infoln("Inserting Sample Service Hits...")
+-	for i := int64(1); i <= 5; i++ {
+-		records := createHitsAt(i)
+-		if err := gormbulk.BulkInsert(db.GormDB(), records, db.ChunkSize()); err != nil {
+-			log.Error(err)
+-			return err
+-		}
++	records_1 := createHitsAt(1, -90 * types.Day, 1 * time.Hour)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 1", len(records_1)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_1, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
++	}
++	// Statping - Statping Github
++	records_2 := createHitsAt(2, -90 * types.Day, 1 * time.Hour)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 2", len(records_2)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_2, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
++	}
++	records_3 := createHitsAt(3, -60 * types.Day, 1 * time.Hour)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 3", len(records_3)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_3, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
++	}
++	records_4 := createHitsAt(4, -90 * types.Day, 1 * time.Hour)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 4", len(records_4)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_4, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
++	}
++	records_5 := createHitsAt(5, -15 * types.Day, 30 * time.Minute)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 5", len(records_5)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_5, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
++	}
++	records_6 := createHitsAt(6, -75 * types.Day, 30 * time.Minute)
++	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 6", len(records_6)))
++	if err := gormbulk.BulkInsert(db.GormDB(), records_6, db.ChunkSize()); err != nil {
++		log.Error(err)
++		return err
+ 	}
++	// Service 7 is permanatly offline
+ 	return nil
+ }
+ 
+-func createHitsAt(serviceID int64) []interface{} {
++func createHitsAt(serviceID int64, daysToCreate time.Duration, createEvery time.Duration) []interface{} {
+ 	log.Infoln(fmt.Sprintf("Adding Sample records to service #%d...", serviceID))
+ 
+-	createdAt := utils.Now().Add(-3 * types.Day)
++	createdAt := utils.Now().Add(daysToCreate)
+ 	p := utils.NewPerlin(2, 2, 5, utils.Now().UnixNano())
+ 
+ 	var records []interface{}
+@@ -47,7 +78,7 @@ func createHitsAt(serviceID int64) []interface{} {
+ 		if createdAt.After(utils.Now()) {
+ 			break
+ 		}
+-		createdAt = createdAt.Add(30 * time.Second)
++		createdAt = createdAt.Add(createEvery)
+ 	}
+ 
+ 	return records
+
+From a5aab1c282ecdf895fef86e551ffd788a79104db Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Fri, 15 Dec 2023 01:54:59 -0700
+Subject: [PATCH 08/17] Add more details to dev readme
+
+---
+ dev/README.md | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/dev/README.md b/dev/README.md
+index bb458528b..0490e58fe 100644
+--- a/dev/README.md
++++ b/dev/README.md
+@@ -17,4 +17,5 @@ cd statping-ng # go into the root folder, it's important you run it in there.
+ docker compose -f dev/docker-compose.lite.yml up
+ ```
+ 
+-3. Go to: http://localhost:8585
++3. [Frontend] Go to: http://localhost:8888
++3. [Backend] Go to: http://localhost:8585
+
+From 6648b9f11b615b140d722e7b511e60b9b954f44e Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Fri, 15 Dec 2023 01:57:39 -0700
+Subject: [PATCH 09/17] Cleanup GroupServiceFailures
+
+---
+ .../src/components/Index/GroupServiceFailures.vue  | 14 ++------------
+ 1 file changed, 2 insertions(+), 12 deletions(-)
+
+diff --git a/frontend/src/components/Index/GroupServiceFailures.vue b/frontend/src/components/Index/GroupServiceFailures.vue
+index 6378aa3cc..415d08c2b 100644
+--- a/frontend/src/components/Index/GroupServiceFailures.vue
++++ b/frontend/src/components/Index/GroupServiceFailures.vue
+@@ -87,7 +87,7 @@ export default {
+       async lastDaysFailures() {
+         const start = this.beginningOf('day', this.nowSubtract(86400 * this.days_to_show))
+         const end = this.endOf('today')
+-        // Call both endpoints
++        // Call both endpoints to get both success and failure data for the past 90 days
+         const failuresPromise = Api.service_failures_data(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true);
+         const hitsPromise = Api.service_hits(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true);
+ 
+@@ -97,18 +97,13 @@ export default {
+         // Merge the data
+         const mergedData = this.mergeData(failuresData, hitsData);
+ 
+-        if (this.service.id === 3) { console.log(mergedData) }
+-
+         mergedData.forEach((d) => {
+           let date = new Date(d.timeframe);
+-          // Throw out data for "tomorrow" since we attempt to pull extra data that doesn't exist.
++          // Throw out data that is from the future (shouldn't happen, but good to check)
+           if ((this.toUnix(date) * 1000) > Date.now()) { 
+-            // console.log(this.toUnix(date) * 1000)
+-            // console.log(Date.now())
+             return 
+           }
+           
+-          // console.log(date)
+           this.failureData.push({
+             month: date.getUTCMonth() + 1,
+             day: date.getUTCDate(),
+@@ -120,23 +115,18 @@ export default {
+ 
+         // Only show the last configured number of days
+         this.failureData.slice(-this.days_to_show);
+-
+-        // console.log(JSON.stringify(this.failureData, null, 4));
+-        if (this.service.id === 3) { console.log(this.failureData) }
+       },
+       mergeData(failuresData, hitsData) {
+         const dataMap = new Map();
+         
+         // Process hits data
+         hitsData.forEach(d => {
+-          // console.log(d);
+           let date = this.parseISO(d.timeframe);
+           dataMap.set(d.timeframe, { hits: d.amount, amount: 0, date: d.timeframe });
+         });
+         
+         // Process failures data
+         failuresData.forEach(d => {
+-          // console.log(d);
+           let date = this.parseISO(d.timeframe);
+ 
+           let data = dataMap.get(d.timeframe) || { hits: 0, amount: 0, date: d.timeframe };
+
+From 17b7406092fee052b782c8a9b16dcc511fcf3900 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Sun, 24 Mar 2024 00:52:16 -0600
+Subject: [PATCH 10/17] Fix tests by generating more realistic samples
+
+---
+ types/failures/samples.go | 25 +++++++++++++++++++++++--
+ types/hits/samples.go     | 15 ++++++++-------
+ 2 files changed, 31 insertions(+), 9 deletions(-)
+
+diff --git a/types/failures/samples.go b/types/failures/samples.go
+index 475a33b27..ddcf7e853 100644
+--- a/types/failures/samples.go
++++ b/types/failures/samples.go
+@@ -42,11 +42,16 @@ func createFailuresForService(serviceID int64, start time.Time, end time.Time, c
+ 				24 * types.Hour,
+ 				3 * types.Hour,
+ 				60 * types.Minute,
++				5 * types.Minute,
+ 			}
+ 			outageLength := outageLengths[rand.Intn(len(outageLengths))]
+ 
+ 			// Simulate failures for the duration of the outage
+ 			outageEnd := currentTime.Add(outageLength)
++			// Initialize the current day and count of records.
++			currentDay := currentTime.Day()
++			dayRecordCount := 0
++			
+ 			for currentTime.Before(outageEnd) {
+ 				f1 := &Failure{
+ 					Service:   serviceID,
+@@ -55,10 +60,26 @@ func createFailuresForService(serviceID int64, start time.Time, end time.Time, c
+ 					CreatedAt: currentTime.UTC(),
+ 				}
+ 				records = append(records, f1)
+-				currentTime = currentTime.Add(5 * time.Minute) // simulate the next ping after 5 minutes
++				dayRecordCount++
++				currentTime = currentTime.Add(1 * time.Minute) // simulate the next ping after 1 minute
++
++				// Check if we have moved to the next day
++				if currentDay != currentTime.Day() {
++					// Log the number of failures created for the previous day
++					utils.Log.Infoln("Created", dayRecordCount, "Failures for Service", serviceID, "for day", currentTime.Add(-1 * time.Minute).UTC())
++
++					// Reset for the new day
++					currentDay = currentTime.Day()
++					dayRecordCount = 0
++				}
++			}
++
++			// Don't forget to log the count for the last day of the outage period as well
++			if dayRecordCount > 0 {
++				utils.Log.Infoln("Created", dayRecordCount, "Failures for Service", serviceID, "for day", currentTime.UTC())
+ 			}
+ 		} else {
+-			currentTime = currentTime.Add(5 * time.Minute) // No outage, move to the next minute
++			currentTime = currentTime.Add(5 * time.Minute) // No outage, move to the next random check period
+ 		}
+ 	}
+ 	return records
+diff --git a/types/hits/samples.go b/types/hits/samples.go
+index 1dce17af3..a944ee995 100644
+--- a/types/hits/samples.go
++++ b/types/hits/samples.go
+@@ -11,42 +11,43 @@ import (
+ 	"time"
+ )
+ 
+-var SampleHits = 99900.
++// max sample hits
++var SampleHits = 200000.
+ 
+ func Samples() error {
+ 	log.Infoln("Inserting Sample Service Hits...")
+-	records_1 := createHitsAt(1, -90 * types.Day, 1 * time.Hour)
++	records_1 := createHitsAt(1, -90 * types.Day, 1 * time.Minute)
+ 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 1", len(records_1)))
+ 	if err := gormbulk.BulkInsert(db.GormDB(), records_1, db.ChunkSize()); err != nil {
+ 		log.Error(err)
+ 		return err
+ 	}
+ 	// Statping - Statping Github
+-	records_2 := createHitsAt(2, -90 * types.Day, 1 * time.Hour)
++	records_2 := createHitsAt(2, -90 * types.Day, 1 * time.Minute)
+ 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 2", len(records_2)))
+ 	if err := gormbulk.BulkInsert(db.GormDB(), records_2, db.ChunkSize()); err != nil {
+ 		log.Error(err)
+ 		return err
+ 	}
+-	records_3 := createHitsAt(3, -60 * types.Day, 1 * time.Hour)
++	records_3 := createHitsAt(3, -60 * types.Day, 1 * time.Minute)
+ 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 3", len(records_3)))
+ 	if err := gormbulk.BulkInsert(db.GormDB(), records_3, db.ChunkSize()); err != nil {
+ 		log.Error(err)
+ 		return err
+ 	}
+-	records_4 := createHitsAt(4, -90 * types.Day, 1 * time.Hour)
++	records_4 := createHitsAt(4, -90 * types.Day, 1 * time.Minute)
+ 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 4", len(records_4)))
+ 	if err := gormbulk.BulkInsert(db.GormDB(), records_4, db.ChunkSize()); err != nil {
+ 		log.Error(err)
+ 		return err
+ 	}
+-	records_5 := createHitsAt(5, -15 * types.Day, 30 * time.Minute)
++	records_5 := createHitsAt(5, -15 * types.Day, 1 * time.Minute)
+ 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 5", len(records_5)))
+ 	if err := gormbulk.BulkInsert(db.GormDB(), records_5, db.ChunkSize()); err != nil {
+ 		log.Error(err)
+ 		return err
+ 	}
+-	records_6 := createHitsAt(6, -75 * types.Day, 30 * time.Minute)
++	records_6 := createHitsAt(6, -75 * types.Day, 1 * time.Minute)
+ 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 6", len(records_6)))
+ 	if err := gormbulk.BulkInsert(db.GormDB(), records_6, db.ChunkSize()); err != nil {
+ 		log.Error(err)
+
+From ab3beacc5751b1c42661271e82873a1518c0f794 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Mon, 25 Mar 2024 00:21:26 -0600
+Subject: [PATCH 11/17] Fixup Service Heatmap on Service Page
+
+---
+ frontend/package.json                         |   4 +-
+ frontend/public/css/base.css                  |   2 +-
+ .../src/components/Service/ServiceHeatmap.vue | 206 +++++++++++-------
+ frontend/src/pages/Service.vue                |   4 +-
+ frontend/yarn.lock                            |  22 +-
+ 5 files changed, 150 insertions(+), 88 deletions(-)
+
+diff --git a/frontend/package.json b/frontend/package.json
+index 760c51407..ac39c5dc6 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -19,7 +19,7 @@
+     "@fortawesome/free-brands-svg-icons": "^5.12.1",
+     "@fortawesome/free-solid-svg-icons": "^5.12.0",
+     "@fortawesome/vue-fontawesome": "^0.1.9",
+-    "apexcharts": "^3.23.0",
++    "apexcharts": "^3.48.0",
+     "axios": "^0.19.1",
+     "codemirror-colorpicker": "^1.9.66",
+     "core-js": "^3.6.5",
+@@ -29,7 +29,7 @@
+     "sass": "^1.26.10",
+     "semver": "^7.3.2",
+     "vue": "^2.6.11",
+-    "vue-apexcharts": "^1.6.0",
++    "vue-apexcharts": "^1.6.2",
+     "vue-clipboard2": "^0.3.1",
+     "vue-codemirror": "^4.0.6",
+     "vue-cookies": "^1.7.0",
+diff --git a/frontend/public/css/base.css b/frontend/public/css/base.css
+index 25673621b..eba6a9b19 100644
+--- a/frontend/public/css/base.css
++++ b/frontend/public/css/base.css
+@@ -146,7 +146,7 @@ HTML, BODY {
+ 
+ .service-chart-heatmap {
+   position: relative;
+-  height: 300px;
++  height: 600px;
+   width: 100%;
+ }
+ 
+diff --git a/frontend/src/components/Service/ServiceHeatmap.vue b/frontend/src/components/Service/ServiceHeatmap.vue
+index febaddd7f..a4e631a57 100644
+--- a/frontend/src/components/Service/ServiceHeatmap.vue
++++ b/frontend/src/components/Service/ServiceHeatmap.vue
+@@ -1,5 +1,5 @@
+ <template>
+-    <apexchart v-if="ready" width="100%" height="180" type="heatmap" :options="plotOptions" :series="series"></apexchart>
++    <apexchart v-if="ready" width="100%" height="280" type="heatmap" :options="plotOptions" :series="series"></apexchart>
+ </template>
+ 
+ <script>
+@@ -17,75 +17,77 @@
+           await this.chartHeatmap()
+       },
+       data() {
+-          return {
+-              ready: false,
+-              data: [],
+-              plotOptions: {
+-                  chart: {
+-                      selection: {
+-                          enabled: false
+-                      },
+-                      zoom: {
+-                          enabled: false
+-                      },
+-                      toolbar: {
+-                          show: false
+-                      },
+-                    },
+-                      colors: [ "#cb3d36" ],
+-                      enableShades: true,
+-                      shadeIntensity: 0.5,
+-                      colorScale: {
+-                          ranges: [ {
+-                              from: 0,
+-                              to: 0,
+-                              color: '#bababa',
+-                              name: 'none',
+-                          },
+-                              {
+-                                  from: 2,
+-                                  to: 10,
+-                                  color: '#cb3d36',
+-                                  name: 'medium',
+-                              },
+-                              {
+-                                  from: 11,
+-                                  to: 999,
+-                                  color: '#cb221c',
+-                                  name: 'high',
+-                              }
+-                          ]
+-                      },
+-                  xaxis: {
+-                      tickAmount: '1',
+-                      tickPlacement: 'between',
+-                      min: 1,
+-                      max: 31,
+-                      type: "numeric",
+-                      labels: {
+-                          show: true
+-                      },
+-                      tooltip: {
+-                          enabled: false
+-                      }
+-                  },
+-                  yaxis: {
+-                      labels: {
+-                          show: true
+-                      },
+-                  }
+-                  },
+-              series: [ {
+-                  data: []
+-              } ]
+-          }
++        return {
++          ready: false,
++          mergedData: [],
++          data: [],
++          outageSeverity: {
++            minor: { start: 1, end: 30 },
++            moderate: { start: 30, end: 120 },
++            major: { start: 120, end: 240 },
++            critical: { start: 240 }
++          },
++          plotOptions: {
++            tooltip: { 
++              enabled: true,
++              custom: function({series, seriesIndex, dataPointIndex, w}) {
++                const failures = series[seriesIndex][dataPointIndex];
++                // if (failures < 0) { return  `100% Uptime` }
++                if (failures > 0) { return  `Failures: ${failures}` }
++                // else return `No Data`;
++                return ''
++              }
++            },
++            chart: {
++              selection: {
++                enabled: false
++              },
++              zoom: {
++                enabled: false
++              },
++              toolbar: {
++                show: false
++              },
++            },
++            colors: [ "#cb3d36" ],
++            xaxis: {
++              tickAmount: 30,
++              min: 1,
++              max: 31,
++              type: "numeric",
++              labels: {
++                show: true,
++                enabled: true,
++                formatter: (value) => `${value}`,
++              },
++              tooltip: {
++                enabled: true,
++                formatter: function(value, { series, seriesIndex, dataPointIndex, w }) {
++                  // Assuming each 'x' value is already set as the day of the month.
++                  // The series name for each series is set as the full month name.
++                  const month = w.globals.seriesNames[seriesIndex]; // Gets the month from the series name.
++                  const year = new Date().getFullYear(); // Assumes current year; adjust as needed.
++                  return `${dataPointIndex} ${month} ${year}`; // Formats the tooltip's title to show a full date.
++                }
++              }
++            },
++            yaxis: {
++              labels: {
++                show: true
++              }
++            }
++          },
++          series: [{
++            data: []
++          }],
++        }
+       },
+       methods: {
+           async chartHeatmap() {
+             const monthData = []
+             let start = this.firstDayOfMonth(this.now())
+ 
+-            for (let i=0; i<3; i++) {
++            for (let i=0; i<6; i++) {
+                 monthData.push(await this.heatmapData(this.addMonths(start, -i), this.lastDayOfMonth(this.addMonths(start, -i))))
+             }
+ 
+@@ -93,18 +95,72 @@
+             this.ready = true
+           },
+           async heatmapData(start, end) {
+-              const data = await Api.service_failures_data(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true)
+-              let dataArr = []
+-                if (!data) {
+-                  return {name: start.toLocaleString('en-us', { month: 'long'}), data: []}
+-                }
+-              data.forEach((d) => {
+-                dataArr.push({x: this.parseISO(d.timeframe), y: d.amount});
+-              });
++              const failuresData = await Api.service_failures_data(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true)
++              const hitsData = await Api.service_hits(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true);
+ 
+-              let date = new Date(dataArr[0].x);
+-              return {name: start.toLocaleString('en-us', { month: 'long'}), data: dataArr}
+-          }
++              // Merge the data
++              const mergedData = this.mergeData(failuresData, hitsData);
++              console.log(mergedData)
++              return {name: start.toLocaleString('en-us', { month: 'long'}), data: mergedData}
++          },
++          mergeData(failuresData, hitsData) {
++            let data = {}
++            
++            // Process hits data
++            hitsData.forEach(d => {
++              let date = this.parseISO(d.timeframe);
++              data[date] = -d.amount
++            });
++            
++            // Process failures data
++            failuresData.forEach(d => {
++              let date = this.parseISO(d.timeframe);
++              data[date] = d.amount
++            });
++
++            let dataArr = []
++            for (let i = 0; i < 31; i++) {
++              if (failuresData[i] && failuresData[i].amount > 0) {
++                // If any failures return failure amount
++                dataArr.push(failuresData[i].amount)
++              } else if (hitsData[i] && hitsData[i].amount > 0) {
++                // Make neg if only success
++                // dataArr.push(-hitsData[i].amount)
++                dataArr.push(0)
++              } else {
++                dataArr.push(0)
++              }
++            }
++            
++            // Convert map to array
++            return dataArr;
++          },
++          getDayColor({ value, seriesIndex, w }) {
++              // No data points for day
++              if (value === 0) {
++                return '#e9e9e9';
++              } 
++              // No failures for day
++              else if (value < 0) {
++                return '#4CAF50';
++              } 
++              // Some failures for the day
++              else {
++                // Determine the severity and return the corresponding color class
++                const outageSeverity = value;
++                if (outageSeverity >= this.outageSeverity.minor.start && outageSeverity < this.outageSeverity.minor.end) {
++                  return '#98EE99'; // Light green
++                } else if (outageSeverity >= this.outageSeverity.moderate.start && outageSeverity < this.outageSeverity.moderate.end) {
++                  return '#FFEB3B'; // Yellow
++                } else if (outageSeverity >= this.outageSeverity.major.start && outageSeverity < this.outageSeverity.major.end) {
++                  return '#FF9800'; // Orange
++                } else if (outageSeverity >= this.outageSeverity.critical.start) {
++                  return '#F44336'; // Red
++                }
++              }
++              // Default, shouldn't get here
++              return '#e9e9e9';
++            }
+       }
+   }
+ </script>
+diff --git a/frontend/src/pages/Service.vue b/frontend/src/pages/Service.vue
+index 947985e59..0e0062d3e 100644
+--- a/frontend/src/pages/Service.vue
++++ b/frontend/src/pages/Service.vue
+@@ -77,10 +77,10 @@
+ 
+             </div>
+ 
+-            <div class="card text-black-50 bg-white mb-3">
++            <div class="card text-black-50 bg-white mb-0" style="height: 380px">
+                 <div class="card-header text-capitalize">Service Failures</div>
+                 <div class="card-body">
+-                    <div class="service-chart-heatmap mt-5 mb-4">
++                    <div class="service-chart-heatmap mb-4">
+                         <ServiceHeatmap :service="service"/>
+                     </div>
+                 </div>
+diff --git a/frontend/yarn.lock b/frontend/yarn.lock
+index 3868ed007..a4dcd131a 100644
+--- a/frontend/yarn.lock
++++ b/frontend/yarn.lock
+@@ -1803,6 +1803,11 @@
+   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
+   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
+ 
++"@yr/monotone-cubic-spline@^1.0.3":
++  version "1.0.3"
++  resolved "https://registry.yarnpkg.com/@yr/monotone-cubic-spline/-/monotone-cubic-spline-1.0.3.tgz#7272d89f8e4f6fb7a1600c28c378cc18d3b577b9"
++  integrity sha512-FQXkOta0XBSUPHndIKON2Y9JeQz5ZeMqLYZVVK93FliNBFm7LNMIZmY6FrMEB9XPcDbE2bekMbZD6kzDkxwYjA==
++
+ abab@^2.0.3:
+   version "2.0.4"
+   resolved "https://registry.yarnpkg.com/abab/-/abab-2.0.4.tgz#6dfa57b417ca06d21b2478f0e638302f99c2405c"
+@@ -1973,11 +1978,12 @@ anymatch@~3.1.1:
+     normalize-path "^3.0.0"
+     picomatch "^2.0.4"
+ 
+-apexcharts@^3.23.0:
+-  version "3.23.0"
+-  resolved "https://registry.yarnpkg.com/apexcharts/-/apexcharts-3.23.0.tgz#12877aa789d658aef5eb930af6c3b8850fefd925"
+-  integrity sha512-1mV6qouuopvYR6UFSXi/Ge4jRMe//zyAN3aK05mAs4Iuet8mA0w31Q6OU6syD77bawt9p3YKNOmNF7OO2u9w0g==
++apexcharts@^3.48.0:
++  version "3.48.0"
++  resolved "https://registry.yarnpkg.com/apexcharts/-/apexcharts-3.48.0.tgz#cf0e18f4551b04a242d81942c965c15547f5f1b6"
++  integrity sha512-Lhpj1Ij6lKlrUke8gf+P+SE6uGUn+Pe1TnCJ+zqrY0YMvbqM3LMb1lY+eybbTczUyk0RmMZomlTa2NgX2EUs4Q==
+   dependencies:
++    "@yr/monotone-cubic-spline" "^1.0.3"
+     svg.draggable.js "^2.2.2"
+     svg.easing.js "^2.0.0"
+     svg.filter.js "^2.0.2"
+@@ -10757,10 +10763,10 @@ vm-browserify@^1.0.1:
+   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.2.tgz#78641c488b8e6ca91a75f511e7a3b32a86e5dda0"
+   integrity sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==
+ 
+-vue-apexcharts@^1.6.0:
+-  version "1.6.0"
+-  resolved "https://registry.yarnpkg.com/vue-apexcharts/-/vue-apexcharts-1.6.0.tgz#c7d3afd93f712433d404e5ceeb4e3aa65f422af2"
+-  integrity sha512-sT6tuVTLBwfH3TA7azecDNS/W70bmz14ZJI7aE7QIqcG9I6OywyH7x3hcOeY1v1DxttI8Svc5RuYj4Dd+A5F4g==
++vue-apexcharts@^1.6.2:
++  version "1.6.2"
++  resolved "https://registry.yarnpkg.com/vue-apexcharts/-/vue-apexcharts-1.6.2.tgz#0547826067f97e8ea67ca9423e524eb6669746ad"
++  integrity sha512-9HS3scJwWgKjmkcWIf+ndNDR0WytUJD8Ju0V2ZYcjYtlTLwJAf2SKUlBZaQTkDmwje/zMgulvZRi+MXmi+WkKw==
+ 
+ vue-clipboard2@^0.3.1:
+   version "0.3.1"
+
+From ef331bb2fbf102d2477de547006d9b45371330ad Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Mon, 25 Mar 2024 00:32:43 -0600
+Subject: [PATCH 12/17] Display Uptime % for past 12 Months
+
+Keep last 365 days of records and fix issue with uptime calculation
+---
+ database/routines.go                                |  2 +-
+ frontend/src/components/Service/ServiceTopStats.vue | 10 +++++++---
+ types/services/methods.go                           |  8 ++++++--
+ types/services/samples.go                           |  1 +
+ types/services/struct.go                            |  1 +
+ utils/env.go                                        |  2 +-
+ 6 files changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/database/routines.go b/database/routines.go
+index 3a0bf5948..4b194ee43 100644
+--- a/database/routines.go
++++ b/database/routines.go
+@@ -15,7 +15,7 @@ var (
+ )
+ 
+ // Maintenance will automatically delete old records from 'failures' and 'hits'
+-// this function is currently set to delete records 7+ days old every 60 minutes
++// this function is currently set to delete records 365+ days old every 60 minutes
+ // env: REMOVE_AFTER - golang duration parsed time for deleting records older than REMOVE_AFTER duration from now
+ // env: CLEANUP_INTERVAL - golang duration parsed time for checking old records routine
+ func Maintenance() {
+diff --git a/frontend/src/components/Service/ServiceTopStats.vue b/frontend/src/components/Service/ServiceTopStats.vue
+index 0a9a48ef4..cf3612abb 100644
+--- a/frontend/src/components/Service/ServiceTopStats.vue
++++ b/frontend/src/components/Service/ServiceTopStats.vue
+@@ -1,17 +1,21 @@
+ <template>
+     <div class="row stats_area mt-5 mb-4">
+-        <div class="col-4" v-if="showResponseTime">
++        <div class="col-3" v-if="showResponseTime">
+             <span class="font-5 d-block font-weight-bold">{{humanTime(service.avg_response)}}</span>
+             <span class="font-1 subtitle">{{$t('average_response')}}</span>
+         </div>
+-        <div :class="showResponseTime ? 'col-4' : 'col-6'">
++        <div :class="showResponseTime ? 'col-3' : 'col-6'">
+             <span class="font-5 d-block font-weight-bold">{{service.online_24_hours}} %</span>
+             <span class="font-1 subtitle">{{$t('last_uptime')}} 24 {{$tc('hour', 24)}}</span>
+         </div>
+-        <div :class="showResponseTime ? 'col-4' : 'col-6'">
++        <div :class="showResponseTime ? 'col-3' : 'col-6'">
+             <span class="font-5 d-block font-weight-bold">{{service.online_7_days}} %</span>
+             <span class="font-1 subtitle">{{$t('last_uptime')}} 7 {{$tc('day', 7)}}</span>
+         </div>
++        <div :class="showResponseTime ? 'col-3' : 'col-6'">
++            <span class="font-5 d-block font-weight-bold">{{service.online_1_year}} %</span>
++            <span class="font-1 subtitle">{{$t('last_uptime')}} 12 {{$tc('month', 12)}}</span>
++        </div>
+     </div>
+ </template>
+ 
+diff --git a/types/services/methods.go b/types/services/methods.go
+index bf68988ec..9a22adfcc 100644
+--- a/types/services/methods.go
++++ b/types/services/methods.go
+@@ -261,6 +261,7 @@ func SelectAllServices(start bool) (map[int64]*Service, error) {
+ func (s *Service) UpdateStats() *Service {
+ 	s.Online24Hours = s.OnlineDaysPercent(1)
+ 	s.Online7Days = s.OnlineDaysPercent(7)
++	s.Online1Year = s.OnlineDaysPercent(365)
+ 	s.AvgResponse = s.AvgTime()
+ 	s.FailuresLast24Hours = s.FailuresSince(utils.Now().Add(-time.Hour * 24)).Count()
+ 
+@@ -300,16 +300,20 @@
+ 	hitsCount := s.HitsSince(ago).Count()
+ 	checkinHitsCount := s.AllCheckinHits().Since(ago).Count()
+ 
+-	if failsCount == 0 {
++	// If there were no failures, and we have success
++	// Then return 100% uptime
++	if failsCount == 0 && hitsCount > 0 {
+ 		s.Online24Hours = 100.00
+ 		return s.Online24Hours
+ 	}
+ 
++	// If we have 0 hits then its 0% uptime
+ 	if hitsCount == 0 && checkinHitsCount == 0 {
+ 		s.Online24Hours = 0
+ 		return s.Online24Hours
+ 	}
+ 
++	// Otherwise, calculate the uptime percentage
+ 	avg := (float64(failsCount) / float64(hitsCount+checkinHitsCount)) * 100
+ 	avg = 100 - avg
+ 	if avg < 0 {
+diff --git a/types/services/samples.go b/types/services/samples.go
+index c20ad9c29..9eb69274f 100644
+--- a/types/services/samples.go
++++ b/types/services/samples.go
+@@ -36,6 +36,7 @@ func Example(online bool) Service {
+ 		PingTime:            83526,
+ 		Online24Hours:       0.98,
+ 		Online7Days:         0.99,
++		Online1Year:         0.995,
+ 		AvgResponse:         303443,
+ 		FailuresLast24Hours: 2,
+ 		Checkpoint:          time.Time{},
+diff --git a/types/services/struct.go b/types/services/struct.go
+index d08a7308f..ca86cd020 100644
+--- a/types/services/struct.go
++++ b/types/services/struct.go
+@@ -41,6 +41,7 @@ type Service struct {
+ 	PingTime            int64                 `gorm:"-" json:"ping_time" yaml:"-"`
+ 	Online24Hours       float32               `gorm:"-" json:"online_24_hours" yaml:"-"`
+ 	Online7Days         float32               `gorm:"-" json:"online_7_days" yaml:"-"`
++	Online1Year         float32               `gorm:"-" json:"online_1_year" yaml:"-"`
+ 	AvgResponse         int64                 `gorm:"-" json:"avg_response" yaml:"-"`
+ 	FailuresLast24Hours int                   `gorm:"-" json:"failures_24_hours" yaml:"-"`
+ 	Running             chan bool             `gorm:"-" json:"-" yaml:"-"`
+diff --git a/utils/env.go b/utils/env.go
+index a2fd3e0d5..3601d2192 100644
+--- a/utils/env.go
++++ b/utils/env.go
+@@ -47,7 +47,7 @@ func InitEnvs() {
+ 	Params.SetDefault("NAME", "Statping Sample Data")
+ 	Params.SetDefault("DOMAIN", "http://localhost:8080")
+ 	Params.SetDefault("DESCRIPTION", "This status page has sample data included")
+-	Params.SetDefault("REMOVE_AFTER", 2160*time.Hour)
++	Params.SetDefault("REMOVE_AFTER", 365*24*time.Hour) // Default 12 Months (for 1 year uptime calculation)
+ 	Params.SetDefault("CLEANUP_INTERVAL", 1*time.Hour)
+ 	Params.SetDefault("LANGUAGE", "en")
+ 	Params.SetDefault("LETSENCRYPT_HOST", "")
+
+From e4efdbaa87d8f81c530e7bf0cec3b5bbe344484b Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Mon, 25 Mar 2024 00:53:55 -0600
+Subject: [PATCH 13/17] Allow higher precision for past year uptime
+
+---
+ types/services/methods.go | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/types/services/methods.go b/types/services/methods.go
+index 9a22adfcc..c2b3d0a15 100644
+--- a/types/services/methods.go
++++ b/types/services/methods.go
+@@ -315,9 +315,17 @@ func (s *Service) OnlineSince(ago time.Time) float32 {
+ 	if avg < 0 {
+ 		avg = 0
+ 	}
+-	amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.2f", avg), 10)
+-	s.Online24Hours = float32(amount)
+-	return s.Online24Hours
++
++	// If we have a huge amount of data points, use a more precise number
++	if hitsCount > 100000 {
++		amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.3f", avg), 10)
++		s.Online24Hours = float32(amount)
++		return s.Online24Hours
++	} else {
++		amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.2f", avg), 10)
++		s.Online24Hours = float32(amount)
++		return s.Online24Hours
++	}
+ }
+ 
+ // Uptime returns the duration of how long the service was online
+
+From 8fc0b0beecb611f824916712579cf7a2e185a9b2 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Mon, 25 Mar 2024 22:18:31 -0600
+Subject: [PATCH 14/17] Try using Go 1.20.0 for running Tests
+
+---
+ .github/workflows/build.yml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index be76b3395..2e1c2285a 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -49,7 +49,7 @@ jobs:
+       - name: get go/node version information
+         id: tool-versions
+         run: |
+-          echo "go_version=1.20.x" >> $GITHUB_OUTPUT
++          echo "go_version=1.20.0" >> $GITHUB_OUTPUT
+           echo "node_version=16.14.0" >> $GITHUB_OUTPUT
+         shell: bash
+       - name: show data results
+
+From 422de34b099390846ffe5a3d43e7b3516e38029d Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Tue, 26 Mar 2024 00:31:19 -0600
+Subject: [PATCH 15/17] Add GOPROXY directly?
+
+---
+ .github/workflows/build.yml | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index 2e1c2285a..676d4a804 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -49,7 +49,7 @@ jobs:
+       - name: get go/node version information
+         id: tool-versions
+         run: |
+-          echo "go_version=1.20.0" >> $GITHUB_OUTPUT
++          echo "go_version=1.20.x" >> $GITHUB_OUTPUT
+           echo "node_version=16.14.0" >> $GITHUB_OUTPUT
+         shell: bash
+       - name: show data results
+@@ -250,6 +250,8 @@ jobs:
+           path: ./source
+ 
+       - name: Install Statping
++        env:
++          GOPROXY: https://proxy.golang.org,direct
+         run: |
+           make build certs
+           chmod +x statping
+@@ -324,6 +326,8 @@ jobs:
+           path: ./source
+ 
+       - name: Install Statping
++        env:
++          GOPROXY: https://proxy.golang.org,direct
+         run: |
+           make build
+           chmod +x statping
+@@ -374,6 +378,8 @@ jobs:
+           path: ./source
+ 
+       - name: Install Statping
++        env:
++          GOPROXY: https://proxy.golang.org,direct
+         run: |
+           make build
+           chmod +x statping
+
+From 9b8ed7359b095dec272e8f89cc82c6e79b5768ce Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Tue, 26 Mar 2024 00:47:43 -0600
+Subject: [PATCH 16/17] Attempt to set goroot to path correctly
+
+and also check the go version
+---
+ .github/workflows/build.yml | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index 676d4a804..a0a830fea 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -315,7 +315,8 @@ jobs:
+ 
+       - name: Setting ENV's
+         run: |
+-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
++          echo "GOROOT=$GOROOT" >> $GITHUB_ENV
++          echo "PATH=$GOROOT/bin:$PATH" >> $GITHUB_ENV
+           echo "/opt/hostedtoolcache/node/${{ needs.data.outputs.node_version }}/x64/bin" >> $GITHUB_PATH
+         shell: bash
+ 
+@@ -329,6 +330,7 @@ jobs:
+         env:
+           GOPROXY: https://proxy.golang.org,direct
+         run: |
++          go version
+           make build
+           chmod +x statping
+           mv statping $(go env GOPATH)/bin/
+@@ -367,7 +369,8 @@ jobs:
+ 
+       - name: Setting ENV's
+         run: |
+-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
++          echo "GOROOT=$GOROOT" >> $GITHUB_ENV
++          echo "PATH=$GOROOT/bin:$PATH" >> $GITHUB_ENV
+           echo "/opt/hostedtoolcache/node/${{ needs.data.outputs.node_version }}/x64/bin" >> $GITHUB_PATH
+         shell: bash
+ 
+@@ -381,6 +384,7 @@ jobs:
+         env:
+           GOPROXY: https://proxy.golang.org,direct
+         run: |
++          go version
+           make build
+           chmod +x statping
+           mv statping $(go env GOPATH)/bin/
+@@ -420,7 +424,8 @@ jobs:
+ 
+       - name: Setting ENV's
+         run: |
+-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
++          echo "GOROOT=$GOROOT" >> $GITHUB_ENV
++          echo "PATH=$GOROOT/bin:$PATH" >> $GITHUB_ENV
+           echo "/opt/hostedtoolcache/node/${{ needs.data.outputs.node_version }}/x64/bin" >> $GITHUB_PATH
+         shell: bash
+ 
+@@ -432,6 +437,7 @@ jobs:
+ 
+       - name: Install Statping
+         run: |
++          go version
+           make build
+           chmod +x statping
+           mv statping $(go env GOPATH)/bin/
+
+From 144df9c5aa3a2455691cffd8fc7c53ca6077aca2 Mon Sep 17 00:00:00 2001
+From: Sky Young <OstlerDev@users.noreply.github.com>
+Date: Tue, 26 Mar 2024 01:55:39 -0600
+Subject: [PATCH 17/17] Use Go v1.21.8 for running tests
+
+---
+ .github/workflows/build.yml | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index a0a830fea..4604e820d 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -311,7 +311,7 @@ jobs:
+       - uses: actions/checkout@v2
+       - uses: actions/setup-go@v2
+         with:
+-          go-version: ${{ needs.data.outputs.go_version }}
++          go-version: '1.21.8'
+ 
+       - name: Setting ENV's
+         run: |
+@@ -365,7 +365,7 @@ jobs:
+       - uses: actions/checkout@v2
+       - uses: actions/setup-go@v2
+         with:
+-          go-version: ${{ needs.data.outputs.go_version }}
++          go-version: '1.21.8'
+ 
+       - name: Setting ENV's
+         run: |
+@@ -420,7 +420,7 @@ jobs:
+       - uses: actions/checkout@v2
+       - uses: actions/setup-go@v2
+         with:
+-          go-version: ${{ needs.data.outputs.go_version }}
++          go-version: '1.21.8'
+ 
+       - name: Setting ENV's
+         run: |

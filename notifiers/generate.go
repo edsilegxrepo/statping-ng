@@ -89,15 +89,14 @@ type mjmlApi struct {
 
 const emailFailureMJML = `<mjml>
   <mj-head>
-    <mj-title>Statping Service Notification</mj-title>
+    <mj-title>Monitoring Service Notification</mj-title>
   </mj-head>
   <mj-body background-color="#E7E7E7">
     <mj-raw>
       <!-- Top Bar -->
     </mj-raw>
-    <mj-section background-color="#a30911" background-url="https://assets.statping.com/offlinebanner.png" padding="0px">
+    <mj-section background-color="#a30911" padding="0px">
       <mj-column>
-        <mj-image width="45px" href="https://statping.com" src="https://assets.statping.com/iconlight.png" align="center" alt="Sphero"></mj-image>
       </mj-column>
     </mj-section>
   
@@ -142,37 +141,19 @@ const emailFailureMJML = `<mjml>
    
  <mj-spacer height="30px" />
         
-    <mj-section padding="0" background-url="https://assets.statping.com/offlinebanner.png" background-color="#a30911">
+    <mj-section padding="0" background-color="#a30911">
       <mj-column>
-        <mj-image width="250px" href="https://statping.com" src="https://assets.statping.com/statpingcom.png" align="center"></mj-image>
       </mj-column>
     </mj-section>
         
          <mj-section padding-bottom="0" padding-top="10px">
         <mj-column>
         <mj-text color="#445566" font-size="11px" align="center" line-height="16px">
-            You are receiving this email because one of your services has changed on your Statping instance. You can modify this email on the Email Notifier page in Settings.
-          </mj-text>
-          <mj-text color="#445566" font-size="11px" align="center" line-height="16px">
-            &copy; Statping
+            You are receiving this email because one of your services has changed on your monitoring instance.
           </mj-text>
         </mj-column>
       </mj-section>
         
-         <mj-section padding-top="0" padding-bottom="0">
-        <mj-group>
-          <mj-column width="100%" padding-right="0">
-            <mj-text color="#445566" font-size="11px" align="center" line-height="16px" font-weight="bold">
-              <a class="footer-link" href="https://statping.com">Statping.com</a>&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0; 
-              
-              <a class="footer-link" href="https://github.com/statping/statping">Github</a>&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;
-              
-              <a class="footer-link" href="https://statping.com/privacy">Privacy</a>&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;
-            </mj-text>
-          </mj-column>
-        </mj-group>
-
-      </mj-section>
       </mj-column>
     </mj-section>
         
@@ -181,15 +162,14 @@ const emailFailureMJML = `<mjml>
 
 const emailSuccessMJML = `<mjml>
   <mj-head>
-    <mj-title>Statping Service Notification</mj-title>
+    <mj-title>Monitoring Service Notification</mj-title>
   </mj-head>
   <mj-body background-color="#E7E7E7">
     <mj-raw>
       <!-- Top Bar -->
     </mj-raw>
-    <mj-section background-color="#12ab0c" background-url="https://assets.statping.com/greenbackground.png" padding="0px">
+    <mj-section background-color="#12ab0c" padding="0px">
       <mj-column>
-        <mj-image width="45px" href="https://statping.com" src="https://assets.statping.com/iconlight.png" align="center" alt="Sphero"></mj-image>
       </mj-column>
     </mj-section>
   
@@ -234,37 +214,19 @@ const emailSuccessMJML = `<mjml>
    
  <mj-spacer height="30px" />
         
-    <mj-section padding="0" background-url="https://assets.statping.com/greenbackground.png" background-color="#12ab0c">
+    <mj-section padding="0" background-color="#12ab0c">
       <mj-column>
-        <mj-image width="250px" href="https://statping.com" src="https://assets.statping.com/statpingcom.png" align="center"></mj-image>
       </mj-column>
     </mj-section>
         
          <mj-section padding-bottom="0" padding-top="10px">
         <mj-column>
         <mj-text color="#445566" font-size="11px" align="center" line-height="16px">
-            You are receiving this email because one of your services has changed on your Statping instance. You can modify this email on the Email Notifier page in Settings.
-          </mj-text>
-          <mj-text color="#445566" font-size="11px" align="center" line-height="16px">
-            &copy; Statping
+            You are receiving this email because one of your services has changed on your monitoring instance.
           </mj-text>
         </mj-column>
       </mj-section>
         
-         <mj-section padding-top="0" padding-bottom="0">
-        <mj-group>
-          <mj-column width="100%" padding-right="0">
-            <mj-text color="#445566" font-size="11px" align="center" line-height="16px" font-weight="bold">
-              <a class="footer-link" href="https://statping.com">Statping.com</a>&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0; 
-              
-              <a class="footer-link" href="https://github.com/statping/statping">Github</a>&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;
-              
-              <a class="footer-link" href="https://statping.com/privacy">Privacy</a>&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;&#xA0;
-            </mj-text>
-          </mj-column>
-        </mj-group>
-
-      </mj-section>
       </mj-column>
     </mj-section>
         

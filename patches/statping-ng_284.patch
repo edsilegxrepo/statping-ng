@@ -1,0 +1,476 @@
+From 610dd73178209cf1013d1569014c52e62080d708 Mon Sep 17 00:00:00 2001
+From: Aoik <aoi.kuiyuyou@gmail.com>
+Date: Fri, 5 Apr 2024 20:50:47 +0800
+Subject: [PATCH] Add command service type
+
+---
+ frontend/src/forms/Service.vue |  33 ++++---
+ handlers/services.go           |  20 ++++-
+ types/errors/common.go         |  24 +++++
+ types/services/command.go      |  19 ++++
+ types/services/database.go     |  30 +++++--
+ types/services/routine.go      | 158 +++++++++++++++++++++++++++++++++
+ 6 files changed, 266 insertions(+), 18 deletions(-)
+ create mode 100644 types/services/command.go
+
+diff --git a/frontend/src/forms/Service.vue b/frontend/src/forms/Service.vue
+index a260e1061..9d3ee9d86 100644
+--- a/frontend/src/forms/Service.vue
++++ b/frontend/src/forms/Service.vue
+@@ -14,6 +14,7 @@
+             <label for="service_type" class="col-sm-4 col-form-label">{{ $t('service_type') }}</label>
+             <div class="col-sm-8">
+                 <select v-model="service.type" @change="updateDefaultValues()" class="form-control" id="service_type">
++                    <option value="cmd">Command</option>
+                     <option value="http">HTTP {{ $t('service') }}</option>
+                     <option value="tcp">TCP {{ $t('service') }}</option>
+                     <option value="udp">UDP {{ $t('service') }}</option>
+@@ -74,7 +75,7 @@
+             <div class="card-header">Request Details</div>
+             <div class="card-body">
+ 
+-            <div class="form-group row">
++            <div v-if="service.type !== 'cmd'" class="form-group row">
+                 <label for="service_url" class="col-sm-4 col-form-label">
+                   {{ $t('service_endpoint') }} {{service.type === 'http' ? "(URL)" : "(Domain)"}}
+                 </label>
+@@ -117,7 +118,7 @@
+             <div class="col-sm-6">
+                 <span v-if="service.timeout >= 0" class="slider-info">{{secondsHumanize(service.timeout)}}</span>
+                 <input v-model.number="service.timeout" type="range" id="timeout" name="timeout" class="slider" min="1" max="180">
+-                <small class="form-text text-muted">If the endpoint does not respond within this time it will be considered to be offline</small>
++                <small class="form-text text-muted">If the {{service.type === 'cmd' ? 'command' : 'endpoint'}} does not {{service.type === 'cmd' ? 'exit' : 'respond'}} within this time it will be considered to be offline</small>
+             </div>
+ 
+             <div class="col-sm-2">
+@@ -126,11 +127,11 @@
+ 
+         </div>
+ 
+-        <div v-if="service.type.match(/^(http)$/) && service.method.match(/^(POST|PATCH|DELETE|PUT)$/)" class="form-group row">
+-            <label class="col-sm-4 col-form-label">Optional Post Data (JSON)</label>
++        <div v-if="service.type === 'cmd' || service.type.match(/^(http)$/) && service.method.match(/^(POST|PATCH|DELETE|PUT)$/)" class="form-group row">
++            <label class="col-sm-4 col-form-label">{{service.type === 'cmd' ? "Command Config (JSON)" : "Optional Post Data (JSON)"}}</label>
+             <div class="col-sm-8">
+-                <textarea v-model="service.post_data" class="form-control" rows="3" autocapitalize="none" spellcheck="false" placeholder='{"data": { "method": "success", "id": 148923 } }'></textarea>
+-                <small class="form-text text-muted">Insert a JSON string to send data to the endpoint.</small>
++                <textarea v-model="service.post_data" class="form-control" :rows="service.type === 'cmd' && !service.post_data ? '21' : service.type === 'cmd' ? '5' : '3'" autocapitalize="none" spellcheck="false" :placeholder="service.type === 'cmd' ? '# Format:\n{\n  &quot;Cmd&quot;: &quot;_CMD_PATH_(required)&quot;,\n  &quot;Args&quot;: [_ARGS_LIST_(optional)],\n  &quot;Dir&quot;: &quot;_DIR_PATH_(optional)&quot;,\n  &quot;Env&quot;: {_ENV_VARS_MAP_(optional)},\n  &quot;Stdin&quot;: &quot;_STDIN_STR_(optional)&quot;,\n  &quot;Stdout&quot;: &quot;_STDOUT_REGEX_(optional)&quot;,\n  &quot;Stderr&quot;: &quot;_STDERR_REGEX_(optional)&quot;\n}\n# Example:\n{\n  &quot;Cmd&quot;: &quot;/usr/bin/ping&quot;,\n  &quot;Args&quot;: [&quot;-c&quot;, &quot;1&quot;, &quot;-W&quot;, &quot;1&quot;, &quot;example.com&quot;],\n  &quot;Stdout&quot;: &quot;.+1 received.+&quot;\n}\n# Example:\n{\n  &quot;Cmd&quot;: &quot;/bin/bash&quot;,\n  &quot;Args&quot;: [&quot;-c&quot;, &quot;/usr/bin/ping -c 1 -W 1 example.com&quot;]\n}' : '{&quot;data&quot;: { &quot;method&quot;: &quot;success&quot;, &quot;id&quot;: 148923 } }'"></textarea>
++                <small class="form-text text-muted">{{service.type === 'cmd' ? 'Configure the command to run.' : 'Insert a JSON string to send data to the endpoint.'}}</small>
+             </div>
+         </div>
+         <div v-if="service.type.match(/^(http)$/)" class="form-group row">
+@@ -154,11 +155,12 @@
+                 <small class="form-text text-muted">You can use plain text or insert <a target="_blank" href="https://regex101.com/r/I5bbj9/1">Regex</a> to validate the response</small>
+             </div>
+         </div>
+-        <div v-if="service.type.match(/^(http)$/)" class="form-group row">
++        <div v-if="service.type.match(/^(cmd|http)$/)" class="form-group row">
+             <label for="service_response_code" class="col-sm-4 col-form-label">{{ $t('expected_code') }}</label>
+             <div class="col-sm-8">
+-                <input v-model="service.expected_status" type="number" name="expected_status" class="form-control" placeholder="200" id="service_response_code">
+-                <small class="form-text text-muted">A status code of 200 is success, or view all the <a target="_blank" href="https://www.restapitutorial.com/httpstatuscodes.html">HTTP Status Codes</a></small>
++                <input v-model="service.expected_status" type="number" name="expected_status" class="form-control" :placeholder="service.type === 'cmd' ? '0' : '200'" id="service_response_code">
++                <small v-if="service.type === 'cmd'" class="form-text text-muted">An exit code of 0 is success</small>
++                <small v-if="service.type === 'http'" class="form-text text-muted">A status code of 200 is success, or view all the <a target="_blank" href="https://www.restapitutorial.com/httpstatuscodes.html">HTTP Status Codes</a></small>
+             </div>
+         </div>
+ 
+@@ -304,14 +306,14 @@
+               loading: false,
+               service: {
+                   name: "",
+-                  type: "http",
++                  type: "cmd",
+                   domain: "",
+                   group_id: 0,
+                   method: "GET",
+                   post_data: "",
+                   headers: "",
+                   expected: "",
+-                  expected_status: 200,
++                  expected_status: 0,
+                   port: 80,
+                   check_interval: 60,
+                   timeout: 15,
+@@ -361,7 +363,14 @@
+           this.use_tls = this.service.tls_cert !== ""
+         },
+         updateDefaultValues() {
+-            if (this.service.type === "grpc") {
++            if (this.service.type === "cmd") {
++                this.service.expected_status = 0
++                this.service.expected = ""
++                this.service.port = 0
++                this.service.verify_ssl = false
++                this.service.method = ""
++            }
++            else if (this.service.type === "grpc") {
+                 this.service.expected_status = 1
+                 this.service.expected = "status:SERVING"
+                 this.service.port = 50051
+diff --git a/handlers/services.go b/handlers/services.go
+index 2de29f4b9..240650856 100644
+--- a/handlers/services.go
++++ b/handlers/services.go
+@@ -8,6 +8,7 @@ import (
+ 	"github.com/statping-ng/statping-ng/types/hits"
+ 	"github.com/statping-ng/statping-ng/types/services"
+ 	"github.com/statping-ng/statping-ng/utils"
++	"math"
+ 	"net/http"
+ )
+ 
+@@ -55,6 +56,11 @@ func apiServiceHandler(r *http.Request) interface{} {
+ 		return err
+ 	}
+ 	srv = srv.UpdateStats()
++	// ExpectedStatus 0 is stored in database as MinInt32,
++	// to circumvent the problem of gorm not updating zero value.
++	if srv.Type == "cmd" && srv.ExpectedStatus == math.MinInt32 {
++		srv.ExpectedStatus = 0
++	}
+ 	return *srv
+ }
+ 
+@@ -64,7 +70,10 @@ func apiCreateServiceHandler(w http.ResponseWriter, r *http.Request) {
+ 		sendErrorJson(err, w, r)
+ 		return
+ 	}
+-
++	if err := service.Validate(); err != nil {
++		sendErrorJson(err, w, r)
++		return
++	}
+ 	if err := service.Create(); err != nil {
+ 		sendErrorJson(err, w, r)
+ 		return
+@@ -124,6 +133,10 @@ func apiServiceUpdateHandler(w http.ResponseWriter, r *http.Request) {
+ 		sendErrorJson(err, w, r)
+ 		return
+ 	}
++	if err := service.Validate(); err != nil {
++		sendErrorJson(err, w, r)
++		return
++	}
+ 	if err := service.Update(); err != nil {
+ 		sendErrorJson(err, w, r)
+ 		return
+@@ -272,6 +285,11 @@ func apiAllServicesHandler(r *http.Request) interface{} {
+ 		if !v.Public.Bool && !IsUser(r) {
+ 			continue
+ 		}
++		// ExpectedStatus 0 is stored in database as MinInt32,
++		// to circumvent the problem of gorm not updating zero value.
++		if v.Type == "cmd" && v.ExpectedStatus == math.MinInt32 {
++			v.ExpectedStatus = 0
++		}
+ 		srvs = append(srvs, v)
+ 	}
+ 	return srvs
+diff --git a/types/errors/common.go b/types/errors/common.go
+index 945a7da03..34a743443 100644
+--- a/types/errors/common.go
++++ b/types/errors/common.go
+@@ -22,6 +22,30 @@ var (
+ 		Err:  "ID needs to be an integer",
+ 		Code: 422,
+ 	}
++	ServiceNameMissing = &appError{
++		Err:  "missing service name",
++		Code: 422,
++	}
++	ServiceTypeMissing = &appError{
++		Err:  "missing service type",
++		Code: 422,
++	}
++	DomainNameMissing = &appError{
++		Err:  "missing domain name",
++		Code: 422,
++	}
++	CheckIntervalMissing = &appError{
++		Err:  "missing check interval",
++		Code: 422,
++	}
++	CommandConfigNotJson = &appError{
++		Err:  "command config not JSON",
++		Code: 422,
++	}
++	CommandConfigFieldCmdMissing = &appError{
++		Err:  "command config field \"Cmd\" missing",
++		Code: 422,
++	}
+ )
+ 
+ func Missing(object interface{}, id interface{}) error {
+diff --git a/types/services/command.go b/types/services/command.go
+new file mode 100644
+index 000000000..42c19270d
+--- /dev/null
++++ b/types/services/command.go
+@@ -0,0 +1,19 @@
++package services
++
++type CmdConfig struct {
++	Cmd     string
++	Args    []string
++	Dir     string
++	Stdin   string
++	Env     map[string]string
++	Stdout  string
++	Stderr  string
++}
++
++type CmdResult struct {
++	isErr       bool
++	errMsg      string
++	ExitCode    int
++	Stdout      string
++	Stderr      string
++}
+diff --git a/types/services/database.go b/types/services/database.go
+index 044842a94..750f67530 100644
+--- a/types/services/database.go
++++ b/types/services/database.go
+@@ -1,11 +1,13 @@
+ package services
+ 
+ import (
++	"encoding/json"
+ 	"fmt"
+ 	"github.com/statping-ng/statping-ng/database"
+ 	"github.com/statping-ng/statping-ng/types/errors"
+ 	"github.com/statping-ng/statping-ng/types/metrics"
+ 	"github.com/statping-ng/statping-ng/utils"
++	"math"
+ 	"sort"
+ )
+ 
+@@ -17,14 +19,32 @@ var (
+ 
+ func (s *Service) Validate() error {
+ 	if s.Name == "" {
+-		return errors.New("missing service name")
+-	} else if s.Domain == "" && s.Type != "static" {
+-		return errors.New("missing domain name")
++		return errors.ServiceNameMissing
++	} else if s.Domain == "" && s.Type != "cmd" && s.Type != "static" {
++		return errors.DomainNameMissing
+ 	} else if s.Type == "" {
+-		return errors.New("missing service type")
++		return errors.ServiceTypeMissing
+ 	} else if s.Interval == 0 && s.Type != "static" {
+-		return errors.New("missing check interval")
++		return errors.CheckIntervalMissing
+ 	}
++
++	if s.Type == "cmd" {
++		var cmdConfig CmdConfig
++		err := json.Unmarshal([]byte(s.PostData.String), &cmdConfig)
++		if err != nil {
++			return errors.CommandConfigNotJson
++		}
++		if cmdConfig.Cmd == "" {
++			return errors.CommandConfigFieldCmdMissing
++		}
++
++		// ExpectedStatus 0 is stored in database as MinInt32,
++		// to circumvent the problem of gorm not updating zero value.
++		if s.ExpectedStatus == 0 {
++			s.ExpectedStatus = math.MinInt32
++		}
++	}
++
+ 	return nil
+ }
+ 
+diff --git a/types/services/routine.go b/types/services/routine.go
+index 966c59993..eba6f0d97 100644
+--- a/types/services/routine.go
++++ b/types/services/routine.go
+@@ -4,14 +4,19 @@ import (
+ 	"bytes"
+ 	"context"
+ 	"crypto/tls"
++	"encoding/json"
+ 	"errors"
+ 	"fmt"
++	"math"
+ 	"net"
+ 	"net/http"
+ 	"net/smtp"
+ 	"net/url"
++	"os"
++	"os/exec"
+ 	"regexp"
+ 	"strings"
++	"syscall"
+ 	"time"
+ 
+ 	"github.com/prometheus/client_golang/prometheus"
+@@ -60,6 +65,157 @@ CheckLoop:
+ 	}
+ }
+ 
++func makeCmdEnv(oldEnvList []string, newEnvMap map[string]string) []string {
++	newEnvList := make([]string, len(newEnvMap))
++	i := 0
++	for k, v := range newEnvMap {
++		newEnvList[i] = fmt.Sprintf("%v=%v", k, v)
++		i += 1
++	}
++	return append(oldEnvList, newEnvList...)
++}
++
++func runCmd(s *Service, cmdConfig *CmdConfig, cmdResult *CmdResult) {
++	timeout := time.Duration(s.Timeout) * time.Second
++	ctx, cancel := context.WithTimeout(context.Background(), timeout)
++	defer cancel()
++
++	cmd := exec.CommandContext(ctx, cmdConfig.Cmd, cmdConfig.Args...)
++	if cmdConfig.Dir != "" {
++		cmd.Dir = cmdConfig.Dir
++	}
++	if cmdConfig.Env != nil {
++		cmd.Env = makeCmdEnv(os.Environ(), cmdConfig.Env)
++	}
++	if cmdConfig.Stdin != "" {
++		cmd.Stdin = bytes.NewBufferString(cmdConfig.Stdin)
++	}
++	var stdoutBuf bytes.Buffer
++	var stderrBuf bytes.Buffer
++	cmd.Stdout = &stdoutBuf
++	cmd.Stderr = &stderrBuf
++
++	err := cmd.Run()
++	cmdResult.Stderr = stderrBuf.String()
++	cmdResult.Stdout = stdoutBuf.String()
++	cmdResult.errMsg = ""
++	if err == nil {
++		cmdResult.isErr = false
++		cmdResult.ExitCode = 0
++	} else {
++		cmdResult.isErr = true
++		cmdResult.ExitCode = 255
++		exitErr, isExitErr := err.(*exec.ExitError)
++		if !isExitErr {
++			cmdResult.errMsg = err.Error()
++		} else {
++			waitStatus, isWaitStatus := exitErr.Sys().(syscall.WaitStatus)
++			if !isWaitStatus {
++				cmdResult.errMsg = err.Error()
++			} else {
++				cmdResult.isErr = false
++				cmdResult.ExitCode = waitStatus.ExitStatus()
++			}
++		}
++	}
++}
++
++func CheckCmd(s *Service, record bool) (*Service, error) {
++	defer s.updateLastCheck()
++	timer := prometheus.NewTimer(metrics.ServiceTimer(s.Name))
++	defer timer.ObserveDuration()
++
++	startTime := utils.Now()
++
++	var cmdConfig CmdConfig
++	err := json.Unmarshal([]byte(s.PostData.String), &cmdConfig)
++	if err != nil {
++		if record {
++			RecordFailure(s, "Command config not JSON", "json")
++		}
++		return s, err
++	}
++
++	var cmdResult CmdResult
++	runCmd(s, &cmdConfig, &cmdResult)
++	if cmdResult.isErr {
++		if record {
++			RecordFailure(s, fmt.Sprintf("Command execution error: %v", cmdResult.errMsg), "cmd")
++		}
++		return s, errors.New(fmt.Sprintf("command execution error: %v", cmdResult.errMsg))
++	}
++
++	cmdResultBytes, err := json.Marshal(cmdResult)
++	if err != nil {
++		if record {
++			RecordFailure(s, "Command result converting to json failed", "json")
++		}
++		return s, err
++	}
++
++	s.Latency = utils.Now().Sub(startTime).Microseconds()
++	s.LastResponse = string(cmdResultBytes[:])
++	s.LastStatusCode = cmdResult.ExitCode
++
++	metrics.Gauge("status_code", float64(cmdResult.ExitCode), s.Name)
++
++	exitCodeExpected := s.ExpectedStatus
++	// ExpectedStatus 0 is stored in database as MinInt32,
++	// to circumvent the problem of gorm not updating zero value.
++	if exitCodeExpected == math.MinInt32 {
++		exitCodeExpected = 0
++	}
++	if exitCodeExpected != cmdResult.ExitCode {
++		if record {
++			RecordFailure(s, fmt.Sprintf("Exit code did not match:\nExpected=%v\nActual=%v", exitCodeExpected, cmdResult.ExitCode), "status_code")
++		}
++		return s, err
++	}
++
++	if cmdConfig.Stdout != "" {
++		match, err := regexp.MatchString(cmdConfig.Stdout, cmdResult.Stdout)
++		if err != nil {
++			if record {
++				msg := fmt.Sprintf("Stdout regex is invalid: Regex=%v", cmdConfig.Stdout)
++				RecordFailure(s, msg, "regex")
++			}
++			return s, err
++		}
++		if !match {
++			if record {
++				msg := fmt.Sprintf("Stdout did not match:\nExpected=%v\nActual=%v", cmdConfig.Stdout, cmdResult.Stdout)
++				RecordFailure(s, msg, "regex")
++			}
++			return s, err
++		}
++	}
++
++	if cmdConfig.Stderr != "" {
++		match, err := regexp.MatchString(cmdConfig.Stderr, cmdResult.Stderr)
++		if err != nil {
++			if record {
++				msg := fmt.Sprintf("Stderr regex is invalid: Regex=%v", cmdConfig.Stderr)
++				RecordFailure(s, msg, "regex")
++			}
++			return s, err
++		}
++		if !match {
++			if record {
++				msg := fmt.Sprintf("Stderr did not match:\nExpected=%v\nActual=%v", cmdConfig.Stderr, cmdResult.Stderr)
++				RecordFailure(s, msg, "regex")
++			}
++			return s, err
++		}
++	}
++
++	s.Online = true
++	if record {
++		RecordSuccess(s)
++	}
++
++	return s, err
++}
++
+ func parseHost(s *Service) string {
+ 	if s.Type == "tcp" || s.Type == "udp" || s.Type == "grpc" || s.Type == "smtp" || s.Type == "imap" {
+ 		return s.Domain
+@@ -671,6 +827,8 @@ func RecordFailure(s *Service, issue, reason string) {
+ // if record param is set to true, it will add a record into the database.
+ func (s *Service) CheckService(record bool) {
+ 	switch s.Type {
++	case "cmd":
++		CheckCmd(s, record)
+ 	case "http":
+ 		CheckHttp(s, record)
+ 	case "tcp", "udp":

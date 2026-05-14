@@ -162,7 +162,7 @@ func (e *emailer) dialSend(email *emailOutgoing) error {
 		mailer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
-	m.SetAddressHeader("From", email.From, "Statping")
+	m.SetAddressHeader("From", email.From, "Monitoring Service")
 	m.SetHeader("To", email.To)
 	m.SetHeader("Subject", email.Subject)
 	m.SetBody("text/html", email.Template)

@@ -1,0 +1,99 @@
+--- ./Dockerfile.dist	2024-05-10 12:07:54.000000000 -0500
++++ ./Dockerfile	2024-10-25 21:41:40.593575166 -0500
+@@ -1,6 +1,10 @@
+-FROM node:16.14.0-alpine AS frontend
++FROM node:22.18.0-alpine AS frontend
+ LABEL maintainer="Statping-ng (https://github.com/statping-ng)"
+ ARG BUILDPLATFORM
++ENV NODE_OPTIONS --openssl-legacy-provider
++
++RUN apk update && apk upgrade --available
++
+ WORKDIR /statping
+ COPY ./frontend/package.json .
+ COPY ./frontend/yarn.lock .
+@@ -10,21 +14,18 @@
+ 
+ # Statping Golang BACKEND building from source
+ # Creates "/go/bin/statping" and "/usr/local/bin/sass" for copying
+-FROM golang:1.20.0-alpine AS backend
++FROM golang:1.25.0-alpine AS backend
+ LABEL maintainer="Statping-NG (https://github.com/statping-ng)"
+ ARG VERSION
+ ARG COMMIT
+ ARG BUILDPLATFORM
+ ARG TARGETARCH
++
++RUN apk update && apk upgrade --available
+ RUN apk add --no-cache libstdc++ gcc g++ make git autoconf \
+     libtool ca-certificates linux-headers wget curl jq && \
+     update-ca-certificates
+ 
+-WORKDIR /root
+-RUN git clone --depth 1 --branch 3.6.2 https://github.com/sass/sassc.git
+-RUN . sassc/script/bootstrap && make -C sassc -j4
+-# sassc binary: /root/sassc/bin/sassc
+-
+ WORKDIR /go/src/github.com/statping-ng/statping-ng
+ ADD go.mod go.sum ./
+ RUN go mod download
+@@ -40,19 +41,19 @@
+ COPY --from=frontend /statping/dist/ ./source/dist/
+ RUN go install github.com/GeertJohan/go.rice/rice@latest
+ RUN cd source && rice embed-go
+-RUN go build -a -ldflags "-s -w -extldflags -static -X main.VERSION=$VERSION -X main.COMMIT=$COMMIT" -o statping --tags "netgo linux" ./cmd
++RUN CGO_ENABLED=1 CGO_CFLAGS="-D_LARGEFILE64_SOURCE" go build -a -ldflags "-s -w -extldflags -static -X main.VERSION=$VERSION -X main.COMMIT=$COMMIT" -o statping --tags "netgo linux" ./cmd
+ RUN chmod a+x statping && mv statping /go/bin/statping
+ # /go/bin/statping - statping binary
+-# /root/sassc/bin/sassc - sass binary
++# sass binary supplied via distribution package
+ # /statping - Vue frontend (from frontend)
+ 
+ # Statping main Docker image that contains all required libraries
+ FROM alpine:latest
+ 
++RUN apk update && apk upgrade --available
+ RUN apk --no-cache add libgcc libstdc++ ca-certificates curl jq && update-ca-certificates
+ 
+ COPY --from=backend /go/bin/statping /usr/local/bin/
+-COPY --from=backend /root/sassc/bin/sassc /usr/local/bin/
+ COPY --from=backend /usr/local/share/ca-certificates /usr/local/share/
+ 
+ WORKDIR /app
+--- ./Makefile.dist	2024-05-10 12:07:54.000000000 -0500
++++ ./Makefile	2024-10-25 20:23:05.116172232 -0500
+@@ -1,19 +1,19 @@
+ VERSION=$(shell cat version.txt)
+-COMMIT=$(shell git rev-parse HEAD)
++COMMIT=$(shell cat commit.txt)
+ SIGN_KEY=B76D61FAA6DB759466E83D9964B9C6AAE2D55278
+ BINARY_NAME=statping
+ GOBUILD=go build -a
+-GOVERSION=1.17.8
+-NODE_VERSION=16.14.0
++GOVERSION=1.25.0
++NODE_VERSION=22.18.0
+ XGO=xgo -go $(GOVERSION) --dest=build
+ BUILDVERSION=-ldflags "-X main.VERSION=${VERSION} -X main.COMMIT=${COMMIT}"
+ TRVIS_SECRET=O3/2KTOV8krv+yZ1EB/7D1RQRe6NdpFUEJNJkMS/ollYqmz3x2mCO7yIgIJKCKguLXZxjM6CxJcjlCrvUwibL+8BBp7xJe4XFIOrjkPvbbVPry4HkFZCf2GfcUK6o4AByQ+RYqsW2F17Fp9KLQ1rL3OT3eLTwCAGKx3tlY8y+an43zkmo5dN64V6sawx26fh6XTfww590ey+ltgQTjf8UPNup2wZmGvMo9Hwvh/bYR/47bR6PlBh6vhlKWyotKf2Fz1Bevbu0zc35pee5YlsrHR+oSF+/nNd/dOij34BhtqQikUR+zQVy9yty8SlmneVwD3yOENvlF+8roeKIXb6P6eZnSMHvelhWpAFTwDXq2N3d/FIgrQtLxsAFTI3nTHvZgs6OoTd6dA0wkhuIGLxaL3FOeztCdxP5J/CQ9GUcTvifh5ArGGwYxRxQU6rTgtebJcNtXFISP9CEUR6rwRtb6ax7h6f1SbjUGAdxt+r2LbEVEk4ZlwHvdJ2DtzJHT5DQtLrqq/CTUgJ8SJFMkrJMp/pPznKhzN4qvd8oQJXygSXX/gz92MvoX0xgpNeLsUdAn+PL9KketfR+QYosBz04d8k05E+aTqGaU7FUCHPTLwlOFvLD8Gbv0zsC/PWgSLXTBlcqLEz5PHwPVHTcVzspKj/IyYimXpCSbvu1YOIjyc=
+-PUBLISH_BODY='{ "request": { "branch": "master", "message": "Homebrew update version v${VERSION}", "config": { "env": { "VERSION": "${VERSION}", "COMMIT": "$(TRAVIS_COMMIT)" } } } }'
++PUBLISH_BODY='{ "request": { "branch": "master", "message": "Homebrew update version v${VERSION}", "config": { "env": { "VERSION": "${VERSION}", "COMMIT": "${COMMIT}" } } } }'
+ TRAVIS_BUILD_CMD='{ "request": { "branch": "master", "message": "Compile master for Statping v${VERSION}", "config": { "merge_mode": "replace", "language": "go", "go": 1.17, "install": true, "sudo": "required", "services": ["docker"], "env": { "secure": "${TRVIS_SECRET}" }, "before_deploy": ["git config --local user.name \"hunterlong\"", "git config --local user.email \"info@socialeck.com\"", "git tag v$(VERSION) --force"], "deploy": [{ "provider": "releases", "api_key": "$$GITHUB_TOKEN", "file_glob": true, "file": "build/*", "skip_cleanup": true, "on": { "branch": "master" } }], "before_script": ["rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install stable", "nvm install 16.14.0", "nvm use 16.14.0 --default", "npm install -g sass yarn cross-env", "pip install --user awscli"], "script": ["make release"], "after_success": [], "after_deploy": ["make post-release"] } } }'
+ TEST_DIR=$(GOPATH)/src/github.com/statping-ng/statping-ng
+ PATH:=$(GOPATH)/bin:$(PATH)
+-OS = freebsd linux openbsd
+-ARCHS = 386 arm amd64 arm64
++OS = linux
++ARCHS = amd64
+ 
+ all: build-deps compile install test build
+ 
+@@ -282,7 +282,7 @@
+ 	docker push adamboutcher/statping-ng
+ 
+ docker-build-dev:
+-	docker build --build-arg VERSION=${VERSION} -t statping-ng/statping-ng:latest --no-cache -f Dockerfile .
++	docker build --build-arg VERSION=${VERSION} --build-arg COMMIT=${COMMIT} -t statping-ng/statping-ng:latest --no-cache -f Dockerfile .
+ 	docker tag statping-ng/statping-ng:latest statping-ng/statping-ng:dev-v${VERSION}
+ 
+ post-release: frontend-build upload_to_s3 publish-homebrew dockerhub

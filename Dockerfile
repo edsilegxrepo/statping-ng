@@ -1,6 +1,10 @@
-FROM node:16.14.0-alpine AS frontend
+FROM node:22.18.0-alpine AS frontend
 LABEL maintainer="Statping-ng (https://github.com/statping-ng)"
 ARG BUILDPLATFORM
+ENV NODE_OPTIONS --openssl-legacy-provider
+
+RUN apk update && apk upgrade --available
+
 WORKDIR /statping
 COPY ./frontend/package.json .
 COPY ./frontend/yarn.lock .
@@ -10,20 +14,17 @@ RUN yarn build && yarn cache clean
 
 # Statping Golang BACKEND building from source
 # Creates "/go/bin/statping" and "/usr/local/bin/sass" for copying
-FROM golang:1.20.0-alpine AS backend
+FROM golang:1.25.0-alpine AS backend
 LABEL maintainer="Statping-NG (https://github.com/statping-ng)"
 ARG VERSION
 ARG COMMIT
 ARG BUILDPLATFORM
 ARG TARGETARCH
+
+RUN apk update && apk upgrade --available
 RUN apk add --no-cache libstdc++ gcc g++ make git autoconf \
     libtool ca-certificates linux-headers wget curl jq && \
     update-ca-certificates
-
-WORKDIR /root
-RUN git clone --depth 1 --branch 3.6.2 https://github.com/sass/sassc.git
-RUN . sassc/script/bootstrap && make -C sassc -j4
-# sassc binary: /root/sassc/bin/sassc
 
 WORKDIR /go/src/github.com/statping-ng/statping-ng
 ADD go.mod go.sum ./
@@ -40,19 +41,19 @@ COPY utils ./utils
 COPY --from=frontend /statping/dist/ ./source/dist/
 RUN go install github.com/GeertJohan/go.rice/rice@latest
 RUN cd source && rice embed-go
-RUN go build -a -ldflags "-s -w -extldflags -static -X main.VERSION=$VERSION -X main.COMMIT=$COMMIT" -o statping --tags "netgo linux" ./cmd
+RUN CGO_ENABLED=1 CGO_CFLAGS="-D_LARGEFILE64_SOURCE" go build -a -ldflags "-s -w -extldflags -static -X main.VERSION=$VERSION -X main.COMMIT=$COMMIT" -o statping --tags "netgo linux" ./cmd
 RUN chmod a+x statping && mv statping /go/bin/statping
 # /go/bin/statping - statping binary
-# /root/sassc/bin/sassc - sass binary
+# sass binary supplied via distribution package
 # /statping - Vue frontend (from frontend)
 
 # Statping main Docker image that contains all required libraries
 FROM alpine:latest
 
+RUN apk update && apk upgrade --available
 RUN apk --no-cache add libgcc libstdc++ ca-certificates curl jq && update-ca-certificates
 
 COPY --from=backend /go/bin/statping /usr/local/bin/
-COPY --from=backend /root/sassc/bin/sassc /usr/local/bin/
 COPY --from=backend /usr/local/share/ca-certificates /usr/local/share/
 
 WORKDIR /app

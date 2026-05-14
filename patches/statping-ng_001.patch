@@ -1,0 +1,12 @@
+--- ./frontend/src/components/Index/Footer.vue.dist	2025-01-29 12:23:23.522434587 -0600
++++ ./frontend/src/components/Index/Footer.vue	2025-01-29 12:53:44.153545139 -0600
+@@ -6,8 +6,7 @@
+             <router-link class="links" :to="admin ? '/dashboard' : '/login'">{{$t('dashboard')}}</router-link>
+           </div>
+             <span class="font-1 mt-3">
+-            <a href="https://github.com/statping-ng/statping-ng" class="statping" target="_blank">
+-              Statping {{core.version}} made with <font-awesome-icon icon="heart" class="hlight font-1"/></a>
++              Statping {{core.version}}
+             </span>
+           </div>
+         </div>
