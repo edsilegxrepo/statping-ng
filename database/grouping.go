@@ -32,12 +32,17 @@ type GroupQuery struct {
 	Limit     int
 	Offset    int
 	FillEmpty bool
+	Table     string
 
 	db Database
 }
 
 func (b GroupQuery) Find(data interface{}) error {
-	return b.db.Order("id DESC").Find(data).Error()
+	order := "id DESC"
+	if b.Table != "" {
+		order = fmt.Sprintf("%s.id DESC", b.Table)
+	}
+	return b.db.Order(order).Find(data).Error()
 }
 
 func (b GroupQuery) Database() Database {
@@ -223,6 +228,7 @@ func ParseQueriesForTable(r *http.Request, o isObject, whereTable string) (*Grou
 		Offset:    int(offset),
 		FillEmpty: fill,
 		db:        q,
+		Table:     whereTable,
 	}
 
 	if query.Start.After(query.End) {

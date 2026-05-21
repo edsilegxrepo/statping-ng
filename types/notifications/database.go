@@ -7,7 +7,7 @@ import (
 var db database.Database
 
 func SetDB(database database.Database) {
-	db = database.Model(&Notification{})
+	db = database
 }
 
 func (n *Notification) Values() Values {

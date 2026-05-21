@@ -10,6 +10,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 var (
@@ -49,34 +50,37 @@ func (s *Service) Validate() error {
 	return nil
 }
 
-func (s *Service) BeforeCreate() error {
+func (s *Service) BeforeCreate(tx *gorm.DB) (err error) {
 	return s.Validate()
 }
 
-func (s *Service) BeforeUpdate() error {
+func (s *Service) BeforeUpdate(tx *gorm.DB) (err error) {
 	return s.Validate()
 }
 
-func (s *Service) AfterFind() {
-	db.Where("service = ?", s.Id).Find(&s.Incidents)
-	db.Where("service = ?", s.Id).Find(&s.Messages)
-	db.Where("service = ?", s.Id).Find(&s.Checkins)
+func (s *Service) AfterFind(tx *gorm.DB) (err error) {
+	tx.Where("service = ?", s.Id).Find(&s.Incidents)
+	tx.Where("service = ?", s.Id).Find(&s.Messages)
+	tx.Where("service = ?", s.Id).Find(&s.Checkins)
 	metrics.Query("service", "find")
+	return nil
 }
 
-func (s *Service) AfterCreate() error {
+func (s *Service) AfterCreate(tx *gorm.DB) (err error) {
 	s.prevOnline = true
 	allServices[s.Id] = s
 	metrics.Query("service", "create")
 	return nil
 }
 
-func (s *Service) AfterUpdate() {
+func (s *Service) AfterUpdate(tx *gorm.DB) (err error) {
 	metrics.Query("service", "update")
+	return nil
 }
 
-func (s *Service) AfterDelete() {
+func (s *Service) AfterDelete(tx *gorm.DB) (err error) {
 	metrics.Query("service", "delete")
+	return nil
 }
 
 func init() {
@@ -88,7 +92,7 @@ func Services() map[int64]*Service {
 }
 
 func SetDB(database database.Database) {
-	db = database.Model(&Service{})
+	db = database
 }
 
 func Find(id int64) (*Service, error) {

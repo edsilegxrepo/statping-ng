@@ -42,3 +42,5 @@ tmp
 services.yml
 statping.wiki
 statping_test
+version.txt
+commit.txt

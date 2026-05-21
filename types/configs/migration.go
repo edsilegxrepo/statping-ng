@@ -133,28 +133,26 @@ func (d *DbConfig) MigrateDatabase() error {
 		return err
 	}
 
-	d.Db.Table("core").Model(&core.Core{}).Update("version", utils.Params.GetString("VERSION"))
+	d.Db.Table("core").Model(&core.Core{}).Where("migration_id >= 0").Update("version", utils.Params.GetString("VERSION"))
 
 	log.Infoln("Statping Database Tables Migrated")
 
-	if err := d.Db.Model(&hits.Hit{}).AddIndex("idx_service_hit", "service").Error(); err != nil {
-		log.Errorln(err)
+	if !d.Db.HasIndex(&hits.Hit{}, "idx_service_hit_created_at") {
+		if err := d.Db.Model(&hits.Hit{}).AddIndex("idx_service_hit_created_at", "service", "created_at").Error(); err != nil {
+			log.Errorln(err)
+		}
 	}
 
-	if err := d.Db.Model(&hits.Hit{}).AddIndex("hit_created_at", "created_at").Error(); err != nil {
-		log.Errorln(err)
+	if !d.Db.HasIndex(&failures.Failure{}, "idx_service_fail_created_at") {
+		if err := d.Db.Model(&failures.Failure{}).AddIndex("idx_service_fail_created_at", "service", "created_at").Error(); err != nil {
+			log.Errorln(err)
+		}
 	}
 
-	if err := d.Db.Model(&failures.Failure{}).AddIndex("fail_created_at", "created_at").Error(); err != nil {
-		log.Errorln(err)
-	}
-
-	if err := d.Db.Model(&failures.Failure{}).AddIndex("idx_service_fail", "service").Error(); err != nil {
-		log.Errorln(err)
-	}
-
-	if err := d.Db.Model(&failures.Failure{}).AddIndex("idx_checkin_fail", "checkin").Error(); err != nil {
-		log.Errorln(err)
+	if !d.Db.HasIndex(&checkins.CheckinHit{}, "idx_checkin_hit_created_at") {
+		if err := d.Db.Model(&checkins.CheckinHit{}).AddIndex("idx_checkin_hit_created_at", "checkin", "created_at").Error(); err != nil {
+			log.Errorln(err)
+		}
 	}
 	log.Infoln("Database Indexes Created")
 

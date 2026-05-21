@@ -1,6 +1,10 @@
 package hits
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // Hit struct is a 'successful' ping or web response entry for a service.
 type Hit struct {
@@ -12,9 +16,9 @@ type Hit struct {
 }
 
 // BeforeCreate for Hit will set CreatedAt to UTC
-func (h *Hit) BeforeCreate() (err error) {
+func (h *Hit) BeforeCreate(tx *gorm.DB) (err error) {
 	if h.CreatedAt.IsZero() {
 		h.CreatedAt = time.Now().UTC()
 	}
-	return
+	return nil
 }

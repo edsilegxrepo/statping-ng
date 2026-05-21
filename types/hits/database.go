@@ -4,6 +4,7 @@ import (
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 var log = utils.Log
@@ -11,23 +12,27 @@ var log = utils.Log
 var db database.Database
 
 func SetDB(database database.Database) {
-	db = database.Model(&Hit{})
+	db = database
 }
 
-func (h *Hit) AfterFind() {
+func (h *Hit) AfterFind(tx *gorm.DB) (err error) {
 	metrics.Query("hit", "find")
+	return nil
 }
 
-func (h *Hit) AfterUpdate() {
+func (h *Hit) AfterUpdate(tx *gorm.DB) (err error) {
 	metrics.Query("hit", "update")
+	return nil
 }
 
-func (h *Hit) AfterDelete() {
+func (h *Hit) AfterDelete(tx *gorm.DB) (err error) {
 	metrics.Query("hit", "delete")
+	return nil
 }
 
-func (h *Hit) AfterCreate() {
+func (h *Hit) AfterCreate(tx *gorm.DB) (err error) {
 	metrics.Query("hit", "create")
+	return nil
 }
 
 func (h *Hit) Create() error {

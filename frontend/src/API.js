@@ -8,7 +8,7 @@ const tokenKey = "statping_auth";
 class Api {
   constructor() {
     this.version = "0.91.0";
-    this.commit = "892118d098885b5051571b6b1350c9baef83e9a1";
+    this.commit = "c2a7ae6e3cc0449d3f94d8f998e1317a15d42b72";
   }
 
   async oauth() {

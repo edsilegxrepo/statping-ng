@@ -6,12 +6,13 @@ import (
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 var db database.Database
 
 func SetDB(database database.Database) {
-	db = database.Model(&Core{})
+	db = database
 	c, err := Select()
 	if err != nil {
 		utils.Log.Errorln(err)
@@ -26,8 +27,9 @@ func SetDB(database database.Database) {
 	}
 }
 
-func (c *Core) AfterFind() {
+func (c *Core) AfterFind(tx *gorm.DB) (err error) {
 	metrics.Query("core", "find")
+	return nil
 }
 
 func Select() (*Core, error) {

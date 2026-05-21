@@ -18,38 +18,38 @@ func Samples() error {
 	log.Infoln("Inserting Sample Service Hits...")
 	records_1 := createHitsAt(1, -90*types.Day, 1*time.Minute)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 1", len(records_1)))
-	if err := db.GormDB().CreateInBatches(records_1, db.ChunkSize()).Error; err != nil {
+	if err := db.GormDB().Model(&Hit{}).CreateInBatches(records_1, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
 	// Statping - Statping Github
 	records_2 := createHitsAt(2, -90*types.Day, 1*time.Minute)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 2", len(records_2)))
-	if err := db.GormDB().CreateInBatches(records_2, db.ChunkSize()).Error; err != nil {
+	if err := db.GormDB().Model(&Hit{}).CreateInBatches(records_2, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
 	records_3 := createHitsAt(3, -60*types.Day, 1*time.Minute)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 3", len(records_3)))
-	if err := db.GormDB().CreateInBatches(records_3, db.ChunkSize()).Error; err != nil {
+	if err := db.GormDB().Model(&Hit{}).CreateInBatches(records_3, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
 	records_4 := createHitsAt(4, -90*types.Day, 1*time.Minute)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 4", len(records_4)))
-	if err := db.GormDB().CreateInBatches(records_4, db.ChunkSize()).Error; err != nil {
+	if err := db.GormDB().Model(&Hit{}).CreateInBatches(records_4, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
 	records_5 := createHitsAt(5, -15*types.Day, 1*time.Minute)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 5", len(records_5)))
-	if err := db.GormDB().CreateInBatches(records_5, db.ChunkSize()).Error; err != nil {
+	if err := db.GormDB().Model(&Hit{}).CreateInBatches(records_5, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
 	records_6 := createHitsAt(6, -75*types.Day, 1*time.Minute)
 	utils.Log.Infoln(fmt.Sprintf("Adding %v Hit records to service 6", len(records_6)))
-	if err := db.GormDB().CreateInBatches(records_6, db.ChunkSize()).Error; err != nil {
+	if err := db.GormDB().Model(&Hit{}).CreateInBatches(records_6, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
@@ -57,13 +57,13 @@ func Samples() error {
 	return nil
 }
 
-func createHitsAt(serviceID int64, daysToCreate time.Duration, createEvery time.Duration) []interface{} {
+func createHitsAt(serviceID int64, daysToCreate time.Duration, createEvery time.Duration) []*Hit {
 	log.Infoln(fmt.Sprintf("Adding Sample records to service #%d...", serviceID))
 
 	createdAt := utils.Now().Add(daysToCreate)
 	p := utils.NewPerlin(2, 2, 5, utils.Now().UnixNano())
 
-	var records []interface{}
+	var records []*Hit
 	for hi := 0.; hi <= SampleHits; hi++ {
 		latency := p.Noise1D(hi / 500)
 

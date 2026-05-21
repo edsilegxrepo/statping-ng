@@ -4,6 +4,7 @@ import (
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 var (
@@ -12,17 +13,18 @@ var (
 )
 
 func SetDB(database database.Database) {
-	db = database.Model(&Checkin{})
-	dbHits = database.Model(&CheckinHit{})
+	db = database
+	dbHits = database
 }
 
-func (c *Checkin) AfterFind() {
+func (c *Checkin) AfterFind(tx *gorm.DB) (err error) {
 	c.AllHits = c.Hits()
 	c.AllFailures = c.Failures().LastAmount(32)
 	if last := c.LastHit(); last != nil {
 		c.LastHitTime = last.CreatedAt
 	}
 	metrics.Query("checkin", "find")
+	return nil
 }
 
 func Find(id int64) (*Checkin, error) {

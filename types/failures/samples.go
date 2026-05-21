@@ -26,8 +26,8 @@ func Example() Failure {
 	}
 }
 
-func createFailuresForService(serviceID int64, start time.Time, end time.Time, chanceOfFailure float64) []interface{} {
-	var records []interface{}
+func createFailuresForService(serviceID int64, start time.Time, end time.Time, chanceOfFailure float64) []*Failure {
+	var records []*Failure
 	currentTime := start
 	for currentTime.Before(end) {
 		// Randomly decide if an outage should occur
@@ -90,15 +90,15 @@ func Samples() error {
 	chanceOfFailure := 0.0003 // very small chance of starting an outage at any given minute
 
 	// Only add failures to services 3 and 4
-	records_3 := createFailuresForService(3, utils.Now().Add(-60*types.Day), endDate, chanceOfFailure)
-	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 3", len(records_3)))
-	if err := db.GormDB().CreateInBatches(records_3, db.ChunkSize()).Error; err != nil {
+	records3 := createFailuresForService(3, utils.Now().Add(-60*types.Day), endDate, chanceOfFailure)
+	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 3", len(records3)))
+	if err := db.GormDB().Model(&Failure{}).CreateInBatches(records3, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}
-	records_4 := createFailuresForService(4, utils.Now().Add(-90*types.Day), endDate, chanceOfFailure)
-	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 4", len(records_4)))
-	if err := db.GormDB().CreateInBatches(records_4, db.ChunkSize()).Error; err != nil {
+	records4 := createFailuresForService(4, utils.Now().Add(-90*types.Day), endDate, chanceOfFailure)
+	utils.Log.Infoln(fmt.Sprintf("Adding %v Failure records to service 4", len(records4)))
+	if err := db.GormDB().Model(&Failure{}).CreateInBatches(records4, db.ChunkSize()).Error; err != nil {
 		log.Error(err)
 		return err
 	}

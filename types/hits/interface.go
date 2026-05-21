@@ -89,11 +89,11 @@ func (h Hitters) Avg() int64 {
 
 func AllHits(obj ColumnIDInterfacer) Hitters {
 	column, id := obj.HitsColumnID()
-	return Hitters{db.Where(fmt.Sprintf("%s = ?", column), id)}
+	return Hitters{db.Model(&Hit{}).Where(fmt.Sprintf("%s = ?", column), id)}
 }
 
 func Since(t time.Time, obj ColumnIDInterfacer) Hitters {
 	column, id := obj.HitsColumnID()
 	timestamp := db.FormatTime(t)
-	return Hitters{db.Where(fmt.Sprintf("%s = ? AND created_at > ?", column), id, timestamp)}
+	return Hitters{db.Model(&Hit{}).Where(fmt.Sprintf("%s = ? AND created_at > ?", column), id, timestamp)}
 }

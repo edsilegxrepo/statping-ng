@@ -5,6 +5,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 var (
@@ -14,8 +15,8 @@ var (
 )
 
 func SetDB(database database.Database) {
-	db = database.Model(&Incident{})
-	dbUpdate = database.Model(&IncidentUpdate{})
+	db = database
+	dbUpdate = database
 }
 
 func (i *Incident) Validate() error {
@@ -25,29 +26,33 @@ func (i *Incident) Validate() error {
 	return nil
 }
 
-func (i *Incident) BeforeUpdate() error {
+func (i *Incident) BeforeUpdate(tx *gorm.DB) (err error) {
 	return i.Validate()
 }
 
-func (i *Incident) BeforeCreate() error {
+func (i *Incident) BeforeCreate(tx *gorm.DB) (err error) {
 	return i.Validate()
 }
 
-func (i *Incident) AfterFind() {
-	db.Where("incident = ?", i.Id).Order("id DESC").Find(&i.Updates)
+func (i *Incident) AfterFind(tx *gorm.DB) (err error) {
+	tx.Where("incident = ?", i.Id).Order("id DESC").Find(&i.Updates)
 	metrics.Query("incident", "find")
+	return nil
 }
 
-func (i *Incident) AfterCreate() {
+func (i *Incident) AfterCreate(tx *gorm.DB) (err error) {
 	metrics.Query("incident", "create")
+	return nil
 }
 
-func (i *Incident) AfterUpdate() {
+func (i *Incident) AfterUpdate(tx *gorm.DB) (err error) {
 	metrics.Query("incident", "update")
+	return nil
 }
 
-func (i *Incident) AfterDelete() {
+func (i *Incident) AfterDelete(tx *gorm.DB) (err error) {
 	metrics.Query("incident", "delete")
+	return nil
 }
 
 func (i *IncidentUpdate) Validate() error {
@@ -57,28 +62,32 @@ func (i *IncidentUpdate) Validate() error {
 	return nil
 }
 
-func (i *IncidentUpdate) BeforeUpdate() error {
+func (i *IncidentUpdate) BeforeUpdate(tx *gorm.DB) (err error) {
 	return i.Validate()
 }
 
-func (i *IncidentUpdate) BeforeCreate() error {
+func (i *IncidentUpdate) BeforeCreate(tx *gorm.DB) (err error) {
 	return i.Validate()
 }
 
-func (i *IncidentUpdate) AfterFind() {
+func (i *IncidentUpdate) AfterFind(tx *gorm.DB) (err error) {
 	metrics.Query("incident_update", "find")
+	return nil
 }
 
-func (i *IncidentUpdate) AfterCreate() {
+func (i *IncidentUpdate) AfterCreate(tx *gorm.DB) (err error) {
 	metrics.Query("incident_update", "create")
+	return nil
 }
 
-func (i *IncidentUpdate) AfterUpdate() {
+func (i *IncidentUpdate) AfterUpdate(tx *gorm.DB) (err error) {
 	metrics.Query("incident_update", "update")
+	return nil
 }
 
-func (i *IncidentUpdate) AfterDelete() {
+func (i *IncidentUpdate) AfterDelete(tx *gorm.DB) (err error) {
 	metrics.Query("incident_update", "delete")
+	return nil
 }
 
 func FindUpdate(uid int64) (*IncidentUpdate, error) {

@@ -60,5 +60,5 @@ func (c *CheckinHit) Delete() error {
 }
 
 func AllCheckinHits(serviceId int64) CheckinHitters {
-	return CheckinHitters{dbHits.Joins("JOIN checkins ON checkins.id = checkin").Where("checkins.service = ?", serviceId).Order("checkin_hits.id DESC")}
+	return CheckinHitters{dbHits.Model(&CheckinHit{}).Joins("JOIN checkins ON checkins.id = checkin").Where("checkins.service = ?", serviceId).Order("checkin_hits.id DESC")}
 }

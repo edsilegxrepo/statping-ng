@@ -3,6 +3,7 @@ package users
 import (
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 func (u *User) Validate() error {
@@ -14,7 +15,7 @@ func (u *User) Validate() error {
 	return nil
 }
 
-func (u *User) BeforeDelete() error {
+func (u *User) BeforeDelete(tx *gorm.DB) (err error) {
 	if utils.Params.GetBool("DEMO_MODE") {
 		if u.Username == "admin" {
 			return errors.New("cannot delete admin in DEMO_MODE")
@@ -23,7 +24,7 @@ func (u *User) BeforeDelete() error {
 	return nil
 }
 
-func (u *User) BeforeCreate() error {
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if err := u.Validate(); err != nil {
 		return err
 	}
@@ -32,6 +33,6 @@ func (u *User) BeforeCreate() error {
 	return nil
 }
 
-func (u *User) BeforeUpdate() error {
+func (u *User) BeforeUpdate(tx *gorm.DB) (err error) {
 	return u.Validate()
 }

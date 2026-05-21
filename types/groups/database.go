@@ -7,6 +7,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 )
 
 func SetDB(database database.Database) {
-	db = database.Model(&Group{})
+	db = database
 }
 
 func (g *Group) Validate() error {
@@ -25,28 +26,32 @@ func (g *Group) Validate() error {
 	return nil
 }
 
-func (g *Group) AfterFind() {
+func (g *Group) AfterFind(tx *gorm.DB) (err error) {
 	metrics.Query("group", "find")
+	return nil
 }
 
-func (g *Group) AfterUpdate() {
+func (g *Group) AfterUpdate(tx *gorm.DB) (err error) {
 	metrics.Query("group", "update")
+	return nil
 }
 
-func (g *Group) AfterDelete() {
+func (g *Group) AfterDelete(tx *gorm.DB) (err error) {
 	metrics.Query("group", "delete")
+	return nil
 }
 
-func (g *Group) BeforeUpdate() error {
+func (g *Group) BeforeUpdate(tx *gorm.DB) (err error) {
 	return g.Validate()
 }
 
-func (g *Group) BeforeCreate() error {
+func (g *Group) BeforeCreate(tx *gorm.DB) (err error) {
 	return g.Validate()
 }
 
-func (g *Group) AfterCreate() {
+func (g *Group) AfterCreate(tx *gorm.DB) (err error) {
 	metrics.Query("group", "create")
+	return nil
 }
 
 func Find(id int64) (*Group, error) {

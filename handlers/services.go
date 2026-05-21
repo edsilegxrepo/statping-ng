@@ -157,7 +157,7 @@ func apiServiceDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupQuery, err := database.ParseQueries(r, service.AllHits())
+	groupQuery, err := database.ParseQueriesForTable(r, service.AllHits(), "hits")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -178,7 +178,7 @@ func apiServiceFailureDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupQuery, err := database.ParseQueries(r, service.AllFailures())
+	groupQuery, err := database.ParseQueriesForTable(r, service.AllFailures(), "failures")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -200,7 +200,7 @@ func apiServicePingDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupQuery, err := database.ParseQueries(r, service.AllHits())
+	groupQuery, err := database.ParseQueriesForTable(r, service.AllHits(), "hits")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -222,7 +222,7 @@ func apiServiceTimeDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupHits, err := database.ParseQueries(r, service.AllHits())
+	groupHits, err := database.ParseQueriesForTable(r, service.AllHits(), "hits")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -234,7 +234,7 @@ func apiServiceTimeDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupFailures, err := database.ParseQueries(r, service.AllFailures())
+	groupFailures, err := database.ParseQueriesForTable(r, service.AllFailures(), "failures")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -331,7 +331,7 @@ func apiServiceFailuresHandler(r *http.Request) interface{} {
 		return err
 	}
 	var fails []*failures.Failure
-	query, err := database.ParseQueries(r, service.AllFailures())
+	query, err := database.ParseQueriesForTable(r, service.AllFailures(), "failures")
 	if err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func apiServiceHitsHandler(r *http.Request) interface{} {
 		return err
 	}
 	var hts []*hits.Hit
-	query, err := database.ParseQueries(r, service.AllHits())
+	query, err := database.ParseQueriesForTable(r, service.AllHits(), "hits")
 	if err != nil {
 		return err
 	}

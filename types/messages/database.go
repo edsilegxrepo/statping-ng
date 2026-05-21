@@ -12,7 +12,7 @@ var (
 )
 
 func SetDB(database database.Database) {
-	db = database.Model(&Message{})
+	db = database
 }
 
 func Find(id int64) (*Message, error) {

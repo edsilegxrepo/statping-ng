@@ -4,6 +4,7 @@ import (
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/metrics"
 	"github.com/statping-ng/statping-ng/utils"
+	"gorm.io/gorm"
 )
 
 var (
@@ -12,23 +13,27 @@ var (
 )
 
 func SetDB(database database.Database) {
-	db = database.Model(&User{})
+	db = database
 }
 
-func (u *User) AfterFind() {
+func (u *User) AfterFind(tx *gorm.DB) (err error) {
 	metrics.Query("user", "find")
+	return nil
 }
 
-func (u *User) AfterCreate() {
+func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	metrics.Query("user", "create")
+	return nil
 }
 
-func (u *User) AfterUpdate() {
+func (u *User) AfterUpdate(tx *gorm.DB) (err error) {
 	metrics.Query("user", "update")
+	return nil
 }
 
-func (u *User) AfterDelete() {
+func (u *User) AfterDelete(tx *gorm.DB) (err error) {
 	metrics.Query("user", "delete")
+	return nil
 }
 
 func Find(id int64) (*User, error) {
@@ -57,9 +62,6 @@ func All() []*User {
 
 func (u *User) Create() error {
 	q := db.Create(u)
-	if db.Error() == nil {
-		log.Warnf("User #%d (%s) has been created", u.Id, u.Username)
-	}
 	return q.Error()
 }
 

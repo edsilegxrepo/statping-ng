@@ -65,6 +65,7 @@ type Database interface {
 	Rollback() Database
 	RecordNotFound() bool
 	HasTable(value interface{}) bool
+	HasIndex(value interface{}, name string) bool
 	AutoMigrate(values ...interface{}) Database
 	Association(column string) *gorm.Association
 	Preload(query string, args ...interface{}) Database
@@ -175,7 +176,7 @@ type Db struct {
 
 // Openw is a drop-in replacement for Open()
 func Openw(dialect string, args ...interface{}) (db Database, err error) {
-	if dialect == "sqlite" {
+	if dialect == "sqlite" || dialect == "" {
 		dialect = "sqlite3"
 	}
 	dsn := args[0].(string)
@@ -253,9 +254,13 @@ func (it *Db) wrap(db *gorm.DB) Database {
 }
 
 func Wrap(db *gorm.DB) Database {
+	name := "sqlite3"
+	if db != nil && db.Dialector != nil {
+		name = db.Dialector.Name()
+	}
 	return &Db{
 		Database: db,
-		Type:     db.Name(),
+		Type:     name,
 		ReadOnly: utils.Params.GetBool("READ_ONLY"),
 	}
 }
@@ -487,6 +492,10 @@ func (it *Db) RecordNotFound() bool {
 
 func (it *Db) HasTable(value interface{}) bool {
 	return it.Database.Migrator().HasTable(value)
+}
+
+func (it *Db) HasIndex(value interface{}, name string) bool {
+	return it.Database.Migrator().HasIndex(value, name)
 }
 
 func (it *Db) AutoMigrate(values ...interface{}) Database {

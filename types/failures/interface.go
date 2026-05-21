@@ -62,11 +62,11 @@ func (f Failurer) DeleteAll() error {
 
 func AllFailures(obj ColumnIDInterfacer) Failurer {
 	column, id := obj.FailuresColumnID()
-	return Failurer{db.Where(fmt.Sprintf("%s = ?", column), id)}
+	return Failurer{db.Model(&Failure{}).Where(fmt.Sprintf("%s = ?", column), id)}
 }
 
 func Since(t time.Time, obj ColumnIDInterfacer) Failurer {
 	column, id := obj.FailuresColumnID()
 	timestamp := db.FormatTime(t)
-	return Failurer{db.Where(fmt.Sprintf("%s = ? AND created_at > ?", column), id, timestamp)}
+	return Failurer{db.Model(&Failure{}).Where(fmt.Sprintf("%s = ? AND created_at > ?", column), id, timestamp)}
 }
