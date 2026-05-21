@@ -66,6 +66,7 @@ type Database interface {
 	RecordNotFound() bool
 	HasTable(value interface{}) bool
 	HasIndex(value interface{}, name string) bool
+	HasConstraint(value interface{}, name string) bool
 	AutoMigrate(values ...interface{}) Database
 	Association(column string) *gorm.Association
 	Preload(query string, args ...interface{}) Database
@@ -94,6 +95,7 @@ type Database interface {
 	FormatTime(t time.Time) string
 	ParseTime(t string) (time.Time, error)
 	DbType() string
+	Db() Database
 	GormDB() *gorm.DB
 	ChunkSize() int
 }
@@ -127,6 +129,14 @@ func (it *Db) GormDB() *gorm.DB {
 
 func (it *Db) DbType() string {
 	return it.Type
+}
+
+func DbType() string {
+	return database.DbType()
+}
+
+func (it *Db) Db() Database {
+	return it
 }
 
 func Close(db Database) error {
@@ -496,6 +506,10 @@ func (it *Db) HasTable(value interface{}) bool {
 
 func (it *Db) HasIndex(value interface{}, name string) bool {
 	return it.Database.Migrator().HasIndex(value, name)
+}
+
+func (it *Db) HasConstraint(value interface{}, name string) bool {
+	return it.Database.Migrator().HasConstraint(value, name)
 }
 
 func (it *Db) AutoMigrate(values ...interface{}) Database {

@@ -157,7 +157,7 @@ func apiServiceDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupQuery, err := database.ParseQueriesForTable(r, service.AllHits(), "hits")
+	groupQuery, err := database.ParseQueriesForTable(r, service.AllHits().Db().Select("latency, created_at"), "hits")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -178,7 +178,7 @@ func apiServiceFailureDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupQuery, err := database.ParseQueriesForTable(r, service.AllFailures(), "failures")
+	groupQuery, err := database.ParseQueriesForTable(r, service.AllFailures().Db().Select("created_at"), "failures")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -200,7 +200,7 @@ func apiServicePingDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupQuery, err := database.ParseQueriesForTable(r, service.AllHits(), "hits")
+	groupQuery, err := database.ParseQueriesForTable(r, service.AllHits().Db().Select("ping_time, created_at"), "hits")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -211,7 +211,6 @@ func apiServicePingDataHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(err, w, r)
 		return
 	}
-
 	returnJson(objs, w, r)
 }
 
@@ -222,19 +221,19 @@ func apiServiceTimeDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupHits, err := database.ParseQueriesForTable(r, service.AllHits(), "hits")
+	groupHits, err := database.ParseQueriesForTable(r, service.AllHits().Db().Select("created_at"), "hits")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}
 
-	groupCheckinHits, err := database.ParseQueriesForTable(r, service.AllCheckinHits(), "checkin_hits")
+	groupCheckinHits, err := database.ParseQueriesForTable(r, service.AllCheckinHits().Db().Select("checkin_hits.created_at"), "checkin_hits")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}
 
-	groupFailures, err := database.ParseQueriesForTable(r, service.AllFailures(), "failures")
+	groupFailures, err := database.ParseQueriesForTable(r, service.AllFailures().Db().Select("created_at"), "failures")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return

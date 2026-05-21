@@ -33,14 +33,28 @@ func Maintenance() {
 
 		log.Infof("Deleting hits older than %s", deleteAfter.String())
 		deleteAllSince("hits", deleteAfter)
+
+		log.Infof("Deleting checkin hits older than %s", deleteAfter.String())
+		deleteAllSince("checkin_hits", deleteAfter)
 	}
 }
 
-// deleteAllSince will delete a specific table's records based on a time.
+// deleteAllSince will delete a specific table's records based on a time using batches.
 func deleteAllSince(table string, date time.Time) {
-	sql := fmt.Sprintf("DELETE FROM %s WHERE created_at < '%s'", table, database.FormatTime(date))
-	log.Info(sql)
-	if err := database.Exec(sql).Error(); err != nil {
-		log.WithField("query", sql).Errorln(err)
+	formattedDate := database.FormatTime(date)
+	for {
+		sql := fmt.Sprintf("DELETE FROM %s WHERE created_at < '%s' LIMIT 5000", table, formattedDate)
+		if database.DbType() == "postgres" || database.DbType() == "sqlite3" || database.DbType() == "sqlite" {
+			sql = fmt.Sprintf("DELETE FROM %s WHERE id IN (SELECT id FROM %s WHERE created_at < '%s' LIMIT 5000)", table, table, formattedDate)
+		}
+		q := database.Exec(sql)
+		if err := q.Error(); err != nil {
+			log.WithField("query", sql).Errorln(err)
+			break
+		}
+		if q.RowsAffected() == 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }

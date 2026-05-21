@@ -6,6 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/source"
+	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/utils"
 	_ "gorm.io/driver/mysql"
@@ -154,7 +155,52 @@ func (d *DbConfig) MigrateDatabase() error {
 			log.Errorln(err)
 		}
 	}
+
+	// High-volume created_at indexes for maintenance cleanup performance
+	if !d.Db.HasIndex(&hits.Hit{}, "idx_hits_created_at") {
+		if err := d.Db.Model(&hits.Hit{}).AddIndex("idx_hits_created_at", "created_at").Error(); err != nil {
+			log.Errorln(err)
+		}
+	}
+	if !d.Db.HasIndex(&failures.Failure{}, "idx_failures_created_at") {
+		if err := d.Db.Model(&failures.Failure{}).AddIndex("idx_failures_created_at", "created_at").Error(); err != nil {
+			log.Errorln(err)
+		}
+	}
+	if !d.Db.HasIndex(&checkins.CheckinHit{}, "idx_checkin_hits_created_at") {
+		if err := d.Db.Model(&checkins.CheckinHit{}).AddIndex("idx_checkin_hits_created_at", "created_at").Error(); err != nil {
+			log.Errorln(err)
+		}
+	}
 	log.Infoln("Database Indexes Created")
+
+	if database.DbType() == "postgres" || database.DbType() == "mysql" {
+		log.Infoln("Adding Foreign Key Constraints...")
+		if !d.Db.HasConstraint(&hits.Hit{}, "fk_hits_service") {
+			d.Db.Exec("ALTER TABLE hits ADD CONSTRAINT fk_hits_service FOREIGN KEY (service) REFERENCES services(id) ON DELETE CASCADE")
+		}
+		if !d.Db.HasConstraint(&failures.Failure{}, "fk_failures_service") {
+			d.Db.Exec("ALTER TABLE failures ADD CONSTRAINT fk_failures_service FOREIGN KEY (service) REFERENCES services(id) ON DELETE CASCADE")
+		}
+		if !d.Db.HasConstraint(&failures.Failure{}, "fk_failures_checkin") {
+			d.Db.Exec("ALTER TABLE failures ADD CONSTRAINT fk_failures_checkin FOREIGN KEY (checkin) REFERENCES checkins(id) ON DELETE CASCADE")
+		}
+		if !d.Db.HasConstraint(&checkins.CheckinHit{}, "fk_checkin_hits_checkin") {
+			d.Db.Exec("ALTER TABLE checkin_hits ADD CONSTRAINT fk_checkin_hits_checkin FOREIGN KEY (checkin) REFERENCES checkins(id) ON DELETE CASCADE")
+		}
+		if !d.Db.HasConstraint(&checkins.Checkin{}, "fk_checkins_service") {
+			d.Db.Exec("ALTER TABLE checkins ADD CONSTRAINT fk_checkins_service FOREIGN KEY (service) REFERENCES services(id) ON DELETE CASCADE")
+		}
+		if !d.Db.HasConstraint(&incidents.Incident{}, "fk_incidents_service") {
+			d.Db.Exec("ALTER TABLE incidents ADD CONSTRAINT fk_incidents_service FOREIGN KEY (service) REFERENCES services(id) ON DELETE CASCADE")
+		}
+		if !d.Db.HasConstraint(&incidents.IncidentUpdate{}, "fk_incidents_updates_incident") {
+			d.Db.Exec("ALTER TABLE incident_updates ADD CONSTRAINT fk_incidents_updates_incident FOREIGN KEY (incident) REFERENCES incidents(id) ON DELETE CASCADE")
+		}
+		if !d.Db.HasConstraint(&messages.Message{}, "fk_messages_service") {
+			d.Db.Exec("ALTER TABLE messages ADD CONSTRAINT fk_messages_service FOREIGN KEY (service) REFERENCES services(id) ON DELETE CASCADE")
+		}
+	}
 
 	return nil
 }

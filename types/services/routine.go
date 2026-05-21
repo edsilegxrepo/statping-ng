@@ -56,7 +56,6 @@ CheckLoop:
 			break CheckLoop
 		case <-time.After(s.SleepDuration):
 			s.CheckService(record)
-			s.UpdateStats()
 			s.Checkpoint = s.Checkpoint.Add(s.Duration())
 			if !s.Online {
 				s.SleepDuration = s.Duration()
