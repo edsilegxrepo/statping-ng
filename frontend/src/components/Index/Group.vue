@@ -3,12 +3,12 @@
         <h4 v-if="group.name !== 'Empty Group'" class="group_header mb-3 mt-4">{{group.name}}</h4>
         <div class="list-group online_list mb-4">
 
-            <div v-for="(service, index) in services" v-bind:key="index" class="list-group-item list-group-item-action position-relative">
-                <router-link class="no-decoration font-3 stretched-link" :to="serviceLink(service)">
+            <router-link tag="div" v-for="(service, index) in services" v-bind:key="index" class="list-group-item list-group-item-action" :to="serviceLink(service)" style="cursor: pointer;">
+                <span class="no-decoration font-3 text-dark font-weight-bold">
                   {{service.name}}
                   <MessagesIcon :messages="service.messages"/>
-                </router-link>
-                <span class="badge text-uppercase float-right" style="position: relative; z-index: 2;" :class="{'bg-success': service.online, 'bg-danger': !service.online }">
+                </span>
+                <span class="badge text-uppercase float-right" :class="{'bg-success': service.online, 'bg-danger': !service.online }">
                     {{service.online ? $t('online') : $t('offline')}}
                 </span>
 
@@ -16,7 +16,7 @@
 
                 <IncidentsBlock :service="service"/>
 
-            </div>
+            </router-link>
 
         </div>
     </div>

@@ -1,8 +1,8 @@
 <template>
-    <div class="dashboard_card card mb-4 position-relative" :class="{'offline-card': !service.online}">
+    <router-link tag="div" :to="serviceLink(service)" class="dashboard_card card mb-4" style="cursor: pointer;" :class="{'offline-card': !service.online}">
         <div class="card-header pb-1">
             <h6 v-observe-visibility="setVisible">
-                <router-link :to="serviceLink(service)" class="no-decoration stretched-link">{{service.name}}</router-link>
+                <span class="no-decoration font-weight-bold text-dark">{{service.name}}</span>
                 <span class="badge float-right text-uppercase" :class="{'badge-success': service.online, 'badge-danger': !service.online}">
                     {{service.online ? $t('online') : $t('offline')}}
                 </span>
@@ -22,7 +22,7 @@
                 </div>
               </div>
         </div>
-        <div class="card-footer" style="position: relative; z-index: 2;">
+        <div class="card-footer">
 
           <div class="row">
           <div class="col-5 pr-0">
@@ -31,13 +31,13 @@
 
             <div class="col-7 pr-2 pl-0">
               <div class="btn-group float-right">
-                  <button @click="$router.push({path: `/dashboard/service/${service.id}/incidents`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('incidents'))" class="btn btn-sm btn-white incident">
+                  <button @click.stop="$router.push({path: `/dashboard/service/${service.id}/incidents`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('incidents'))" class="btn btn-sm btn-white incident">
                     <font-awesome-icon icon="bullhorn"/>
                   </button>
-                  <button @click="$router.push({path: `/dashboard/service/${service.id}/checkins`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('checkins'))" class="btn btn-sm btn-white checkins">
+                  <button @click.stop="$router.push({path: `/dashboard/service/${service.id}/checkins`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('checkins'))" class="btn btn-sm btn-white checkins">
                     <font-awesome-icon icon="calendar-check"/>
                   </button>
-                  <button @click="$router.push({path: `/dashboard/service/${service.id}/failures`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('failures'))" class="btn btn-sm btn-white failures">
+                  <button @click.stop="$router.push({path: `/dashboard/service/${service.id}/failures`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('failures'))" class="btn btn-sm btn-white failures">
                     <font-awesome-icon icon="exclamation-triangle"/>
                     <span v-if="service.stats.failures !== 0" class="badge badge-danger ml-1">{{service.stats.failures}}</span>
                   </button>
@@ -53,7 +53,7 @@
             {{failure.issue}}
         </span>
 
-    </div>
+    </router-link>
 </template>
 
 <script>
