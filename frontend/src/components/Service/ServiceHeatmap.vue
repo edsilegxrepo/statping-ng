@@ -59,6 +59,7 @@
             grid: {
               show: true,
               borderColor: '#dee2e6', // Subtle, clean grey border
+              position: 'front', // Draw the grid lines ON TOP of the solid boxes so they are visible
               xaxis: {
                 lines: {
                   show: false // No vertical lines
