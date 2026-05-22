@@ -32,9 +32,7 @@
               enabled: true,
               custom: function({series, seriesIndex, dataPointIndex, w}) {
                 const failures = series[seriesIndex][dataPointIndex];
-                // if (failures < 0) { return  `100% Uptime` }
-                if (failures > 0) { return  `Failures: ${failures}` }
-                // else return `No Data`;
+                if (failures > 0) { return  `<div class="p-2"><strong>${failures} Failures</strong><br><small>Click to view hourly breakdown</small></div>` }
                 return ''
               }
             },
@@ -48,6 +46,15 @@
               toolbar: {
                 show: false
               },
+              events: {
+                dataPointSelection: (event, chartContext, config) => {
+                    const monthName = config.w.globals.seriesNames[config.seriesIndex];
+                    const day = config.dataPointIndex + 1;
+                    const year = new Date().getFullYear();
+                    const selectedDate = new Date(`${monthName} ${day}, ${year}`);
+                    this.$emit('selected-day', selectedDate);
+                }
+              }
             },
             colors: [ "#cb3d36" ],
             xaxis: {

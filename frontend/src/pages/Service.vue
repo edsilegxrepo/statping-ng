@@ -82,14 +82,21 @@
 
             </div>
 
-            <div class="card text-black-50 bg-white mb-0" style="height: 380px">
+            <div class="card text-black-50 bg-white mb-0">
                 <div class="card-header text-capitalize">Service Failures</div>
                 <div class="card-body">
                     <div class="service-chart-heatmap mb-4">
-                        <ServiceHeatmap :service="service"/>
+                        <ServiceHeatmap :service="service" @selected-day="showDailyBreakdown"/>
                     </div>
                 </div>
             </div>
+
+            <DailyFailuresChart 
+              v-if="selectedDay" 
+              :service="service" 
+              :selectedDate="selectedDay" 
+              @close="selectedDay = null"
+            />
 
         </div>
     </div>
@@ -105,6 +112,7 @@
   const ServiceTopStats = () => import(/* webpackChunkName: "service" */ '@/components/Service/ServiceTopStats')
   const AdvancedChart = () => import(/* webpackChunkName: "service" */ '@/components/Service/AdvancedChart')
   const FailuresBarChart = () => import(/* webpackChunkName: "service" */ '@/components/Service/FailuresBarChart')
+  const DailyFailuresChart = () => import(/* webpackChunkName: "service" */ '@/components/Service/DailyFailuresChart')
 
   import flatPickr from 'vue-flatpickr-component';
   import 'flatpickr/dist/flatpickr.css';
@@ -145,7 +153,8 @@ export default {
         ServiceFailures,
         MessageBlock,
         Checkin,
-        flatPickr
+        flatPickr,
+        DailyFailuresChart
     },
     data() {
         return {
@@ -163,6 +172,7 @@ export default {
             end_time: this.endOf('today'),
             timedata: null,
             load_timedata: false,
+            selectedDay: null,
             dailyRangeOpts: {
                 chart: {
                     height: 500,
@@ -467,6 +477,9 @@ export default {
       },
       async chartFailures(start=0, end=99999999999) {
         this.failures_data = await Api.service_failures_data(this.service.id, this.params.start, this.params.end, this.group, true)
+      },
+      showDailyBreakdown(date) {
+        this.selectedDay = date;
       }
     }
 }
