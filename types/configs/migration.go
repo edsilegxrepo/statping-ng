@@ -40,18 +40,33 @@ func (d *DbConfig) ResetCore() error {
 	if err := d.CreateDatabase(); err != nil {
 		return errors.Wrap(err, "error creating database")
 	}
-	if _, err := CreateAdminUser(); err != nil {
+	allSecrets := make(map[string]string)
+
+	adminPass, err := CreateAdminUser()
+	if err != nil {
 		return errors.Wrap(err, "error creating default admin user")
 	}
+	allSecrets[utils.Params.GetString("ADMIN_USER")] = adminPass
+
 	if err := core.Samples(); err != nil {
 		return errors.Wrap(err, "error added core details")
 	}
 	if utils.Params.GetBool("SAMPLE_DATA") {
 		log.Infoln("Adding Sample Data")
-		if _, err := TriggerSamples(); err != nil {
+		creds, err := TriggerSamples()
+		if err != nil {
 			return errors.Wrap(err, "error adding sample data")
 		}
+		for k, v := range creds {
+			allSecrets[k] = v
+		}
 		utils.Params.Set("SAMPLE_DATA", false)
+	}
+
+	if len(allSecrets) > 0 {
+		if err := SaveSecrets(allSecrets); err != nil {
+			log.Errorf("failed to save statping.secrets: %v", err)
+		}
 	}
 	return nil
 }
