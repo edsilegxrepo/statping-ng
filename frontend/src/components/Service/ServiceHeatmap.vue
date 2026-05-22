@@ -56,6 +56,16 @@
                 }
               }
             },
+            grid: {
+              show: true,
+              borderColor: '#f1f1f1',
+              padding: {
+                top: 10,
+                right: 20,
+                bottom: 10,
+                left: 20
+              }
+            },
             colors: [ "#cb3d36" ],
             xaxis: {
               tickAmount: 30,
