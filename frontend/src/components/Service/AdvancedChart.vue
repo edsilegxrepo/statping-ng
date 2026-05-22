@@ -163,12 +163,21 @@
                 let pingText = this.humanTime(pingVal);
                 let failText = failuresVal ? `${failuresVal} Failures` : '0 Failures';
                 
-                return `<div class="chartmarker p-2">
-                  <div class="mb-1"><strong>Latency:</strong> ${latText}</div>
-                  <div class="mb-1"><strong>Ping:</strong> ${pingText}</div>
-                  <div class="mb-1 text-danger"><strong>Failures:</strong> <strong>${failText}</strong></div>
-                  <hr class="my-1" style="border-top: 1px solid #eee;">
-                  <div class="text-muted" style="font-size: 10px;">${dt}</div>
+                return `<div class="p-3" style="background: rgba(255, 255, 255, 0.98); border: 1px solid #dee2e6; border-radius: 6px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12); min-width: 190px; pointer-events: none;">
+                  <div style="margin-bottom: 6px; font-size: 12px; color: #495057; display: flex; justify-content: space-between;">
+                    <span><strong>Latency:</strong></span>
+                    <span style="color: #f1771f; font-weight: bold; margin-left: 10px;">${latText}</span>
+                  </div>
+                  <div style="margin-bottom: 6px; font-size: 12px; color: #495057; display: flex; justify-content: space-between;">
+                    <span><strong>Ping:</strong></span>
+                    <span style="color: #48d338; font-weight: bold; margin-left: 10px;">${pingText}</span>
+                  </div>
+                  <div style="margin-bottom: 6px; font-size: 12px; color: #495057; display: flex; justify-content: space-between;">
+                    <span><strong>Failures:</strong></span>
+                    <span style="color: #e01a1a; font-weight: bold; margin-left: 10px;">${failText}</span>
+                  </div>
+                  <hr style="margin: 8px 0; border: 0; border-top: 1px solid #e9ecef;">
+                  <div style="font-size: 10px; color: #6c757d; text-align: right;">${dt}</div>
                 </div>`
               },
               fixed: {
