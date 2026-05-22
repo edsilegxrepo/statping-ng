@@ -82,12 +82,12 @@
 
             </div>
 
-            <div class="card text-black-50 bg-white mb-0">
+            <div class="card text-black-50 bg-white mb-4">
                 <div class="card-header text-capitalize d-flex justify-content-between">
                   <span>{{ $t('service_failures') }}</span>
                   <small class="text-muted">Last 6 Months</small>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body">
                     <div class="service-chart-heatmap mt-2">
                         <ServiceHeatmap :service="service" @selected-day="showDailyBreakdown"/>
                     </div>

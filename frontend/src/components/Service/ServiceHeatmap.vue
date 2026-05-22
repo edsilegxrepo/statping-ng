@@ -1,5 +1,5 @@
 <template>
-    <apexchart v-if="ready" width="100%" height="280" type="heatmap" :options="plotOptions" :series="series"></apexchart>
+    <apexchart v-if="ready" width="100%" height="350" type="heatmap" :options="plotOptions" :series="series"></apexchart>
 </template>
 
 <script>
@@ -102,10 +102,12 @@
       methods: {
           async chartHeatmap() {
             const monthData = []
-            let start = this.firstDayOfMonth(this.now())
+            let current = this.firstDayOfMonth(this.now())
 
             for (let i=0; i<6; i++) {
-                monthData.push(await this.heatmapData(this.addMonths(start, -i), this.lastDayOfMonth(this.addMonths(start, -i))))
+                let monthStart = this.addMonths(current, -i)
+                let monthEnd = this.lastDayOfMonth(monthStart)
+                monthData.push(await this.heatmapData(monthStart, monthEnd))
             }
 
             this.series = monthData
