@@ -35,6 +35,7 @@
             <label class="col-sm-4 col-form-label">{{$t('confirm_password')}}</label>
             <div class="col-sm-8">
                 <input v-model="user.confirm_password" type="password" id="password_confirm" class="form-control" placeholder="Confirm Password" required>
+                <span v-if="passTooWeak" class="small text-danger d-block">Password must be at least 30 characters and include uppercase, lowercase, and digits</span>
             </div>
         </div>
         <div v-if="user.api_key" class="form-group row">
@@ -52,7 +53,7 @@
             <div class="col-sm-12">
                 <LoadButton
                         class="btn-primary"
-                        :disabled="loading || !user.username || !user.email || !user.password || !user.confirm_password || (user.password !== user.confirm_password)"
+                        :disabled="loading || !canSubmit"
                         :action="saveUser"
                         :label="user.id ? $t('user_update'): $t('user_create')"
                 />
@@ -82,6 +83,7 @@
   data () {
     return {
       loading: false,
+      passTooWeak: false,
       user: {
         username: "",
         admin: false,
@@ -90,6 +92,22 @@
         confirm_password: "",
         api_key: "",
       }
+    }
+  },
+  computed: {
+    canSubmit() {
+        const u = this.user;
+        const hasUpper = /[A-Z]/.test(u.password);
+        const hasLower = /[a-z]/.test(u.password);
+        const hasDigit = /[0-9]/.test(u.password);
+        const isStrong = u.password && u.password.length >= 30 && hasUpper && hasLower && hasDigit;
+        const match = u.password === u.confirm_password;
+        
+        if (u.id) {
+            if (!u.password) return u.username && u.email;
+            return u.username && u.email && isStrong && match;
+        }
+        return u.username && u.email && u.password && isStrong && match;
     }
   },
   watch: {
@@ -104,6 +122,15 @@
     },
     async saveUser() {
       this.loading = true
+      const hasUpper = /[A-Z]/.test(this.user.password);
+      const hasLower = /[a-z]/.test(this.user.password);
+      const hasDigit = /[0-9]/.test(this.user.password);
+      if (this.user.password && (this.user.password.length < 30 || !hasUpper || !hasLower || !hasDigit)) {
+          this.passTooWeak = true
+          this.loading = false
+          return
+      }
+      this.passTooWeak = false
       if (this.user.id) {
         await this.updateUser()
       } else {

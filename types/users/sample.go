@@ -2,33 +2,40 @@ package users
 
 import (
 	"github.com/statping-ng/statping-ng/types/null"
+	"github.com/statping-ng/statping-ng/utils"
 )
 
-func Samples() error {
+func Samples() (map[string]string, error) {
 	log.Infoln("Inserting Sample Users...")
+	pass1 := utils.RandomString(32)
+	pass2 := utils.RandomString(32)
+
 	u2 := &User{
 		Username: "testadmin",
-		Password: "password123",
+		Password: pass1,
 		Email:    "info@betatude.com",
 		Scopes:   "admin",
 		Admin:    null.NewNullBool(true),
 	}
 
 	if err := u2.Create(); err != nil {
-		return err
+		return nil, err
 	}
 
 	u3 := &User{
 		Username: "testadmin2",
-		Password: "password123",
+		Password: pass2,
 		Email:    "info@adminhere.com",
 		Scopes:   "admin",
 		Admin:    null.NewNullBool(true),
 	}
 
 	if err := u3.Create(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return map[string]string{
+		"testadmin":  pass1,
+		"testadmin2": pass2,
+	}, nil
 }

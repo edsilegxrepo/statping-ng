@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"strings"
+	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -47,4 +49,28 @@ func RandomString(n int) string {
 		res[i] = characterRunes[int(b[i])%len(characterRunes)]
 	}
 	return string(res)
+}
+
+// IsHash returns true if the string is already a bcrypt hash
+func IsHash(password string) bool {
+	return strings.HasPrefix(password, "$2a$") || strings.HasPrefix(password, "$2b$") || strings.HasPrefix(password, "$2y$")
+}
+
+// ComplexityCheck returns true if the password meets the complexity requirements:
+// 30 characters minimum, with upper, lower, and digits.
+func ComplexityCheck(password string) bool {
+	if len(password) < 30 {
+		return false
+	}
+	var hasUpper, hasLower, hasDigit bool
+	for _, r := range password {
+		if unicode.IsUpper(r) {
+			hasUpper = true
+		} else if unicode.IsLower(r) {
+			hasLower = true
+		} else if unicode.IsDigit(r) {
+			hasDigit = true
+		}
+	}
+	return hasUpper && hasLower && hasDigit
 }

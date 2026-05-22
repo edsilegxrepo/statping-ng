@@ -81,14 +81,17 @@ func Connect(configs *DbConfig, retry bool) error {
 
 // CreateAdminUser will create the default admin user "admin", "admin", or use the
 // environment variables ADMIN_USER, ADMIN_PASSWORD, and ADMIN_EMAIL if set.
-func CreateAdminUser() error {
+func CreateAdminUser() (string, error) {
 	adminUser := utils.Params.GetString("ADMIN_USER")
 	adminPass := utils.Params.GetString("ADMIN_PASSWORD")
 	adminEmail := utils.Params.GetString("ADMIN_EMAIL")
 
-	if adminUser == "" || adminPass == "" {
+	if adminUser == "" {
 		adminUser = "admin"
-		adminPass = "admin"
+	}
+
+	if adminPass == "" {
+		adminPass = utils.RandomString(32)
 	}
 
 	admin := &users.User{
@@ -100,8 +103,8 @@ func CreateAdminUser() error {
 	}
 
 	if err := admin.Create(); err != nil {
-		return errors.Wrap(err, "error creating admin")
+		return "", errors.Wrap(err, "error creating admin")
 	}
 
-	return nil
+	return adminPass, nil
 }

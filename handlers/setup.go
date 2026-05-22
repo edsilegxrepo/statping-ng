@@ -14,6 +14,14 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
+func setupRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	if core.App.Setup {
+		http.Redirect(w, r, basePath, http.StatusFound)
+		return
+	}
+	baseHandler(w, r)
+}
+
 func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if core.App.Setup {
@@ -31,8 +39,8 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PostForm.Get("project")
 	description := r.PostForm.Get("description")
 	domain := r.PostForm.Get("domain")
-	sendNews, _ := strconv.ParseBool(r.PostForm.Get("newsletter"))
 	sendReports, _ := strconv.ParseBool(r.PostForm.Get("send_reports"))
+	sampleData, _ := strconv.ParseBool(r.PostForm.Get("sample_data"))
 
 	log.WithFields(utils.ToFields(core.App, confgs)).Debugln("new configs posted")
 
@@ -48,7 +56,10 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var adminPass string
 	exists := confgs.Db.HasTable("core")
+	var samplePasses map[string]string
+
 	if !exists {
 		if err := confgs.DropDatabase(); err != nil {
 			sendErrorJson(err, w, r)
@@ -60,15 +71,20 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := configs.CreateAdminUser(); err != nil {
+		adminPass, err = configs.CreateAdminUser()
+		if err != nil {
 			sendErrorJson(err, w, r)
 			return
 		}
 
-		if err := configs.TriggerSamples(); err != nil {
-			sendErrorJson(err, w, r)
-			return
+		if sampleData {
+			samplePasses, err = configs.TriggerSamples()
+			if err != nil {
+				sendErrorJson(err, w, r)
+				return
+			}
 		}
+		confgs.SampleData = false
 	}
 
 	if err = confgs.MigrateDatabase(); err != nil {
@@ -102,13 +118,6 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 
 	core.App = c
 
-	if sendNews {
-		log.Infof("Sending email address %s to newsletter server", confgs.Email)
-		if err := registerNews(confgs.Email, confgs.Domain); err != nil {
-			log.Errorln(err)
-		}
-	}
-
 	log.Infoln("Initializing new Statping instance")
 
 	if _, err := services.SelectAllServices(true); err != nil {
@@ -126,9 +135,13 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	out := struct {
 		Message string            `json:"message"`
 		Config  *configs.DbConfig `json:"config"`
+		Admin   string            `json:"admin_password,omitempty"`
+		Samples map[string]string `json:"sample_passwords,omitempty"`
 	}{
 		"success",
 		confgs,
+		adminPass,
+		samplePasses,
 	}
 	returnJson(out, w, r)
 }

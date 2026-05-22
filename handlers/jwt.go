@@ -19,7 +19,8 @@ type JwtClaim struct {
 func removeJwtToken(w http.ResponseWriter) {
 	c := http.Cookie{
 		Name:     cookieName,
-		Value:    "",
+		Value:    "deleted",
+		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
 		Path:     "/",
 		HttpOnly: true,

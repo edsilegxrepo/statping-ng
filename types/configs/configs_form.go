@@ -27,8 +27,9 @@ func LoadConfigForm(r *http.Request) (*DbConfig, error) {
 	email := g("email")
 	language := g("language")
 	reports, _ := strconv.ParseBool(g("send_reports"))
+	sampleData, _ := strconv.ParseBool(g("sample_data"))
 
-	if project == "" || username == "" || password == "" {
+	if project == "" || username == "" || password == "" || email == "" {
 		err := errors.New("Missing required elements on setup form")
 		return nil, err
 	}
@@ -44,6 +45,7 @@ func LoadConfigForm(r *http.Request) (*DbConfig, error) {
 	p.Set("DESCRIPTION", description)
 	p.Set("LANGUAGE", language)
 	p.Set("ALLOW_REPORTS", reports)
+	p.Set("SAMPLE_DATA", sampleData)
 	p.Set("ADMIN_USER", username)
 	p.Set("ADMIN_PASSWORD", password)
 	p.Set("ADMIN_EMAIL", email)
@@ -64,6 +66,7 @@ func LoadConfigForm(r *http.Request) (*DbConfig, error) {
 		Location:     utils.Directory,
 		Language:     language,
 		AllowReports: reports,
+		SampleData:   sampleData,
 	}
 
 	return confg, nil

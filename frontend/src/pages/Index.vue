@@ -3,6 +3,23 @@
 
       <Header/>
 
+      <div v-if="loaded && groups.length === 0 && services.length === 0" class="row mt-5 mb-5">
+        <div class="col-12 mt-5 mb-4 text-center">
+            <div class="card shadow-sm border-0 py-5">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <font-awesome-icon icon="info-circle" class="text-muted" size="4x"/>
+                    </div>
+                    <h3 class="font-weight-bold mb-3">No Services Monitored</h3>
+                    <p class="text-muted mb-4">There is currently no data available to display. Please access the Dashboard to create and manage your services.</p>
+                    <router-link to="/dashboard" class="btn btn-primary px-5 shadow-sm">
+                        Access Dashboard
+                    </router-link>
+                </div>
+            </div>
+        </div>
+      </div>
+
       <div v-if="!loaded" class="row mt-5 mb-5">
         <div class="col-12 mt-5 mb-2 text-center">
           <font-awesome-icon icon="circle-notch" class="text-dim" size="2x" spin/>
@@ -79,7 +96,7 @@ export default {
         }
       },
       loaded() {
-        return this.$store.getters.services.length !== 0
+        return this.$store.getters.hasPublicData
       },
         core() {
           return this.$store.getters.core

@@ -11,7 +11,16 @@ func (u *User) Validate() error {
 		return errors.New("username is empty")
 	} else if u.Password == "" {
 		return errors.New("password is empty")
+	} else if u.Email == "" {
+		return errors.New("email is empty")
 	}
+
+	if !utils.IsHash(u.Password) {
+		if !utils.ComplexityCheck(u.Password) {
+			return errors.New("password must be at least 30 characters and include uppercase, lowercase, and digits")
+		}
+	}
+
 	return nil
 }
 

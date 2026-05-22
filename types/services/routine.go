@@ -48,13 +48,16 @@ func ServiceCheckQueue(s *Service, record bool) {
 	s.Checkpoint = utils.Now()
 	s.SleepDuration = (time.Duration(s.Id) * 100) * time.Millisecond
 
+	timer := time.NewTimer(s.SleepDuration)
+	defer timer.Stop()
+
 CheckLoop:
 	for {
 		select {
 		case <-s.Running:
 			log.Infoln(fmt.Sprintf("Stopping service: %v", s.Name))
 			break CheckLoop
-		case <-time.After(s.SleepDuration):
+		case <-timer.C:
 			s.CheckService(record)
 			s.Checkpoint = s.Checkpoint.Add(s.Duration())
 			if !s.Online {
@@ -62,6 +65,10 @@ CheckLoop:
 			} else {
 				s.SleepDuration = time.Until(s.Checkpoint)
 			}
+			if s.SleepDuration < 0 {
+				s.SleepDuration = 0
+			}
+			timer.Reset(s.SleepDuration)
 		}
 	}
 }
@@ -234,10 +241,13 @@ func dnsCheck(s *Service) (int64, error) {
 	var err error
 	t1 := utils.Now()
 	host := parseHost(s)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.Timeout)*time.Second)
+	defer cancel()
+
 	if s.Type == "tcp" || s.Type == "udp" || s.Type == "grpc" || s.Type == "smtp" {
-		_, err = net.LookupHost(host)
+		_, err = utils.DNSResolver.LookupHost(ctx, host)
 	} else {
-		_, err = net.LookupIP(host)
+		_, err = utils.DNSResolver.LookupIP(ctx, "ip", host)
 	}
 	if err != nil {
 		return 0, err

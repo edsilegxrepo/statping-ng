@@ -94,6 +94,7 @@ func Router() *mux.Router {
 
 	// API Routes
 	r.Handle("/api", scoped(apiIndexHandler))
+	r.Handle("/setup", http.HandlerFunc(setupRedirectHandler)).Methods("GET")
 	r.Handle("/api/setup", http.HandlerFunc(processSetupHandler)).Methods("POST")
 	api.Handle("/api/login", http.HandlerFunc(apiLoginHandler)).Methods("POST")
 	api.Handle("/api/logout", http.HandlerFunc(logoutHandler))

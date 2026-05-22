@@ -46,35 +46,7 @@
                         </a>
                     </div>
 
-                    <h6 class="mt-4 mb-3 text-muted">Statping-ng {{$t('links')}}</h6>
-
-                    <a href="https://statping-ng.github.io" class="mb-2 font-2 text-decoration-none text-muted">
-                        <font-awesome-icon icon="globe" class="mr-3"/> Statping-ng
-                    </a>
-
-                    <a href="https://github.com/statping-ng/statping-ng/wiki" class="mb-2 font-2 text-decoration-none text-muted">
-                        <font-awesome-icon icon="question" class="mr-3"/> {{$t('docs')}}
-                    </a>
-
-                    <a href="https://github.com/statping-ng/statping-ng/wiki/API" class="mb-2 font-2 text-decoration-none text-muted">
-                        <font-awesome-icon icon="laptop" class="mr-2"/> API {{$t('docs')}}
-                    </a>
-
-                    <a href="https://raw.githubusercontent.com/statping-ng/statping-ng/stable/CHANGELOG.md" class="mb-2 font-2 text-decoration-none text-muted">
-                        <font-awesome-icon icon="book" class="mr-3"/> {{$t('changelog')}}
-                    </a>
-
-                    <a href="https://github.com/statping-ng/statping-ng" class="mb-2 font-2 text-decoration-none text-muted">
-                        <font-awesome-icon icon="code-branch" class="mr-3"/> {{$t('repo')}}
-                    </a>
-
-                  <span class="small text-dim text-center mt-5">Statping-ng {{core.version}}<br>
-                    <a class="small text-muted no-decoration" v-if="core.commit" v-bind:href="`https://github.com/statping-ng/statping-ng/commit/${core.commit}`">{{core.commit.slice(0,8)}}</a>
-                  </span>
-
-
                 </div>
-
             </div>
             <div class="col-md-9 col-sm-12">
 
@@ -225,12 +197,17 @@
           this.$store.commit("setModal", modal)
         },
         async logout () {
-          await Api.logout()
+          try {
+            await Api.logout()
+          } catch (e) {
+            console.error("Backend logout failed", e)
+          }
           this.$store.commit('setHasAllData', false)
           this.$store.commit('setToken', null)
           this.$store.commit('setAdmin', false)
           this.$store.commit('setUser', false)
-          // this.$cookies.remove("statping_auth")
+          this.$store.commit('setLoggedIn', false)
+          this.$cookies.remove("statping_auth")
           await this.$router.push('/logout')
         }
       }

@@ -69,7 +69,7 @@ After=network-online.target
 Type=simple
 Restart=always
 Environment="STATPING_DIR=` + dir + `"
-Environment="ALLOW_REPORTS=true"
+Environment="ALLOW_REPORTS=false"
 ExecStart=` + binPath + ` --port=` + utils.ToString(port) + `
 WorkingDirectory=` + dir + `
 

@@ -26,9 +26,20 @@ type Sampler interface {
 	Samples() []database.DbObject
 }
 
-func TriggerSamples() error {
-	return createSamples(
-		core.Samples,
+func TriggerSamples() (map[string]string, error) {
+	creds := make(map[string]string)
+
+	// Admin user samples
+	c, err := users.Samples()
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range c {
+		creds[k] = v
+	}
+
+	// Other samples
+	err = createSamples(
 		services.Samples,
 		messages.Samples,
 		checkins.Samples,
@@ -38,6 +49,7 @@ func TriggerSamples() error {
 		hits.Samples,
 		incidents.Samples,
 	)
+	return creds, err
 }
 
 func createSamples(sm ...SamplerFunc) error {

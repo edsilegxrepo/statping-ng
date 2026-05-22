@@ -24,6 +24,68 @@ import (
 // Directory returns the current path or the STATPING_DIR environment variable
 var Directory string
 
+var (
+	transports = make(map[string]*http.Transport)
+	transMu    sync.RWMutex
+	DNSResolver = &net.Resolver{
+		PreferGo: true,
+	}
+)
+
+func getTransport(verifySSL bool, customTLS *tls.Config) *http.Transport {
+	key := fmt.Sprintf("ssl-%v", verifySSL)
+	if customTLS != nil {
+		// Use a more stable key than pointer for custom TLS
+		key = fmt.Sprintf("ssl-%v-tls-%p", verifySSL, customTLS)
+	}
+
+	// Double-checked locking with RLock for high-concurrency performance
+	transMu.RLock()
+	if t, ok := transports[key]; ok {
+		transMu.RUnlock()
+		return t
+	}
+	transMu.RUnlock()
+
+	transMu.Lock()
+	defer transMu.Unlock()
+
+	// Final check inside write lock
+	if t, ok := transports[key]; ok {
+		return t
+	}
+
+	t := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: !verifySSL,
+			Renegotiation:      tls.RenegotiateOnceAsClient,
+		},
+		DisableKeepAlives:     false,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			dialer := &net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+				Resolver:  DNSResolver,
+			}
+			return dialer.DialContext(ctx, network, addr)
+		},
+	}
+
+	if customTLS != nil {
+		t.TLSClientConfig.RootCAs = customTLS.RootCAs
+		t.TLSClientConfig.Certificates = customTLS.Certificates
+	}
+
+	transports[key] = t
+	return t
+}
+
 func NotNumber(val string) bool {
 	_, err := strconv.ParseInt(val, 10, 64)
 	return err != nil
@@ -187,10 +249,20 @@ func HttpRequest(endpoint, method string, contentType interface{}, headers []str
 	if method == "" {
 		method = "GET"
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
 	t1 := Now()
-	if req, err = http.NewRequest(method, endpoint, body); err != nil {
+	if req, err = http.NewRequestWithContext(ctx, method, endpoint, body); err != nil {
 		return nil, nil, err
 	}
+
+	// Anti-caching headers (CRITICAL for monitoring)
+	req.Header.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	req.Header.Set("Pragma", "no-cache")
+	req.Header.Set("Expires", "0")
+
 	// set default headers so end user can overwrite them if needed
 	req.Header.Set("User-Agent", "Statping-ng")
 	req.Header.Set("Statping-Version", Params.GetString("VERSION"))
@@ -215,36 +287,22 @@ func HttpRequest(endpoint, method string, contentType interface{}, headers []str
 		}
 	}
 
-	var resp *http.Response
-	dialer := &net.Dialer{
-		Timeout:   timeout,
-		KeepAlive: timeout,
-	}
-
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: !verifySSL, // #nosec G402
-			ServerName:         verifyHost,
-			Renegotiation:      tls.RenegotiateOnceAsClient,
-		},
-		DisableKeepAlives:     true,
-		ResponseHeaderTimeout: timeout,
-		TLSHandshakeTimeout:   timeout,
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			// redirect all connections to host specified in url
-			return dialer.DialContext(ctx, network, addr)
-		},
-	}
-	if customTLS != nil {
-		transport.TLSClientConfig.RootCAs = customTLS.RootCAs
-		transport.TLSClientConfig.Certificates = customTLS.Certificates
-	}
+	transport := getTransport(verifySSL, customTLS)
 	client := &http.Client{
 		Transport: transport,
 		Timeout:   timeout,
 	}
 
+	// For custom Host headers, we need to handle SNI carefully.
+	// If verifyHost (from Host header) differs from URL Host, we use a one-off transport
+	// to ensure thread-safety and correct SNI without polluting the shared pool.
+	if verifyHost != req.URL.Hostname() {
+		tr := transport.Clone()
+		tr.TLSClientConfig.ServerName = verifyHost
+		client.Transport = tr
+	}
+
+	var resp *http.Response
 	if req.Header.Get("Redirect") != "true" {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -256,7 +314,11 @@ func HttpRequest(endpoint, method string, contentType interface{}, headers []str
 		return nil, resp, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	contents, err := io.ReadAll(resp.Body)
+
+	// Bounded Reader: Prevent OOM by capping response size to 10MB
+	// Most status pages/APIs are < 100KB, 10MB is very safe.
+	limitReader := io.LimitReader(resp.Body, 10*1024*1024)
+	contents, err := io.ReadAll(limitReader)
 	if err != nil {
 		return nil, resp, err
 	}

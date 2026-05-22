@@ -100,7 +100,8 @@ func TestDelete(t *testing.T) {
 }
 
 func TestSamples(t *testing.T) {
-	require.Nil(t, Samples())
+	_, err := Samples()
+	require.Nil(t, err)
 	assert.Len(t, All(), 3)
 }
 

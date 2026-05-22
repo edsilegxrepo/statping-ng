@@ -18,6 +18,7 @@ const NotFound = () => import(/* webpackChunkName: "index" */ '@/pages/NotFound'
 const Importer = () => import(/* webpackChunkName: "index" */ '@/components/Dashboard/Importer')
 
 import VueRouter from "vue-router";
+import Vue from "vue";
 import Api from "./API";
 import store from "./store"
 
@@ -32,6 +33,18 @@ const routes = [
     component: Setup,
     meta: {
       title: 'Statping Setup',
+    },
+    beforeEnter: async (to, from, next) => {
+        try {
+            const core = await Api.core()
+            if (core.setup) {
+                next('/')
+            } else {
+                next()
+            }
+        } catch (e) {
+            next()
+        }
     }
   },
   {
@@ -48,34 +61,39 @@ const routes = [
     },
     beforeEnter: async (to, from, next) => {
       if (to.matched.some(record => record.meta.requiresAuth)) {
-        if (to.path !== '/login') {
-          if(store.getters.loggedIn) {
-            next()
-            return
-          }
-          const token = $cookies.get('statping_auth')
-          if (!token) {
-            next('/login')
-            return
-          }
-          try {
-            const jwt = await Api.check_token(token)
-            store.commit('setAdmin', jwt.admin)
-            if (jwt.admin) {
-              store.commit('setLoggedIn', true)
-              store.commit('setUser', true)
-            } else {
-              store.commit('setLoggedIn', false)
-              next('/login')
-              return
-            }
-          } catch (e) {
-            console.error(e)
-            next('/login')
-            return
-          }
+        if (to.path === '/login') {
+          next()
+          return
         }
-        next()
+
+        if (store.getters.loggedIn) {
+          next()
+          return
+        }
+
+        const token = Vue.$cookies.get('statping_auth')
+        if (!token) {
+          store.commit('setLoggedIn', false)
+          next('/login')
+          return
+        }
+
+        try {
+          const jwt = await Api.check_token(token)
+          if (jwt && jwt.admin) {
+            store.commit('setAdmin', true)
+            store.commit('setLoggedIn', true)
+            store.commit('setUser', true)
+            next()
+          } else {
+            store.commit('setLoggedIn', false)
+            next('/login')
+          }
+        } catch (e) {
+          console.error("Auth check failed:", e)
+          store.commit('setLoggedIn', false)
+          next('/login')
+        }
       } else {
         next()
       }
