@@ -3,7 +3,7 @@
   <div class="text-center" style="width:210px" v-if="!loaded">
     <font-awesome-icon icon="circle-notch" class="h-25 text-dim" spin/>
   </div>
-  <apexchart v-else width="100%" height="50" type="bar" :options="chartOpts" :series="data"></apexchart>
+  <apexchart v-else width="100%" height="80" type="bar" :options="chartOpts" :series="data"></apexchart>
   </div>
 </template>
 
@@ -57,31 +57,27 @@ export default {
           curve: 'straight'
         },
         fill: {
-          opacity: 0.4,
+          opacity: 0.8,
         },
         yaxis: {
           min: 0,
-          max: 1,
+          forceNiceScale: true
         },
         plotOptions: {
           bar: {
             colors: {
               ranges: [{
-                from: 0,
-                to: 1,
-                color: '#cfcfcf'
-              }, {
-                from: 2,
-                to: 3,
-                color: '#f58e49'
+                from: 1,
+                to: 2,
+                color: '#f58e49' // Orange for minor
               }, {
                 from: 3,
-                to: 20,
-                color: '#e01a1a'
+                to: 10,
+                color: '#e01a1a' // Red for major
               }, {
-                from: 21,
+                from: 11,
                 to: Infinity,
-                color: '#9b0909'
+                color: '#9b0909' // Dark Red for critical spikes
               }]
             },
           },
@@ -97,7 +93,7 @@ export default {
             if ((dataPointIndex-12) * -1 === 0) {
               ago = `Current hour`
             }
-            return `<div class="chart_list_tooltip font-2 mb-4">${val-1} Failures<br>${dt}</div>`
+            return `<div class="chart_list_tooltip font-2 mb-4">${val} Failures<br>${dt}</div>`
           },
           fixed: {
             enabled: true,
@@ -150,7 +146,7 @@ export default {
       data.forEach((d, k) => {
         arr.push({
           x: d.timeframe,
-          y: d.amount+1,
+          y: d.amount,
         })
       })
       return arr
