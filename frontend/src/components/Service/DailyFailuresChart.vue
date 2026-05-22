@@ -10,7 +10,7 @@
       <div v-if="loading" class="text-center py-5">
         <font-awesome-icon icon="circle-notch" size="3x" spin />
       </div>
-      <apexchart v-else width="100%" height="250" type="line" :options="chartOptions" :series="series"></apexchart>
+      <apexchart v-else width="100%" height="250" type="bar" :options="chartOptions" :series="series"></apexchart>
     </div>
   </div>
 </template>
@@ -40,11 +40,39 @@ export default {
           toolbar: { show: false },
           zoom: { enabled: false }
         },
-        stroke: {
-          curve: 'smooth',
-          width: 3
+        plotOptions: {
+          bar: {
+            colors: {
+              ranges: [
+                {
+                  from: 0,
+                  to: 0,
+                  color: '#28a745' // Green for Healthy
+                },
+                {
+                  from: 1,
+                  to: 10,
+                  color: '#98EE99' // Light Green for Minor Failures
+                },
+                {
+                  from: 11,
+                  to: 30,
+                  color: '#FFEB3B' // Yellow for Moderate Failures
+                },
+                {
+                  from: 31,
+                  to: 60,
+                  color: '#FF9800' // Orange for Major Failures
+                },
+                {
+                  from: 61,
+                  to: 1000000,
+                  color: '#F44336' // Red for Critical Failures
+                }
+              ]
+            }
+          }
         },
-        colors: ['#e01a1a'],
         xaxis: {
           type: 'category',
           categories: Array.from({length: 24}, (_, i) => `${i}:00`),
@@ -54,9 +82,6 @@ export default {
           title: { text: 'Failures' },
           min: 0,
           forceNiceScale: true
-        },
-        markers: {
-          size: 4
         },
         tooltip: {
           y: {
