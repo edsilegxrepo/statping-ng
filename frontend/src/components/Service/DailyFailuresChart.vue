@@ -1,7 +1,7 @@
 <template>
   <div v-if="selectedDate" class="card text-black-50 bg-white mt-3 mb-5">
     <div class="card-header text-capitalize d-flex justify-content-between align-items-center">
-      <span>Hourly Failure Breakdown: {{ format(selectedDate, 'MMMM do, yyyy') }} (UTC)</span>
+      <span>Hourly Failure Breakdown: {{ format(selectedDate, 'MMMM do, yyyy') }} (UTC) - {{ totalFailures }} total failures</span>
       <button class="btn btn-sm btn-outline-secondary" @click="$emit('close')">
         <font-awesome-icon icon="times" />
       </button>
@@ -28,6 +28,14 @@ export default {
     selectedDate: {
       type: Date,
       default: null
+    }
+  },
+  computed: {
+    totalFailures() {
+      if (!this.series || this.series.length === 0 || !this.series[0].data) {
+        return 0;
+      }
+      return this.series[0].data.reduce((sum, val) => sum + val, 0);
     }
   },
   data() {
