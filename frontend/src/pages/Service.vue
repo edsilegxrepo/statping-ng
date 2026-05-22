@@ -64,15 +64,6 @@
                     <div class="row">
                       <AdvancedChart :group="group" :updated="updated_chart" :start="start_time.toString()" :end="end_time.toString()" :service="service"/>
                     </div>
-                  <div class="col-12 mt-3 p-0">
-                    <small class="text-muted font-italic">
-                      <font-awesome-icon icon="info-circle" class="mr-1"/> Failure Frequency (Distribution of failed checks over time)
-                    </small>
-                  </div>
-                  <div>
-                    <FailuresBarChart :service="service" :start="start_time.toString()" :end="end_time.toString()" :group="group"/>
-                  </div>
-
                 </div>
               <div v-else class="row mt-3 mb-3">
                 <div class="col-12 text-center">
@@ -114,7 +105,6 @@
   const ServiceHeatmap = () => import(/* webpackChunkName: "service" */ '@/components/Service/ServiceHeatmap')
   const ServiceTopStats = () => import(/* webpackChunkName: "service" */ '@/components/Service/ServiceTopStats')
   const AdvancedChart = () => import(/* webpackChunkName: "service" */ '@/components/Service/AdvancedChart')
-  const FailuresBarChart = () => import(/* webpackChunkName: "service" */ '@/components/Service/FailuresBarChart')
   const DailyFailuresChart = () => import(/* webpackChunkName: "service" */ '@/components/Service/DailyFailuresChart')
 
   import flatPickr from 'vue-flatpickr-component';
@@ -149,7 +139,6 @@
 export default {
     name: 'Service',
     components: {
-      FailuresBarChart,
       AdvancedChart,
         ServiceTopStats,
         ServiceHeatmap,
