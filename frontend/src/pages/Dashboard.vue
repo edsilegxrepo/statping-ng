@@ -1,5 +1,5 @@
 <template>
-    <div class="container-fluid col-md-10 col-sm-12 mt-md-5">
+    <div class="container-fluid px-md-5 mt-md-5">
       <div v-if="modal" class="modal-backdrop"></div>
       <Modal/>
         <TopNav :admin="admin"/>
