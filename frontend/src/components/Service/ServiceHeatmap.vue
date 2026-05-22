@@ -1,5 +1,5 @@
 <template>
-    <apexchart v-if="ready" width="100%" height="350" type="heatmap" :options="plotOptions" :series="series"></apexchart>
+    <apexchart v-if="ready" width="100%" height="500" type="heatmap" :options="plotOptions" :series="series"></apexchart>
 </template>
 
 <script>
@@ -66,25 +66,21 @@
                 left: 20
               }
             },
+            dataLabels: {
+              enabled: false
+            },
             colors: [ "#cb3d36" ],
             xaxis: {
-              tickAmount: 30,
-              min: 1,
-              max: 31,
-              type: "numeric",
+              type: "category",
               labels: {
                 show: true,
-                enabled: true,
-                formatter: (value) => `${value}`,
               },
               tooltip: {
                 enabled: true,
                 formatter: function(value, { series, seriesIndex, dataPointIndex, w }) {
-                  // Assuming each 'x' value is already set as the day of the month.
-                  // The series name for each series is set as the full month name.
-                  const month = w.globals.seriesNames[seriesIndex]; // Gets the month from the series name.
-                  const year = new Date().getFullYear(); // Assumes current year; adjust as needed.
-                  return `${dataPointIndex} ${month} ${year}`; // Formats the tooltip's title to show a full date.
+                  const month = w.globals.seriesNames[seriesIndex];
+                  const year = new Date().getFullYear();
+                  return `${dataPointIndex + 1} ${month} ${year}`;
                 }
               }
             },
@@ -92,19 +88,20 @@
               labels: {
                 show: true,
                 style: {
-                  fontSize: '11px'
+                  fontSize: '12px',
+                  fontWeight: 'bold'
                 }
               }
             },
             plotOptions: {
               heatmap: {
-                enableShades: true,
-                useFillColorAsStroke: false,
+                enableShades: false,
+                useFillColorAsStroke: true,
                 colorScale: {
                   ranges: [{
                       from: -1000000,
                       to: 0,
-                      color: '#f3f3f3',
+                      color: '#f8f9fa',
                       name: 'Healthy',
                     },
                     {
