@@ -1,7 +1,7 @@
 <template>
   <div v-if="selectedDate" class="card text-black-50 bg-white mt-3 mb-5">
     <div class="card-header text-capitalize d-flex justify-content-between align-items-center">
-      <span>Hourly Failure Breakdown: {{ format(selectedDate, 'MMMM do, yyyy') }}</span>
+      <span>Hourly Failure Breakdown: {{ format(selectedDate, 'MMMM do, yyyy') }} (UTC)</span>
       <button class="btn btn-sm btn-outline-secondary" @click="$emit('close')">
         <font-awesome-icon icon="times" />
       </button>
@@ -76,7 +76,7 @@ export default {
         xaxis: {
           type: 'category',
           categories: Array.from({length: 24}, (_, i) => `${i}:00`),
-          title: { text: 'Hour of Day' }
+          title: { text: 'Hour of Day (UTC)' }
         },
         yaxis: {
           title: { text: 'Failures' },
@@ -104,13 +104,20 @@ export default {
   methods: {
     async fetchDailyData() {
       this.loading = true;
-      const start = this.beginningOf('day', this.selectedDate);
-      const end = this.endOf('day', this.selectedDate);
+      
+      // Since the heatmap aggregates and displays data by UTC day, 
+      // we must query the exact 24-hour range in UTC for the selected day.
+      const year = this.selectedDate.getFullYear();
+      const month = this.selectedDate.getMonth();
+      const day = this.selectedDate.getDate();
+      
+      const startUnix = Math.floor(Date.UTC(year, month, day, 0, 0, 0) / 1000);
+      const endUnix = Math.floor(Date.UTC(year, month, day, 23, 59, 59) / 1000);
       
       const data = await Api.service_failures_data(
         this.service.id, 
-        this.toUnix(start), 
-        this.toUnix(end), 
+        startUnix, 
+        endUnix, 
         "1h", 
         true
       );
