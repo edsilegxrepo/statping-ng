@@ -40,23 +40,31 @@ func (d *DbConfig) ResetCore() error {
 	if err := d.CreateDatabase(); err != nil {
 		return errors.Wrap(err, "error creating database")
 	}
+	// Only collect secrets if they were randomly generated (not provided in config/env)
 	allSecrets := make(map[string]string)
-
-	adminPass, err := CreateAdminUser()
-	if err != nil {
-		return errors.Wrap(err, "error creating default admin user")
+	if utils.Params.GetString("ADMIN_PASSWORD") == "" {
+		adminPass, err := CreateAdminUser()
+		if err != nil {
+			return errors.Wrap(err, "error creating default admin user")
+		}
+		allSecrets[utils.Params.GetString("ADMIN_USER")] = adminPass
+	} else {
+		if _, err := CreateAdminUser(); err != nil {
+			return errors.Wrap(err, "error creating default admin user")
+		}
 	}
-	allSecrets[utils.Params.GetString("ADMIN_USER")] = adminPass
 
 	if err := core.Samples(); err != nil {
 		return errors.Wrap(err, "error added core details")
 	}
+
 	if utils.Params.GetBool("SAMPLE_DATA") {
 		log.Infoln("Adding Sample Data")
 		creds, err := TriggerSamples()
 		if err != nil {
 			return errors.Wrap(err, "error adding sample data")
 		}
+		// Always collect sample data passwords as they are always random
 		for k, v := range creds {
 			allSecrets[k] = v
 		}
