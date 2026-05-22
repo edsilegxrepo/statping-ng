@@ -64,6 +64,11 @@
                     <div class="row">
                       <AdvancedChart :group="group" :updated="updated_chart" :start="start_time.toString()" :end="end_time.toString()" :service="service"/>
                     </div>
+                  <div class="col-12 mt-3 p-0">
+                    <small class="text-muted font-italic">
+                      <font-awesome-icon icon="info-circle" class="mr-1"/> Service Uptime (Online/Offline status timeline)
+                    </small>
+                  </div>
                   <div>
                     <FailuresBarChart :service="service" :start="start_time.toString()" :end="end_time.toString()" :group="group"/>
                   </div>
