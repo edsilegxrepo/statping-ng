@@ -1,5 +1,5 @@
 <template>
-    <apexchart v-if="ready" width="100%" height="500" type="heatmap" :options="plotOptions" :series="series"></apexchart>
+    <apexchart v-if="ready" width="100%" height="400" type="heatmap" :options="plotOptions" :series="series"></apexchart>
 </template>
 
 <script>
@@ -140,57 +140,44 @@
       },
       methods: {
           async chartHeatmap() {
-            const monthData = []
-            let current = this.firstDayOfMonth(this.now())
+            this.ready = false;
+            const months = [];
+            const current = this.firstDayOfMonth(this.now());
 
-            for (let i=0; i<6; i++) {
-                let monthStart = this.addMonths(current, -i)
-                let monthEnd = this.lastDayOfMonth(monthStart)
-                monthData.push(await this.heatmapData(monthStart, monthEnd))
+            // Generate 6 months in chronological order (Oldest to Newest)
+            for (let i = 5; i >= 0; i--) {
+              let start = this.addMonths(current, -i);
+              let end = this.lastDayOfMonth(start);
+              months.push({ start, end });
             }
 
-            this.series = monthData
-            this.ready = true
+            const results = await Promise.all(months.map(m => this.heatmapData(m.start, m.end)));
+            this.series = results;
+            this.ready = true;
           },
           async heatmapData(start, end) {
               const failuresData = await Api.service_failures_data(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true)
-              const hitsData = await Api.service_hits(this.service.id, this.toUnix(start), this.toUnix(end), "24h", true);
-
-              // Merge the data
-              const mergedData = this.mergeData(failuresData, hitsData);
-              console.log(mergedData)
-              return {name: start.toLocaleString('en-us', { month: 'long'}), data: mergedData}
-          },
-          mergeData(failuresData, hitsData) {
-            let data = {}
-            
-            // Process hits data
-            hitsData.forEach(d => {
-              let date = this.parseISO(d.timeframe);
-              data[date] = -d.amount
-            });
-            
-            // Process failures data
-            failuresData.forEach(d => {
-              let date = this.parseISO(d.timeframe);
-              data[date] = d.amount
-            });
-
-            let dataArr = []
-            for (let i = 0; i < 31; i++) {
-              if (failuresData[i] && failuresData[i].amount > 0) {
-                // If any failures return failure amount
-                dataArr.push(failuresData[i].amount)
-              } else if (hitsData[i] && hitsData[i].amount > 0) {
-                // Make neg if only success
-                // dataArr.push(-hitsData[i].amount)
-                dataArr.push(0)
-              } else {
-                dataArr.push(0)
+              const dataArr = this.mergeData(failuresData);
+              return {
+                name: start.toLocaleString('en-us', { month: 'long'}), 
+                data: dataArr
               }
+          },
+          mergeData(failuresData) {
+            const dataArr = [];
+            // Initialize with 31 days of zeros (Healthy)
+            for (let i = 0; i < 31; i++) {
+              dataArr.push({ x: (i + 1).toString(), y: 0 });
             }
             
-            // Convert map to array
+            // Map actual failure data to the correct day index
+            failuresData.forEach(d => {
+              const day = new Date(d.timeframe).getUTCDate();
+              if (day >= 1 && day <= 31) {
+                dataArr[day - 1].y = d.amount;
+              }
+            });
+            
             return dataArr;
           },
           getDayColor({ value, seriesIndex, w }) {

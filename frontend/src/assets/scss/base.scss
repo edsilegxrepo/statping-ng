@@ -348,7 +348,8 @@
 
   .service-chart-heatmap {
     position: relative;
-    height: 180px;
+    height: auto;
+    min-height: 400px;
     width: 100%;
   }
 
