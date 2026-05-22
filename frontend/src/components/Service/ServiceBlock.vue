@@ -1,11 +1,11 @@
 <template>
     <div class="mb-md-4 mb-4">
-        <div class="card index-chart" :class="{'expanded-service': expanded}" @click="goToService($event)" style="cursor: pointer;">
+        <div class="card index-chart position-relative" :class="{'expanded-service': expanded}">
             <div class="card-body">
                 <div class="col-12">
                     <h4 class="mt-2">
-                        <router-link :to="serviceLink(service)" class="d-inline-block text-truncate font-4" style="max-width: 65vw;" :in_service="service">{{service.name}}</router-link>
-                        <span class="badge float-right" :class="{'bg-success': service.online, 'bg-danger': !service.online}">{{service.online ? "ONLINE" : "OFFLINE"}}</span>
+                        <router-link :to="serviceLink(service)" class="stretched-link d-inline-block text-truncate font-4" style="max-width: 65vw;" :in_service="service">{{service.name}}</router-link>
+                        <span class="badge float-right" style="position: relative; z-index: 2;" :class="{'bg-success': service.online, 'bg-danger': !service.online}">{{service.online ? "ONLINE" : "OFFLINE"}}</span>
                     </h4>
 
                     <ServiceTopStats :service="service"/>
@@ -17,7 +17,7 @@
                 <ServiceChart :service="service" :visible="visible" :chart_timeframe="chartTimeframe"/>
             </div>
 
-            <div class="row lower_canvas full-col-12 text-white" :class="{'bg-success': service.online, 'bg-danger': !service.online}">
+            <div class="row lower_canvas full-col-12 text-white" style="position: relative; z-index: 2;" :class="{'bg-success': service.online, 'bg-danger': !service.online}">
                 <div class="col-md-10 col-6">
                     <div class="dropup" :class="{show: dropDownMenu}">
                         <button style="font-size: 10pt;" @click.prevent="openMenu('timeframe')" type="button" class="col-4 float-left btn btn-sm float-right btn-block text-white dropdown-toggle service_scale pr-2">
@@ -182,12 +182,6 @@ export default {
       async setService() {
         await this.$store.commit('setService', this.service)
         this.$router.push('/service/'+this.service.id, {props: {service: this.service}})
-      },
-      goToService(event) {
-        if (event.target.tagName === 'BUTTON' || event.target.closest('button') || event.target.tagName === 'A' || event.target.closest('a')) {
-          return;
-        }
-        this.setService();
       },
         visibleChart(isVisible, entry) {
                 if (isVisible && !this.visible) {

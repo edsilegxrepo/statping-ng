@@ -1,8 +1,8 @@
 <template>
-    <div class="dashboard_card card mb-4" :class="{'offline-card': !service.online}" @click="goToService($event)" style="cursor: pointer;">
+    <div class="dashboard_card card mb-4 position-relative" :class="{'offline-card': !service.online}">
         <div class="card-header pb-1">
             <h6 v-observe-visibility="setVisible">
-                <router-link :to="serviceLink(service)" class="no-decoration">{{service.name}}</router-link>
+                <router-link :to="serviceLink(service)" class="no-decoration stretched-link">{{service.name}}</router-link>
                 <span class="badge float-right text-uppercase" :class="{'badge-success': service.online, 'badge-danger': !service.online}">
                     {{service.online ? $t('online') : $t('offline')}}
                 </span>
@@ -22,7 +22,7 @@
                 </div>
               </div>
         </div>
-        <div class="card-footer">
+        <div class="card-footer" style="position: relative; z-index: 2;">
 
           <div class="row">
           <div class="col-5 pr-0">
@@ -158,12 +158,6 @@
               } else {
                   return "Offline"
               }
-          },
-          goToService(event) {
-            if (event.target.tagName === 'BUTTON' || event.target.closest('button') || event.target.tagName === 'A' || event.target.closest('a')) {
-              return;
-            }
-            this.$router.push(this.serviceLink(this.service));
           }
       }
   }
