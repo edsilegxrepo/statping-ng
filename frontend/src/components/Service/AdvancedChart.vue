@@ -107,6 +107,7 @@
               show: true,
               borderColor: '#f8f9fa',
               padding: {
+                top: 25, // Adds space at the top to completely prevent toolbar overlap
                 bottom: 25 // Adds professional breathing room above the legend
               }
             },

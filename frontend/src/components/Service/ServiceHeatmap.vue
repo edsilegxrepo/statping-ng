@@ -38,13 +38,13 @@
             },
             chart: {
               selection: {
-                enabled: false
+                enabled: true
               },
               zoom: {
-                enabled: false
+                enabled: true
               },
               toolbar: {
-                show: false
+                show: true
               },
               events: {
                 dataPointSelection: (event, chartContext, config) => {
@@ -71,7 +71,7 @@
                 }
               },
               padding: {
-                top: 10,
+                top: 25, // Adds room above the heatmap calendar for the toolbar controls
                 right: 20,
                 bottom: 10,
                 left: 20
