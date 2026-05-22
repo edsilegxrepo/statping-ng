@@ -1,6 +1,6 @@
 <template>
     <div class="service-chart-container">
-        <apexchart v-if="ready" width="100%" height="350" type="line" :options="main_chart_options" :series="main_chart"></apexchart>
+        <apexchart v-if="ready" width="100%" height="420" type="line" :options="main_chart_options" :series="main_chart"></apexchart>
     </div>
 </template>
 
@@ -103,6 +103,13 @@
                 lineCap: 'butt',
               },
             },
+            grid: {
+              show: true,
+              borderColor: '#f8f9fa',
+              padding: {
+                bottom: 25 // Adds professional breathing room above the legend
+              }
+            },
             xaxis: {
               type: "datetime",
               labels: {
@@ -198,7 +205,7 @@
               show: true,
               position: 'bottom', // Moved to bottom to avoid overlapping the top-right toolbar controls
               horizontalAlign: 'center',
-              offsetY: 0
+              offsetY: 10
             },
             dataLabels: {
               enabled: false
