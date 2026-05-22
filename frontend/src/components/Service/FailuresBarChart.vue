@@ -3,7 +3,7 @@
   <div class="text-center" style="width:210px" v-if="!loaded">
     <font-awesome-icon icon="circle-notch" class="h-25 text-dim" spin/>
   </div>
-  <apexchart v-else width="100%" height="120" type="bar" :options="chartOpts" :series="data"></apexchart>
+  <apexchart v-else width="100%" height="50" type="bar" :options="chartOpts" :series="data"></apexchart>
   </div>
 </template>
 
@@ -61,9 +61,7 @@ export default {
         },
         yaxis: {
           min: 0,
-          labels: {
-            show: false
-          }
+          max: 1,
         },
         plotOptions: {
           bar: {
