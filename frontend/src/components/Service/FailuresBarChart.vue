@@ -57,7 +57,7 @@ export default {
           curve: 'straight'
         },
         fill: {
-          opacity: 0.4,
+          opacity: 1,
         },
         yaxis: {
           min: 0,
@@ -68,10 +68,10 @@ export default {
             colors: {
               ranges: [{
                 from: 0,
-                to: 1,
-                color: '#cfcfcf'
+                to: 1.1,
+                color: '#e8e8e8'
               }, {
-                from: 2,
+                from: 1.2,
                 to: 3,
                 color: '#f58e49'
               }, {

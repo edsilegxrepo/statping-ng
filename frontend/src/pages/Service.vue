@@ -66,7 +66,7 @@
                     </div>
                   <div class="col-12 mt-3 p-0">
                     <small class="text-muted font-italic">
-                      <font-awesome-icon icon="info-circle" class="mr-1"/> Service Uptime (Online/Offline status timeline)
+                      <font-awesome-icon icon="info-circle" class="mr-1"/> Failure Frequency (Distribution of failed checks over time)
                     </small>
                   </div>
                   <div>
