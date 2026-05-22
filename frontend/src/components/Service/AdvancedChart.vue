@@ -172,10 +172,7 @@
                 </div>`
               },
               fixed: {
-                enabled: true,
-                position: 'topRight',
-                offsetX: -30,
-                offsetY: 40,
+                enabled: false, // Changed to false so the metric box floats and follows the mouse dynamically
               },
               x: {
                 show: true,
@@ -188,9 +185,10 @@
               },
             },
             legend: {
-              show: true, // Show the legend so operators know what each series/color represents!
-              position: 'top',
-              horizontalAlign: 'right'
+              show: true,
+              position: 'bottom', // Moved to bottom to avoid overlapping the top-right toolbar controls
+              horizontalAlign: 'center',
+              offsetY: 0
             },
             dataLabels: {
               enabled: false
