@@ -1,6 +1,6 @@
 <template>
     <div class="service-chart-container">
-        <apexchart width="100%" height="350" type="line" :options="main_chart_options" :series="main_chart"></apexchart>
+        <apexchart v-if="ready" width="100%" height="350" type="line" :options="main_chart_options" :series="main_chart"></apexchart>
     </div>
 </template>
 
@@ -34,6 +34,7 @@
         },
       data() {
         return {
+          ready: false,
           loading: true,
           main_data: null,
           ping_data: null,
@@ -313,10 +314,12 @@
       },
       methods: {
           async update_data() {
+            this.ready = false
             this.loading = true
             await this.chartHits()
             // await this.expanded_hits()
             this.loading = false
+            this.ready = true
           },
         async expanded_hits() {
           this.expanded_data = await this.load_hits(0, 99999999999, "24h")
