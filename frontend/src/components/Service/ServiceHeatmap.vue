@@ -58,13 +58,28 @@
             },
             grid: {
               show: true,
-              borderColor: '#f1f1f1',
+              borderColor: '#dee2e6', // Subtle, clean grey border
+              xaxis: {
+                lines: {
+                  show: false // No vertical lines
+                }
+              },
+              yaxis: {
+                lines: {
+                  show: true // Horizontal lines separating each month
+                }
+              },
               padding: {
                 top: 10,
                 right: 20,
                 bottom: 10,
                 left: 20
               }
+            },
+            stroke: {
+              show: true,
+              width: 1.5, // Thin border separating each box
+              colors: ['#ffffff'] // White color to cleanly isolate each day box
             },
             dataLabels: {
               enabled: false
@@ -96,7 +111,7 @@
             plotOptions: {
               heatmap: {
                 enableShades: false,
-                useFillColorAsStroke: true,
+                useFillColorAsStroke: false,
                 colorScale: {
                   ranges: [{
                       from: -1000000,
