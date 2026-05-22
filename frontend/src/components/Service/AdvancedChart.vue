@@ -206,7 +206,11 @@
               show: true,
               position: 'bottom', // Moved to bottom to avoid overlapping the top-right toolbar controls
               horizontalAlign: 'center',
-              offsetY: 10
+              offsetY: 10,
+              itemMargin: {
+                horizontal: 25, // Spreads legend items apart to prevent overlapping/touching text
+                vertical: 5
+              }
             },
             dataLabels: {
               enabled: false
