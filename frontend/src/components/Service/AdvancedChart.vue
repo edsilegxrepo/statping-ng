@@ -1,6 +1,6 @@
 <template>
     <div class="service-chart-container">
-        <apexchart width="100%" height="350" type="area" :options="main_chart_options" :series="main_chart"></apexchart>
+        <apexchart width="100%" height="350" type="line" :options="main_chart_options" :series="main_chart"></apexchart>
     </div>
 </template>
 
@@ -38,6 +38,7 @@
           main_data: null,
           ping_data: null,
           expanded_data: null,
+          failure_data: null,
           main_chart_options: {
             noData: {
               text: "Loading...",
@@ -110,13 +111,35 @@
                 enabled: false
               }
             },
-            yaxis: {
-              labels: {
-                formatter: (value) => {
-                  return this.humanTime(value)
+            yaxis: [
+              {
+                title: { text: 'Latency & Ping' },
+                labels: {
+                  formatter: (value) => {
+                    return this.humanTime(value)
+                  }
                 }
               },
-            },
+              {
+                show: false, // Hidden to share the left axis scale
+                labels: {
+                  formatter: (value) => {
+                    return this.humanTime(value)
+                  }
+                }
+              },
+              {
+                opposite: true, // Right axis
+                title: { text: 'Failure Spikes' },
+                labels: {
+                  formatter: (value) => {
+                    return value ? value.toFixed(0) : '0'
+                  }
+                },
+                min: 0,
+                forceNiceScale: true
+              }
+            ],
             markers: {
               size: 0,
               strokeWidth: 0,
@@ -128,16 +151,25 @@
             tooltip: {
               theme: false,
               enabled: true,
-              custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+              custom: ({ series, seriesIndex, dataPointIndex, w }) => {
                 let ts = w.globals.seriesX[seriesIndex][dataPointIndex];
                 const dt = new Date(ts).toLocaleDateString("en-us", timeoptions)
-                let val = series[seriesIndex][dataPointIndex];
-                if (val >= 10000) {
-                  val = Math.round(val / 1000) + " ms"
-                } else {
-                  val = val + " μs"
-                }
-                return `<div class="chartmarker"><span>Response Time: </span><span class="font-3">${val}</span><span>${dt}</span></div>`
+                
+                let latencyVal = series[0][dataPointIndex];
+                let pingVal = series[1][dataPointIndex];
+                let failuresVal = series[2] ? series[2][dataPointIndex] : 0;
+                
+                let latText = this.humanTime(latencyVal);
+                let pingText = this.humanTime(pingVal);
+                let failText = failuresVal ? `${failuresVal} Failures` : '0 Failures';
+                
+                return `<div class="chartmarker p-2">
+                  <div class="mb-1"><strong>Latency:</strong> ${latText}</div>
+                  <div class="mb-1"><strong>Ping:</strong> ${pingText}</div>
+                  <div class="mb-1 text-danger"><strong>Failures:</strong> <strong>${failText}</strong></div>
+                  <hr class="my-1" style="border-top: 1px solid #eee;">
+                  <div class="text-muted" style="font-size: 10px;">${dt}</div>
+                </div>`
               },
               fixed: {
                 enabled: true,
@@ -156,7 +188,9 @@
               },
             },
             legend: {
-              show: false,
+              show: true, // Show the legend so operators know what each series/color represents!
+              position: 'top',
+              horizontalAlign: 'right'
             },
             dataLabels: {
               enabled: false
@@ -168,17 +202,18 @@
             axisBorder: {
               show: false
             },
+            colors: ["#f1771f", "#48d338", "#e01a1a"],
             fill: {
-              colors: ["#f1771f", "#48d338"],
-              opacity: 1,
+              colors: ["#f1771f", "#48d338", "#e01a1a"],
+              opacity: [0.5, 0.4, 0.8], // Transparent areas so they don't block each other, solid bars for failures
               type: 'solid'
             },
             stroke: {
               show: true,
-              curve: 'stepline',
+              curve: 'smooth', // Smoother areas look much more professional than steplines
               lineCap: 'butt',
-              colors: ["#f1771f", "#48d338"],
-              width: 2,
+              colors: ["#f1771f", "#48d338", "transparent"], // No line stroke for the column bars
+              width: [2, 2, 0],
             }
           },
           expanded_chart_options: {
@@ -230,13 +265,26 @@
       },
       computed: {
         main_chart () {
-          return [{
-            name: "latency",
-            ...this.convertToChartData(this.main_data)
-          },{
-            name: "ping",
-            ...this.convertToChartData(this.ping_data)
-          }]
+          const list = [
+            {
+              name: "Latency",
+              type: "area",
+              ...this.convertToChartData(this.main_data)
+            },
+            {
+              name: "Ping",
+              type: "area",
+              ...this.convertToChartData(this.ping_data)
+            }
+          ]
+          if (this.failure_data) {
+            list.push({
+              name: "Failures",
+              type: "column",
+              ...this.convertToChartData(this.failure_data)
+            })
+          }
+          return list
         },
         expanded_chart () {
           return this.toBarData(this.expanded_data)
@@ -269,12 +317,16 @@
         async chartHits() {
           this.main_data = await this.load_hits()
           this.ping_data = await this.load_ping()
+          this.failure_data = await this.load_failures()
         },
         async load_hits(start=this.params.start, end=this.params.end, group=this.group) {
           return await Api.service_hits(this.service.id, start, end, group, false)
         },
         async load_ping(start=this.params.start, end=this.params.end, group=this.group) {
           return await Api.service_ping(this.service.id, start, end, group, false)
+        },
+        async load_failures(start=this.params.start, end=this.params.end, group=this.group) {
+          return await Api.service_failures_data(this.service.id, start, end, group, true)
         }
       }
     }
