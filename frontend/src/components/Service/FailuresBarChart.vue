@@ -61,7 +61,9 @@ export default {
         },
         yaxis: {
           min: 0,
-          max: 1,
+          labels: {
+            show: false
+          }
         },
         plotOptions: {
           bar: {
