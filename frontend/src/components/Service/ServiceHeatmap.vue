@@ -90,7 +90,49 @@
             },
             yaxis: {
               labels: {
-                show: true
+                show: true,
+                style: {
+                  fontSize: '11px'
+                }
+              }
+            },
+            plotOptions: {
+              heatmap: {
+                enableShades: true,
+                useFillColorAsStroke: false,
+                colorScale: {
+                  ranges: [{
+                      from: -1000000,
+                      to: 0,
+                      color: '#f3f3f3',
+                      name: 'Healthy',
+                    },
+                    {
+                      from: 1,
+                      to: 30,
+                      color: '#98EE99',
+                      name: 'Minor',
+                    },
+                    {
+                      from: 31,
+                      to: 120,
+                      color: '#FFEB3B',
+                      name: 'Moderate',
+                    },
+                    {
+                      from: 121,
+                      to: 240,
+                      color: '#FF9800',
+                      name: 'Major',
+                    },
+                    {
+                      from: 241,
+                      to: 1000000,
+                      color: '#F44336',
+                      name: 'Critical',
+                    }
+                  ]
+                }
               }
             }
           },
