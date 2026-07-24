@@ -10,7 +10,7 @@ import (
 
 func TestJSONMarshal(t *testing.T) {
 	tests := []struct {
-		Input        interface{}
+		Input        any
 		ExpectedJSON string
 	}{
 		{

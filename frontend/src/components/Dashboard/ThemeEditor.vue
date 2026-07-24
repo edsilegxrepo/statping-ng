@@ -57,146 +57,145 @@
 </template>
 
 <script>
+// require component
+import { codemirror } from "vue-codemirror";
 import Api from "../../API";
 
-// require component
-import {codemirror} from 'vue-codemirror'
+import("codemirror/mode/css/css.js");
 
-import('codemirror/mode/css/css.js')
+import("codemirror/lib/codemirror.css");
+import("codemirror-colorpicker/dist/codemirror-colorpicker.css");
+import("codemirror-colorpicker");
 
-  import('codemirror/lib/codemirror.css')
-  import('codemirror-colorpicker/dist/codemirror-colorpicker.css')
-  import('codemirror-colorpicker')
-
-  export default {
-      name: 'ThemeEditor',
-      components: {
-          codemirror
-      },
-      computed: {
-          core() {
-              return this.$store.getters.core
-          }
-      },
-      data () {
-          return {
-              base: null,
-              layout: null,
-              forms: null,
-              mixins: null,
-              vars: null,
-              mobile: null,
-              error: null,
-              directory: null,
-              tab: "vars",
-              loaded: false,
-              pending: false,
-              cmOptions: {
-                  height: 700,
-                  tabSize: 4,
-                  lineNumbers: true,
-                  matchBrackets: true,
-                  mode: "text/x-scss",
-                  line: true,
-                  colorpicker: true
-              }
-          }
-      },
-      async mounted () {
-          await this.fetchTheme()
-          this.changeTab('vars')
-      },
-      methods: {
-        visible(isVisible, entry) {
-          if (isVisible) {
-            this.$refs.vars.codemirror.refresh()
-            this.$refs.base.codemirror.refresh()
-            this.$refs.mobile.codemirror.refresh()
-            this.$refs.layout.codemirror.refresh()
-            this.$refs.forms.codemirror.refresh()
-            this.$refs.mixins.codemirror.refresh()
-          }
-        },
-          async fetchTheme() {
-              this.loaded = true
-              this.pending = true
-              const theme = await Api.theme()
-              this.directory = theme.directory
-              if (this.directory) {
-                  this.base = theme.base
-                  this.vars = theme.variables
-                  this.mobile = theme.mobile
-                  this.layout = theme.layout
-                  this.forms = theme.forms
-                  this.mixins = theme.mixins
-              }
-              this.pending = false
-              this.loaded = true
-          },
-          async createAssets() {
-              this.pending = true
-            let resp
-            try {
-              resp = await Api.theme_generate(true)
-            } catch(e) {
-                this.error = e.response.data.error
-            }
-              this.pending = false
-            await this.fetchTheme()
-          },
-        async delete() {
-          this.pending = true
-          const resp = await Api.theme_generate(false)
-          await this.fetchTheme()
-          this.pending = false
-        },
-          async deleteAssets() {
-            const modal = {
-              visible: true,
-              title: "Delete Local Assets",
-              body: `Are you sure you want to delete all local assets?`,
-              btnColor: "btn-danger",
-              btnText: "Delete",
-              func: () => this.delete(),
-            }
-            this.$store.commit("setModal", modal)
-          },
-          async saveAssets() {
-              this.pending = true
-              const data = {
-                base: this.base,
-                layout: this.layout,
-                forms: this.forms,
-                mixins: this.mixins,
-                variables: this.vars,
-                mobile: this.mobile
-              }
-            let resp
-            try {
-              resp = await Api.theme_save(data)
-            } catch(e) {
-              resp = {status: 'error', error: e.response.data.error}
-            }
-              if (resp.error) {
-                  this.error = resp.error
-                  this.pending = false
-                  return
-              } else {
-                  this.error = null
-              }
-              this.pending = false
-              await this.fetchTheme()
-          },
-          changeTab (v) {
-              this.tab = v
-              // if (v === 'base') {
-              //     this.$refs.base.codemirror.refresh();
-              // } else if (v === 'vars') {
-              //     this.$refs.vars.codemirror.refresh();
-              // } else if (v === 'mobile') {
-              //     this.$refs.mobile.codemirror.refresh();
-              // }
-          }
-      }
-  }
+export default {
+	name: "ThemeEditor",
+	components: {
+		codemirror,
+	},
+	computed: {
+		core() {
+			return this.$store.getters.core;
+		},
+	},
+	data() {
+		return {
+			base: null,
+			layout: null,
+			forms: null,
+			mixins: null,
+			vars: null,
+			mobile: null,
+			error: null,
+			directory: null,
+			tab: "vars",
+			loaded: false,
+			pending: false,
+			cmOptions: {
+				height: 700,
+				tabSize: 4,
+				lineNumbers: true,
+				matchBrackets: true,
+				mode: "text/x-scss",
+				line: true,
+				colorpicker: true,
+			},
+		};
+	},
+	async mounted() {
+		await this.fetchTheme();
+		this.changeTab("vars");
+	},
+	methods: {
+		visible(isVisible, _entry) {
+			if (isVisible) {
+				this.$refs.vars.codemirror.refresh();
+				this.$refs.base.codemirror.refresh();
+				this.$refs.mobile.codemirror.refresh();
+				this.$refs.layout.codemirror.refresh();
+				this.$refs.forms.codemirror.refresh();
+				this.$refs.mixins.codemirror.refresh();
+			}
+		},
+		async fetchTheme() {
+			this.loaded = true;
+			this.pending = true;
+			const theme = await Api.theme();
+			this.directory = theme.directory;
+			if (this.directory) {
+				this.base = theme.base;
+				this.vars = theme.variables;
+				this.mobile = theme.mobile;
+				this.layout = theme.layout;
+				this.forms = theme.forms;
+				this.mixins = theme.mixins;
+			}
+			this.pending = false;
+			this.loaded = true;
+		},
+		async createAssets() {
+			this.pending = true;
+			let _resp;
+			try {
+				_resp = await Api.theme_generate(true);
+			} catch (e) {
+				this.error = e.response.data.error;
+			}
+			this.pending = false;
+			await this.fetchTheme();
+		},
+		async delete() {
+			this.pending = true;
+			const _resp = await Api.theme_generate(false);
+			await this.fetchTheme();
+			this.pending = false;
+		},
+		async deleteAssets() {
+			const modal = {
+				visible: true,
+				title: "Delete Local Assets",
+				body: `Are you sure you want to delete all local assets?`,
+				btnColor: "btn-danger",
+				btnText: "Delete",
+				func: () => this.delete(),
+			};
+			this.$store.commit("setModal", modal);
+		},
+		async saveAssets() {
+			this.pending = true;
+			const data = {
+				base: this.base,
+				layout: this.layout,
+				forms: this.forms,
+				mixins: this.mixins,
+				variables: this.vars,
+				mobile: this.mobile,
+			};
+			let resp;
+			try {
+				resp = await Api.theme_save(data);
+			} catch (e) {
+				resp = { status: "error", error: e.response.data.error };
+			}
+			if (resp.error) {
+				this.error = resp.error;
+				this.pending = false;
+				return;
+			} else {
+				this.error = null;
+			}
+			this.pending = false;
+			await this.fetchTheme();
+		},
+		changeTab(v) {
+			this.tab = v;
+			// if (v === 'base') {
+			//     this.$refs.base.codemirror.refresh();
+			// } else if (v === 'vars') {
+			//     this.$refs.vars.codemirror.refresh();
+			// } else if (v === 'mobile') {
+			//     this.$refs.mobile.codemirror.refresh();
+			// }
+		},
+	},
+};
 </script>

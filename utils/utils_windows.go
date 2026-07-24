@@ -15,7 +15,7 @@ func DirWritable(path string) (bool, error) {
 		return false, errors.New("path isn't a directory")
 	}
 
-	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
+	if info.Mode().Perm()&(1<<uint(7)) == 0 {
 		return false, errors.New("write permission bit is not set on this file for user")
 	}
 

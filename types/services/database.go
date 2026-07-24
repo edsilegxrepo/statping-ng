@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"sync"
 
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/errors"
@@ -14,9 +15,10 @@ import (
 )
 
 var (
-	db          database.Database
-	log         = utils.Log.WithField("type", "service")
-	allServices map[int64]*Service
+	db           database.Database
+	log          = utils.Log.WithField("type", "service")
+	allServices  map[int64]*Service
+	servicesLock sync.RWMutex
 )
 
 func (s *Service) Validate() error {
@@ -68,7 +70,9 @@ func (s *Service) AfterFind(tx *gorm.DB) (err error) {
 
 func (s *Service) AfterCreate(tx *gorm.DB) (err error) {
 	s.prevOnline = true
+	servicesLock.Lock()
 	allServices[s.Id] = s
+	servicesLock.Unlock()
 	metrics.Query("service", "create")
 	return nil
 }
@@ -88,7 +92,13 @@ func init() {
 }
 
 func Services() map[int64]*Service {
-	return allServices
+	servicesLock.RLock()
+	defer servicesLock.RUnlock()
+	res := make(map[int64]*Service, len(allServices))
+	for k, v := range allServices {
+		res[k] = v
+	}
+	return res
 }
 
 func SetDB(database database.Database) {
@@ -96,12 +106,21 @@ func SetDB(database database.Database) {
 }
 
 func Find(id int64) (*Service, error) {
+	servicesLock.RLock()
 	srv := allServices[id]
-	if srv == nil {
+	servicesLock.RUnlock()
+	if srv != nil {
+		db.First(&srv, id)
+		return srv, nil
+	}
+	var service Service
+	if err := db.First(&service, id).Error(); err != nil {
 		return nil, errors.Missing(&Service{}, id)
 	}
-	db.First(&srv, id)
-	return srv, nil
+	servicesLock.Lock()
+	allServices[service.Id] = &service
+	servicesLock.Unlock()
+	return &service, nil
 }
 
 func all() []*Service {
@@ -111,15 +130,17 @@ func all() []*Service {
 }
 
 func All() map[int64]*Service {
-	return allServices
+	return Services()
 }
 
 func AllInOrder() []Service {
+	servicesLock.RLock()
 	var services []Service
 	for _, service := range allServices {
 		service.UpdateStats()
 		services = append(services, *service)
 	}
+	servicesLock.RUnlock()
 	sort.Sort(ServiceOrder(services))
 	return services
 }
@@ -136,9 +157,11 @@ func (s *Service) Create() error {
 func (s *Service) Update() error {
 	q := db.Update(s)
 	s.Close()
+	servicesLock.Lock()
 	allServices[s.Id] = s
+	servicesLock.Unlock()
 	s.SleepDuration = s.Duration()
-	go ServiceCheckQueue(allServices[s.Id], true)
+	go ServiceCheckQueue(s, true)
 	return q.Error()
 }
 
@@ -153,23 +176,19 @@ func (s *Service) Delete() error {
 	if err := s.DeleteCheckins(); err != nil {
 		return err
 	}
-	if err := db.Model(s).Association("Checkins").Clear(); err != nil {
-		return err
-	}
 	if err := s.DeleteIncidents(); err != nil {
-		return err
-	}
-	if err := db.Model(s).Association("Incidents").Clear(); err != nil {
 		return err
 	}
 	if err := s.DeleteMessages(); err != nil {
 		return err
 	}
-	if err := db.Model(s).Association("Messages").Clear(); err != nil {
-		return err
-	}
+	s.Checkins = nil
+	s.Incidents = nil
+	s.Messages = nil
 
+	servicesLock.Lock()
 	delete(allServices, s.Id)
+	servicesLock.Unlock()
 	q := db.Model(&Service{}).Delete(s)
 	return q.Error()
 }
@@ -180,7 +199,7 @@ func (s *Service) DeleteMessages() error {
 			return err
 		}
 	}
-	return db.Model(s).Association("messages").Clear()
+	return nil
 }
 
 func (s *Service) DeleteCheckins() error {
@@ -189,5 +208,5 @@ func (s *Service) DeleteCheckins() error {
 			return err
 		}
 	}
-	return db.Model(s).Association("checkins").Clear()
+	return nil
 }

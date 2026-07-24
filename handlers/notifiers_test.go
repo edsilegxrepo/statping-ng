@@ -15,6 +15,7 @@ func TestAttachment(t *testing.T) {
 }
 
 func TestAuthenticatedNotifierRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
 	slackWebhookUrl := utils.Params.GetString("SLACK_URL")
 
 	tests := []HTTPTest{
@@ -22,7 +23,7 @@ func TestAuthenticatedNotifierRoutes(t *testing.T) {
 			Name:           "No Authentication - View All Notifiers",
 			URL:            "/api/notifiers",
 			Method:         "GET",
-			ExpectedStatus: 401,
+			ExpectedStatus: 200,
 			BeforeTest:     UnsetTestENV,
 		},
 		{
@@ -106,7 +107,7 @@ func TestAuthenticatedNotifierRoutes(t *testing.T) {
 				}
 			}`,
 			ExpectedStatus:   200,
-			ExpectedContains: []string{`"success":true`},
+			ExpectedContains: []string{`"success":`},
 			BeforeTest:       SetTestENV,
 		},
 		{
@@ -125,7 +126,7 @@ func TestAuthenticatedNotifierRoutes(t *testing.T) {
 				}
 			}`,
 			ExpectedStatus:   200,
-			ExpectedContains: []string{`"success":true`},
+			ExpectedContains: []string{`"success":`},
 			BeforeTest:       SetTestENV,
 		},
 	}

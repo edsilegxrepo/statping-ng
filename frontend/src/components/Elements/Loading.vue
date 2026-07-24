@@ -8,14 +8,14 @@
 
 <script>
 export default {
-name: "Loading",
-  props: {
-    loading: {
-      type: Boolean,
-      required: true,
-    }
-  }
-}
+	name: "Loading",
+	props: {
+		loading: {
+			type: Boolean,
+			required: true,
+		},
+	},
+};
 </script>
 
 <style scoped>

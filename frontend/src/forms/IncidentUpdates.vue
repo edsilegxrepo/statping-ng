@@ -38,103 +38,116 @@
 </template>
 
 <script>
-    import Api from "../API";
-    const IncidentUpdate = () => import(/* webpackChunkName: "index" */ "@/components/Elements/IncidentUpdate");
+import Api from "../API";
 
-    export default {
-        name: 'FormIncidentUpdates',
-        components: {IncidentUpdate},
-        props: {
-            incident: {
-                type: Object,
-                required: true
-            }
-        },
-        data () {
-            return {
-                updates: [],
-                submitting: false,
-                errorMessage: "",
-                incident_update: {
-                    incident: this.incident.id,
-                    message: "",
-                    type: "Investigating"
-                }
-            }
-        },
-        computed: {
-            canSubmit() {
-                return this.incident_update.message.trim().length > 0
-            }
-        },
+const IncidentUpdate = () =>
+	import(
+		/* webpackChunkName: "index" */ "@/components/Elements/IncidentUpdate"
+	);
 
-        async mounted() {
-            await this.loadUpdates()
-        },
+export default {
+	name: "FormIncidentUpdates",
+	components: { IncidentUpdate },
+	props: {
+		incident: {
+			type: Object,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			updates: [],
+			submitting: false,
+			errorMessage: "",
+			incident_update: {
+				incident: this.incident.id,
+				message: "",
+				type: "Investigating",
+			},
+		};
+	},
+	computed: {
+		canSubmit() {
+			return this.incident_update.message.trim().length > 0;
+		},
+	},
 
-        methods: {
-            extractErrorMessage(error, fallback) {
-                const responseData = error?.response?.data || error
-                if (typeof responseData === "string" && responseData.trim()) {
-                    return responseData.trim()
-                }
-                if (typeof responseData?.error === "string" && responseData.error.trim()) {
-                    return responseData.error
-                }
-                if (responseData?.error?.message) {
-                    return responseData.error.message
-                }
-                if (responseData?.message) {
-                    return responseData.message
-                }
-                if (error?.message) {
-                    return error.message
-                }
-                return fallback
-            },
-            async createIncidentUpdate() {
-                if (this.submitting) {
-                    return
-                }
+	async mounted() {
+		await this.loadUpdates();
+	},
 
-                const message = this.incident_update.message.trim()
-                if (!message) {
-                    this.errorMessage = "Incident update message is required."
-                    return
-                }
+	methods: {
+		extractErrorMessage(error, fallback) {
+			const responseData = error?.response?.data || error;
+			if (typeof responseData === "string" && responseData.trim()) {
+				return responseData.trim();
+			}
+			if (
+				typeof responseData?.error === "string" &&
+				responseData.error.trim()
+			) {
+				return responseData.error;
+			}
+			if (responseData?.error?.message) {
+				return responseData.error.message;
+			}
+			if (responseData?.message) {
+				return responseData.message;
+			}
+			if (error?.message) {
+				return error.message;
+			}
+			return fallback;
+		},
+		async createIncidentUpdate() {
+			if (this.submitting) {
+				return;
+			}
 
-                this.submitting = true
-                this.errorMessage = ""
+			const message = this.incident_update.message.trim();
+			if (!message) {
+				this.errorMessage = "Incident update message is required.";
+				return;
+			}
 
-                try {
-                    const response = await Api.incident_update_create({
-                        ...this.incident_update,
-                        message,
-                    })
+			this.submitting = true;
+			this.errorMessage = "";
 
-                    if (response?.status === "success" && response.output) {
-                        this.updates.push(response.output)
-                        this.incident_update = {
-                            incident: this.incident.id,
-                            message: "",
-                            type: "Investigating"
-                        }
-                        return
-                    }
+			try {
+				const response = await Api.incident_update_create({
+					...this.incident_update,
+					message,
+				});
 
-                    this.errorMessage = this.extractErrorMessage(response, "Unable to add the incident update right now.")
-                } catch (error) {
-                    this.errorMessage = this.extractErrorMessage(error, "Unable to add the incident update right now.")
-                } finally {
-                    this.submitting = false
-                }
-            },
+				if (response?.status === "success" && response.output) {
+					this.updates.push(response.output);
+					this.incident_update = {
+						incident: this.incident.id,
+						message: "",
+						type: "Investigating",
+					};
+					return;
+				}
 
-            async loadUpdates() {
-                this.updates = await Api.incident_updates(this.incident)
-            }
-        }
-    }
+				this.errorMessage = this.extractErrorMessage(
+					response,
+					"Unable to add the incident update right now.",
+				);
+			} catch (error) {
+				this.errorMessage = this.extractErrorMessage(
+					error,
+					"Unable to add the incident update right now.",
+				);
+			} finally {
+				this.submitting = false;
+			}
+		},
+
+		async loadUpdates() {
+			this.updates = await Api.incident_updates(this.incident);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

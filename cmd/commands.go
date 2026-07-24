@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -77,11 +76,10 @@ var versionCmd = &cobra.Command{
 	Short:   "Print the version number of Statping",
 	Run: func(cmd *cobra.Command, args []string) {
 		if COMMIT != "" {
-			fmt.Printf("%s (%s)\n", VERSION, COMMIT)
+			cmd.Printf("%s (%s)\n", VERSION, COMMIT)
 		} else {
-			fmt.Printf("%s\n", VERSION)
+			cmd.Printf("%s\n", VERSION)
 		}
-		os.Exit(0)
 	},
 }
 
@@ -102,7 +100,6 @@ var systemctlCmd = &cobra.Command{
 		if err := systemctlCli(args[1], args[0] == "uninstall", port); err != nil {
 			return err
 		}
-		os.Exit(0)
 		return nil
 	},
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -121,7 +118,6 @@ var assetsCmd = &cobra.Command{
 		if err := assetsCli(); err != nil {
 			return err
 		}
-		os.Exit(0)
 		return nil
 	},
 }
@@ -134,7 +130,6 @@ var exportCmd = &cobra.Command{
 		if err := exportCli(args); err != nil {
 			return err
 		}
-		os.Exit(0)
 		return nil
 	},
 }
@@ -147,7 +142,6 @@ var sassCmd = &cobra.Command{
 		if err := sassCli(); err != nil {
 			return err
 		}
-		os.Exit(0)
 		return nil
 	},
 }
@@ -160,7 +154,6 @@ var envCmd = &cobra.Command{
 		if err := envCli(); err != nil {
 			return err
 		}
-		os.Exit(0)
 		return nil
 	},
 }
@@ -173,7 +166,6 @@ var resetCmd = &cobra.Command{
 		if err := resetCli(); err != nil {
 			return err
 		}
-		os.Exit(0)
 		return nil
 	},
 }
@@ -186,7 +178,6 @@ var onceCmd = &cobra.Command{
 		if err := onceCli(); err != nil {
 			return err
 		}
-		os.Exit(0)
 		return nil
 	},
 }

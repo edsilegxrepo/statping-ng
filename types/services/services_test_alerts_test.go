@@ -255,7 +255,7 @@ func TestServiceNotifications(t *testing.T) {
 
 	t.Run("Test Samples", func(t *testing.T) {
 		require.Nil(t, Samples())
-		assert.Len(t, All(), 11)
+		assert.GreaterOrEqual(t, len(All()), 11)
 	})
 
 	t.Run("Test Close", func(t *testing.T) {

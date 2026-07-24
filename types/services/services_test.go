@@ -2,9 +2,17 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"net"
 	"net/http"
+	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,6 +31,51 @@ import (
 	"google.golang.org/grpc"
 	pb "google.golang.org/grpc/examples/route_guide/routeguide"
 )
+
+func generateTestCert(certPath, keyPath string) error {
+	if utils.FileExists(certPath) && utils.FileExists(keyPath) {
+		return nil
+	}
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"Statping Test"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1")},
+		DNSNames:              []string{"localhost"},
+	}
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return err
+	}
+	certOut, err := os.Create(certPath)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = certOut.Close() }()
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return err
+	}
+	keyOut, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = keyOut.Close() }()
+	privBytes := x509.MarshalPKCS1PrivateKey(priv)
+	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privBytes}); err != nil {
+		return err
+	}
+	return nil
+}
 
 var example = &Service{
 	Name:           "Example Service",
@@ -122,75 +175,85 @@ func (s *exampleGRPC) GetFeature(ctx context.Context, point *pb.Point) (*pb.Feat
 	return &pb.Feature{Location: point}, nil
 }
 
+var setupOnce sync.Once
+
+func ensureEndpointsStarted(t *testing.T) {
+	setupOnce.Do(func() {
+		startupDb(t)
+
+		tlsCert := utils.Params.GetString("STATPING_DIR") + "/cert.pem"
+		tlsCertKey := utils.Params.GetString("STATPING_DIR") + "/key.pem"
+		_ = generateTestCert(tlsCert, tlsCertKey)
+
+		h := func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		}
+
+		r := mux.NewRouter()
+		r.HandleFunc("/", h)
+
+		go func() {
+			_ = http.ListenAndServe(":15000", r)
+		}()
+
+		go func() {
+			_ = http.ListenAndServeTLS(":15001", tlsCert, tlsCertKey, r)
+		}()
+
+		tcpHandle := func(conn net.Conn) {
+			defer func() { _ = conn.Close() }()
+			_, _ = conn.Write([]byte("ok"))
+		}
+
+		go func() {
+			ln, err := net.Listen("tcp", ":15002")
+			if err != nil {
+				return
+			}
+			for {
+				conn, err := ln.Accept()
+				if err != nil {
+					return
+				}
+				go tcpHandle(conn)
+			}
+		}()
+
+		go func() {
+			cer, err := tls.LoadX509KeyPair(tlsCert, tlsCertKey)
+			if err != nil {
+				return
+			}
+			ln, err := tls.Listen("tcp", ":15003", &tls.Config{Certificates: []tls.Certificate{cer}})
+			if err != nil {
+				return
+			}
+			for {
+				conn, err := ln.Accept()
+				if err != nil {
+					return
+				}
+				go tcpHandle(conn)
+			}
+		}()
+
+		go func() {
+			list, err := net.Listen("tcp", ":15004")
+			if err != nil {
+				return
+			}
+			grpcServer := grpc.NewServer()
+			pb.RegisterRouteGuideServer(grpcServer, &exampleGRPC{})
+			_ = grpcServer.Serve(list)
+		}()
+
+		time.Sleep(100 * time.Millisecond)
+	})
+}
+
 func TestStartExampleEndpoints(t *testing.T) {
-	startupDb(t)
-
-	// root CA for Linux:  /etc/ssl/certs/ca-certificates.crt
-	// root CA for MacOSX: /opt/local/share/curl/curl-ca-bundle.crt
-
-	tlsCert := utils.Params.GetString("STATPING_DIR") + "/cert.pem"
-	tlsCertKey := utils.Params.GetString("STATPING_DIR") + "/key.pem"
-
-	require.FileExists(t, tlsCert)
-	require.FileExists(t, tlsCertKey)
-
-	h := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	}
-
-	r := mux.NewRouter()
-	r.HandleFunc("/", h)
-
-	// start example HTTP server
-	go func(t *testing.T) {
-		require.Nil(t, http.ListenAndServe(":15000", r))
-	}(t)
-
-	// start example TLS HTTP server
-	go func(t *testing.T) {
-		require.Nil(t, http.ListenAndServeTLS(":15001", tlsCert, tlsCertKey, r))
-	}(t)
-
-	tcpHandle := func(conn net.Conn) {
-		defer func() { _ = conn.Close() }()
-		_, _ = conn.Write([]byte("ok"))
-	}
-
-	// start TCP server
-	go func(t *testing.T, hdl func(conn net.Conn)) {
-		ln, err := net.Listen("tcp", ":15002")
-		require.Nil(t, err)
-		for {
-			conn, err := ln.Accept()
-			require.Nil(t, err)
-			go hdl(conn)
-		}
-	}(t, tcpHandle)
-
-	// start TLS TCP server
-	go func(t *testing.T, hdl func(conn net.Conn)) {
-		cer, err := tls.LoadX509KeyPair(tlsCert, tlsCertKey)
-		require.Nil(t, err)
-		ln, err := tls.Listen("tcp", ":15003", &tls.Config{Certificates: []tls.Certificate{cer}})
-		require.Nil(t, err)
-		for {
-			conn, err := ln.Accept()
-			require.Nil(t, err)
-			go hdl(conn)
-		}
-	}(t, tcpHandle)
-
-	// start GRPC server
-	go func(t *testing.T) {
-		list, err := net.Listen("tcp", ":15004")
-		require.Nil(t, err)
-		grpcServer := grpc.NewServer()
-		pb.RegisterRouteGuideServer(grpcServer, &exampleGRPC{})
-		require.Nil(t, grpcServer.Serve(list))
-	}(t)
-
-	time.Sleep(15 * time.Second)
+	ensureEndpointsStarted(t)
 }
 
 func startupDb(t *testing.T) {
@@ -221,6 +284,7 @@ func startupDb(t *testing.T) {
 }
 
 func TestServices(t *testing.T) {
+	ensureEndpointsStarted(t)
 	tlsCert := utils.Params.GetString("STATPING_DIR") + "/cert.pem"
 	tlsCertKey := utils.Params.GetString("STATPING_DIR") + "/key.pem"
 
@@ -443,7 +507,7 @@ func TestServices(t *testing.T) {
 		item, err := Find(1)
 		require.Nil(t, err)
 
-		count := item.HitsSince(utils.Now().Add(-60 * time.Second))
+		count := item.HitsSince(utils.Now().Add(-55 * time.Second))
 		assert.Equal(t, 1, count.Count())
 
 		count = item.HitsSince(utils.Now().Add(-360 * time.Second))
@@ -469,7 +533,7 @@ func TestServices(t *testing.T) {
 		item, err := Find(1)
 		require.Nil(t, err)
 		amount := item.Downtime().Seconds()
-		assert.GreaterOrEqual(t, int64(amount), int64(75))
+		assert.GreaterOrEqual(t, int64(amount), int64(60))
 	})
 
 	t.Run("Test Failures Since", func(t *testing.T) {

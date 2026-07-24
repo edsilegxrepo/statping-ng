@@ -35,58 +35,56 @@
 </template>
 
 <script>
-  import Api from "../API";
+import Api from "../API";
 
-  export default {
-      name: 'Checkin',
-      props: {
-          service: {
-              type: Object,
-              required: true
-          }
-      },
-      data() {
-          return {
-              checkin: {
-                  name: "",
-                  interval: 60,
-                  service_id: this.service.id
-              }
-          }
-      },
-      mounted() {
-
-      },
-      computed: {
-          checkins() {
-              return this.$store.getters.serviceCheckins(this.service.id)
-          },
-          core() {
-              return this.$store.getters.core
-          },
-      },
-      methods: {
-          fixInts() {
-              const c = this.checkin
-              this.checkin.interval = parseInt(c.interval)
-              this.checkin.grace = parseInt(c.grace)
-              return this.checkin
-          },
-          async saveCheckin() {
-              const c = this.fixInts()
-              await Api.checkin_create(c)
-              await this.updateCheckins()
-          },
-          async deleteCheckin(checkin) {
-              await Api.checkin_delete(checkin)
-              await this.updateCheckins()
-          },
-          async updateCheckins() {
-              const checkins = await Api.checkins()
-              this.$store.commit('setCheckins', checkins)
-          }
-      }
-  }
+export default {
+	name: "Checkin",
+	props: {
+		service: {
+			type: Object,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			checkin: {
+				name: "",
+				interval: 60,
+				service_id: this.service.id,
+			},
+		};
+	},
+	mounted() {},
+	computed: {
+		checkins() {
+			return this.$store.getters.serviceCheckins(this.service.id);
+		},
+		core() {
+			return this.$store.getters.core;
+		},
+	},
+	methods: {
+		fixInts() {
+			const c = this.checkin;
+			this.checkin.interval = parseInt(c.interval, 10);
+			this.checkin.grace = parseInt(c.grace, 10);
+			return this.checkin;
+		},
+		async saveCheckin() {
+			const c = this.fixInts();
+			await Api.checkin_create(c);
+			await this.updateCheckins();
+		},
+		async deleteCheckin(checkin) {
+			await Api.checkin_delete(checkin);
+			await this.updateCheckins();
+		},
+		async updateCheckins() {
+			const checkins = await Api.checkins();
+			this.$store.commit("setCheckins", checkins);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

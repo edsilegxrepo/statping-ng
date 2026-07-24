@@ -33,61 +33,70 @@
 
 <script>
 import Api from "../../API";
-const Loading = () => import(/* webpackChunkName: "index" */ "@/components/Elements/Loading");
+
+const Loading = () =>
+	import(/* webpackChunkName: "index" */ "@/components/Elements/Loading");
 
 export default {
-name: "ServiceEvents",
-  components: {
-    Loading
-  },
-  props: {
-    service: {
-      type: Object,
-      required: true
-    }
-  },
-  data() {
-    return {
-      incidents: null,
-      loaded: false,
-    }
-  },
-  mounted() {
-   this.load()
-  },
-  computed: {
-  last_failure() {
-    if (!this.service.failures) {
-      return null
-    }
-    return this.service.failures[0]
-  },
-  failureBefore() {
-    return this.isAfter(this.parseISO(this.service.last_error), this.nowSubtract(43200).toISOString())
-  },
-    messages() {
-      return this.$store.getters.serviceMessages(this.service.id)
-    },
-    success_event() {
-      if (this.service.online && this.service.messages.length === 0 && this.service.incidents.length === 0) {
-        return true
-      }
-      return false
-    }
-  },
-  methods: {
-    async load() {
-      this.loaded = false
-      await this.getMessages()
-      await this.getIncidents()
-      this.loaded = true
-    },
-    async getMessages() {
-      // this.messages = this.$store.getters.serviceMessages(this.service.id)
-    },
-    async getIncidents() {
-      this.incidents = await Api.incidents_service(this.service.id)
-    },
-  }
-}
+	name: "ServiceEvents",
+	components: {
+		Loading,
+	},
+	props: {
+		service: {
+			type: Object,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			incidents: null,
+			loaded: false,
+		};
+	},
+	mounted() {
+		this.load();
+	},
+	computed: {
+		last_failure() {
+			if (!this.service.failures) {
+				return null;
+			}
+			return this.service.failures[0];
+		},
+		failureBefore() {
+			return this.isAfter(
+				this.parseISO(this.service.last_error),
+				this.nowSubtract(43200).toISOString(),
+			);
+		},
+		messages() {
+			return this.$store.getters.serviceMessages(this.service.id);
+		},
+		success_event() {
+			if (
+				this.service.online &&
+				this.service.messages.length === 0 &&
+				this.service.incidents.length === 0
+			) {
+				return true;
+			}
+			return false;
+		},
+	},
+	methods: {
+		async load() {
+			this.loaded = false;
+			await this.getMessages();
+			await this.getIncidents();
+			this.loaded = true;
+		},
+		async getMessages() {
+			// this.messages = this.$store.getters.serviceMessages(this.service.id)
+		},
+		async getIncidents() {
+			this.incidents = await Api.incidents_service(this.service.id);
+		},
+	},
+};
 </script>

@@ -32,62 +32,70 @@
 </template>
 
 <script>
-const ServiceChart = () => import(/* webpackChunkName: "service" */ "./ServiceChart");
+const ServiceChart = () =>
+	import(/* webpackChunkName: "service" */ "./ServiceChart");
+
 import Api from "../../API";
 
 export default {
-  name: 'ServiceFailures',
-  components: {ServiceChart},
-  props: {
-    service: {
-      type: Object,
-      required: true
-    },
-  },
-    data () {
-        return {
-            failures: [],
-            limit: 4,
-            offset: 0,
-            total: this.service.stats.failures,
-            page: 1
-        }
-    },
-    computed: {
-      pages() {
-          return Math.floor(this.total / this.limit)
-      },
-        maxPages() {
-          const p = Math.floor(this.total / this.limit)
-          if (p > 16) {
-              return 16
-            } else {
-              return p
-          }
-        }
-    },
-    async mounted () {
-        await this.gotoPage(1)
-    },
-    methods: {
-        async gotoPage(page) {
-            this.page = page;
+	name: "ServiceFailures",
+	components: { ServiceChart },
+	props: {
+		service: {
+			type: Object,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			failures: [],
+			limit: 4,
+			offset: 0,
+			total: this.service.stats.failures,
+			page: 1,
+		};
+	},
+	computed: {
+		pages() {
+			return Math.floor(this.total / this.limit);
+		},
+		maxPages() {
+			const p = Math.floor(this.total / this.limit);
+			if (p > 16) {
+				return 16;
+			} else {
+				return p;
+			}
+		},
+	},
+	async mounted() {
+		await this.gotoPage(1);
+	},
+	methods: {
+		async gotoPage(page) {
+			this.page = page;
 
-            this.offset = (page-1) * this.limit;
+			this.offset = (page - 1) * this.limit;
 
-            window.console.log('page', this.page, this.limit, this.offset);
+			window.console.log("page", this.page, this.limit, this.offset);
 
-            this.failures = await Api.service_failures(this.service.id, 0, 9999999999, this.limit, this.offset)
-        },
-        smallText(s) {
-            if (s.online) {
-                return `Online, last checked ${this.ago(s.last_success)}`
-            } else {
-                return `Offline, last error: ${s.last_failure.issue} ${this.ago(s.last_failure.created_at)}`
-            }
-          }
-      }
-}
+			this.failures = await Api.service_failures(
+				this.service.id,
+				0,
+				9999999999,
+				this.limit,
+				this.offset,
+			);
+		},
+		smallText(s) {
+			if (s.online) {
+				return `Online, last checked ${this.ago(s.last_success)}`;
+			} else {
+				return `Offline, last error: ${s.last_failure.issue} ${this.ago(s.last_failure.created_at)}`;
+			}
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

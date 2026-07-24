@@ -21,14 +21,14 @@
 
 <script>
 export default {
-  name: 'MessageBlock',
-    props: {
-        message: {
-            type: Object,
-            required: true,
-        }
-    }
-}
+	name: "MessageBlock",
+	props: {
+		message: {
+			type: Object,
+			required: true,
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

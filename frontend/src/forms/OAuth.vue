@@ -239,97 +239,97 @@
 </template>
 
 <script>
-  import Api from "../API";
+import Api from "../API";
 
-  export default {
-      name: 'OAuth',
-      computed: {
-        core() {
-          return this.$store.getters.core
-        },
-      },
-      data() {
-          return {
-            google_enabled: false,
-            slack_enabled: false,
-            github_enabled: false,
-            local_enabled: false,
-            custom_enabled: false,
-            loading: false,
-            expanded: {
-              github: false,
-              google: false,
-              slack: false,
-              custom: false,
-              openid: false,
-            },
-            oauth: {
-              gh_client_id: "",
-              gh_client_secret: "",
-              gh_users: "",
-              gh_orgs: "",
-              google_client_id: "",
-              google_client_secret: "",
-              google_users: "",
-              oauth_providers: "",
-              slack_client_id: "",
-              slack_client_secret: "",
-              slack_team: "",
-              slack_users: "",
-              custom_name: "",
-              custom_client_id: "",
-              custom_client_secret: "",
-              custom_endpoint_auth: "",
-              custom_endpoint_token: "",
-              custom_scopes: "",
-              custom_open_id: false,
-            }
-          }
-      },
-    async mounted() {
-        this.oauth = await Api.oauth()
-      this.local_enabled = this.has('local')
-      this.github_enabled = this.has('github')
-      this.google_enabled = this.has('google')
-      this.slack_enabled = this.has('slack')
-      this.custom_enabled = this.has('custom')
-    },
-    methods: {
-      providers() {
-        let providers = [];
-        if (this.github_enabled) {
-          providers.push("github")
-        }
-        if (this.local_enabled) {
-          providers.push("local")
-        }
-        if (this.google_enabled) {
-          providers.push("google")
-        }
-        if (this.slack_enabled) {
-          providers.push("slack")
-        }
-        if (this.custom_enabled) {
-          providers.push("custom")
-        }
-        return providers.join(",")
-      },
-        has(val) {
-          if (!this.oauth.oauth_providers) {
-            return false
-          }
-          return this.oauth.oauth_providers.split(",").includes(val)
-        },
-          async saveOAuth() {
-            this.loading = true
-            this.oauth.oauth_providers = this.providers()
-            await Api.oauth_save(this.oauth)
-            const oauth = await Api.oauth()
-            this.$store.commit('setOAuth', oauth)
-            this.loading = false
-          }
-      }
-  }
+export default {
+	name: "OAuth",
+	computed: {
+		core() {
+			return this.$store.getters.core;
+		},
+	},
+	data() {
+		return {
+			google_enabled: false,
+			slack_enabled: false,
+			github_enabled: false,
+			local_enabled: false,
+			custom_enabled: false,
+			loading: false,
+			expanded: {
+				github: false,
+				google: false,
+				slack: false,
+				custom: false,
+				openid: false,
+			},
+			oauth: {
+				gh_client_id: "",
+				gh_client_secret: "",
+				gh_users: "",
+				gh_orgs: "",
+				google_client_id: "",
+				google_client_secret: "",
+				google_users: "",
+				oauth_providers: "",
+				slack_client_id: "",
+				slack_client_secret: "",
+				slack_team: "",
+				slack_users: "",
+				custom_name: "",
+				custom_client_id: "",
+				custom_client_secret: "",
+				custom_endpoint_auth: "",
+				custom_endpoint_token: "",
+				custom_scopes: "",
+				custom_open_id: false,
+			},
+		};
+	},
+	async mounted() {
+		this.oauth = await Api.oauth();
+		this.local_enabled = this.has("local");
+		this.github_enabled = this.has("github");
+		this.google_enabled = this.has("google");
+		this.slack_enabled = this.has("slack");
+		this.custom_enabled = this.has("custom");
+	},
+	methods: {
+		providers() {
+			let providers = [];
+			if (this.github_enabled) {
+				providers.push("github");
+			}
+			if (this.local_enabled) {
+				providers.push("local");
+			}
+			if (this.google_enabled) {
+				providers.push("google");
+			}
+			if (this.slack_enabled) {
+				providers.push("slack");
+			}
+			if (this.custom_enabled) {
+				providers.push("custom");
+			}
+			return providers.join(",");
+		},
+		has(val) {
+			if (!this.oauth.oauth_providers) {
+				return false;
+			}
+			return this.oauth.oauth_providers.split(",").includes(val);
+		},
+		async saveOAuth() {
+			this.loading = true;
+			this.oauth.oauth_providers = this.providers();
+			await Api.oauth_save(this.oauth);
+			const oauth = await Api.oauth();
+			this.$store.commit("setOAuth", oauth);
+			this.loading = false;
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

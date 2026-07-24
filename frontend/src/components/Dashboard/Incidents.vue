@@ -51,125 +51,137 @@
 <script>
 import Api from "../../API";
 
-const FormIncidentUpdates = () => import(/* webpackChunkName: "dashboard" */ '@/forms/IncidentUpdates')
+const FormIncidentUpdates = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/forms/IncidentUpdates");
 
-    export default {
-        name: 'Incidents',
-        components: {FormIncidentUpdates},
-        data() {
-            return {
-                serviceID: 0,
-                submitting: false,
-                errorMessage: "",
-                incidents: [],
-                incident: {
-                    title: "",
-                    description: "",
-                    service: 0,
-                  }
-              }
-          },
-    computed: {
-        canCreateIncident() {
-            return this.incident.title.trim().length > 0 && this.incident.description.trim().length > 0
-        }
-    },
+export default {
+	name: "Incidents",
+	components: { FormIncidentUpdates },
+	data() {
+		return {
+			serviceID: 0,
+			submitting: false,
+			errorMessage: "",
+			incidents: [],
+			incident: {
+				title: "",
+				description: "",
+				service: 0,
+			},
+		};
+	},
+	computed: {
+		canCreateIncident() {
+			return (
+				this.incident.title.trim().length > 0 &&
+				this.incident.description.trim().length > 0
+			);
+		},
+	},
 
-    created() {
-        this.serviceID = Number(this.$route.params.id);
-        this.incident.service = Number(this.$route.params.id);
-    },
+	created() {
+		this.serviceID = Number(this.$route.params.id);
+		this.incident.service = Number(this.$route.params.id);
+	},
 
-    async mounted() {
-        await this.loadIncidents()
-    },
+	async mounted() {
+		await this.loadIncidents();
+	},
 
-    methods: {
-      extractErrorMessage(error, fallback) {
-        const responseData = error?.response?.data || error
-        if (typeof responseData === "string" && responseData.trim()) {
-          return responseData.trim()
-        }
-        if (typeof responseData?.error === "string" && responseData.error.trim()) {
-          return responseData.error
-        }
-        if (responseData?.error?.message) {
-          return responseData.error.message
-        }
-        if (responseData?.message) {
-          return responseData.message
-        }
-        if (error?.message) {
-          return error.message
-        }
-        return fallback
-      },
+	methods: {
+		extractErrorMessage(error, fallback) {
+			const responseData = error?.response?.data || error;
+			if (typeof responseData === "string" && responseData.trim()) {
+				return responseData.trim();
+			}
+			if (
+				typeof responseData?.error === "string" &&
+				responseData.error.trim()
+			) {
+				return responseData.error;
+			}
+			if (responseData?.error?.message) {
+				return responseData.error.message;
+			}
+			if (responseData?.message) {
+				return responseData.message;
+			}
+			if (error?.message) {
+				return error.message;
+			}
+			return fallback;
+		},
 
-      async delete(i) {
-        this.res = await Api.incident_delete(i)
-        if (this.res.status === "success") {
-          this.incidents = this.incidents.filter(obj => obj.id !== i.id);
-          //await this.loadIncidents()
-        }
-      },
-        async deleteIncident(incident) {
-          const modal = {
-            visible: true,
-            title: "Delete Incident",
-            body: `Are you sure you want to delete Incident ${incident.title}?`,
-            btnColor: "btn-danger",
-            btnText: "Delete Incident",
-            func: () => this.delete(incident),
-          }
-          this.$store.commit("setModal", modal)
-        },
+		async delete(i) {
+			this.res = await Api.incident_delete(i);
+			if (this.res.status === "success") {
+				this.incidents = this.incidents.filter((obj) => obj.id !== i.id);
+				//await this.loadIncidents()
+			}
+		},
+		async deleteIncident(incident) {
+			const modal = {
+				visible: true,
+				title: "Delete Incident",
+				body: `Are you sure you want to delete Incident ${incident.title}?`,
+				btnColor: "btn-danger",
+				btnText: "Delete Incident",
+				func: () => this.delete(incident),
+			};
+			this.$store.commit("setModal", modal);
+		},
 
-        async createIncident() {
-            if (this.submitting) {
-                return
-            }
+		async createIncident() {
+			if (this.submitting) {
+				return;
+			}
 
-            const title = this.incident.title.trim()
-            const description = this.incident.description.trim()
+			const title = this.incident.title.trim();
+			const description = this.incident.description.trim();
 
-            if (!title || !description) {
-                this.errorMessage = "Incident title and description are required."
-                return
-            }
+			if (!title || !description) {
+				this.errorMessage = "Incident title and description are required.";
+				return;
+			}
 
-            this.submitting = true
-            this.errorMessage = ""
+			this.submitting = true;
+			this.errorMessage = "";
 
-            try {
-                const response = await Api.incident_create(this.serviceID, {
-                    ...this.incident,
-                    title,
-                    description,
-                    service: this.serviceID,
-                })
+			try {
+				const response = await Api.incident_create(this.serviceID, {
+					...this.incident,
+					title,
+					description,
+					service: this.serviceID,
+				});
 
-                if (response?.status === "success" && response.output) {
-                    this.incidents.push(response.output)
-                    this.incident = {
-                        title: "",
-                        description: "",
-                        service: this.serviceID,
-                    }
-                    return
-                }
+				if (response?.status === "success" && response.output) {
+					this.incidents.push(response.output);
+					this.incident = {
+						title: "",
+						description: "",
+						service: this.serviceID,
+					};
+					return;
+				}
 
-                this.errorMessage = this.extractErrorMessage(response, "Unable to create the incident right now.")
-            } catch (error) {
-                this.errorMessage = this.extractErrorMessage(error, "Unable to create the incident right now.")
-            } finally {
-                this.submitting = false
-            }
-        },
+				this.errorMessage = this.extractErrorMessage(
+					response,
+					"Unable to create the incident right now.",
+				);
+			} catch (error) {
+				this.errorMessage = this.extractErrorMessage(
+					error,
+					"Unable to create the incident right now.",
+				);
+			} finally {
+				this.submitting = false;
+			}
+		},
 
-        async loadIncidents() {
-            this.incidents = await Api.incidents_service(this.serviceID)
-        }
-
-    }
-}
+		async loadIncidents() {
+			this.incidents = await Api.incidents_service(this.serviceID);
+		},
+	},
+};
 </script>

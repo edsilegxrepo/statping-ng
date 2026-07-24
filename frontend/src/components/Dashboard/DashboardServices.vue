@@ -68,74 +68,81 @@
 </template>
 
 <script>
-  const Modal = () => import(/* webpackChunkName: "dashboard" */ "@/components/Elements/Modal")
-  const FormGroup = () => import(/* webpackChunkName: "dashboard" */ '@/forms/Group')
-  const ToggleSwitch = () => import(/* webpackChunkName: "dashboard" */ '@/forms/ToggleSwitch')
-  const ServicesList = () => import(/* webpackChunkName: "dashboard" */ '@/components/Dashboard/ServicesList')
-  import Api from "../../API";
-  const draggable = () => import(/* webpackChunkName: "dashboard" */ 'vuedraggable')
+const Modal = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/components/Elements/Modal");
+const FormGroup = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/forms/Group");
+const ToggleSwitch = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/forms/ToggleSwitch");
+const ServicesList = () =>
+	import(
+		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ServicesList"
+	);
 
-  export default {
-      name: 'DashboardServices',
-      components: {
-        Modal,
-          ServicesList,
-          ToggleSwitch,
-          FormGroup,
-          draggable
-      },
-      data() {
-          return {
-              edit: false,
-              group: {}
-          }
-      },
-      computed: {
-          groupsList: {
-              get() {
-                  return this.$store.getters.groupsCleanInOrder
-              },
-              async set(value) {
-                  let data = [];
-                  value.forEach((s, k) => {
-                      data.push({group: s.id, order: k + 1})
-                  });
-                  await Api.groups_reorder(data)
-                  const groups = await Api.groups()
-                  this.$store.commit('setGroups', groups)
-              }
-          }
-      },
-      methods: {
-          editChange(v) {
-              this.group = {}
-              this.edit = v
-          },
-          editGroup(g, mode) {
-              this.group = g
-              this.edit = !mode
-          },
-        confirm_delete(service) {
+import Api from "../../API";
 
-        },
-        async delete(g) {
-          await Api.group_delete(g.id)
-          const groups = await Api.groups()
-          this.$store.commit('setGroups', groups)
-        },
-          async deleteGroup(g) {
-            const modal = {
-              visible: true,
-              title: "Delete Group",
-              body: `Are you sure you want to delete group ${g.name}? All services attached will be removed from this group.`,
-              btnColor: "btn-danger",
-              btnText: "Delete Group",
-              func: () => this.delete(g),
-            }
-            this.$store.commit("setModal", modal)
-          }
-      }
-  }
+const draggable = () =>
+	import(/* webpackChunkName: "dashboard" */ "vuedraggable");
+
+export default {
+	name: "DashboardServices",
+	components: {
+		Modal,
+		ServicesList,
+		ToggleSwitch,
+		FormGroup,
+		draggable,
+	},
+	data() {
+		return {
+			edit: false,
+			group: {},
+		};
+	},
+	computed: {
+		groupsList: {
+			get() {
+				return this.$store.getters.groupsCleanInOrder;
+			},
+			async set(value) {
+				let data = [];
+				value.forEach((s, k) => {
+					data.push({ group: s.id, order: k + 1 });
+				});
+				await Api.groups_reorder(data);
+				const groups = await Api.groups();
+				this.$store.commit("setGroups", groups);
+			},
+		},
+	},
+	methods: {
+		editChange(v) {
+			this.group = {};
+			this.edit = v;
+		},
+		editGroup(g, mode) {
+			this.group = g;
+			this.edit = !mode;
+		},
+		confirm_delete(_service) {},
+		async delete(g) {
+			await Api.group_delete(g.id);
+			const groups = await Api.groups();
+			this.$store.commit("setGroups", groups);
+		},
+		async deleteGroup(g) {
+			const modal = {
+				visible: true,
+				title: "Delete Group",
+				body: `Are you sure you want to delete group ${g.name}? All services attached will be removed from this group.`,
+				btnColor: "btn-danger",
+				btnText: "Delete Group",
+				func: () => this.delete(g),
+			};
+			this.$store.commit("setModal", modal);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

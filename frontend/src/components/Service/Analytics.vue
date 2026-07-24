@@ -13,35 +13,35 @@
 </template>
 
 <script>
-    import MiniSparkLine from './MiniSparkLine';
-    import ServiceSparkLine from '../Dashboard/ServiceSparkLine';
+import ServiceSparkLine from "../Dashboard/ServiceSparkLine";
+import MiniSparkLine from "./MiniSparkLine";
 
-    export default {
-        name: 'Analytics',
-        components: { MiniSparkLine, ServiceSparkLine },
-        props: {
-            func: {
-                type: Object,
-                required: true
-            },
-        },
-      data() {
-        return {
-            value: 0,
-            title: "",
-            subtitle: "",
-            chart: [],
-        }
-      },
-      async mounted() {
-            if (this.func) {
-                this.value = this.func.value;
-                this.title = this.func.title;
-                this.subtitle = this.func.subtitle;
-                this.chart = this.convertToChartData(this.func.chart);
-            }
-      },
-    }
+export default {
+	name: "Analytics",
+	components: { MiniSparkLine, ServiceSparkLine },
+	props: {
+		func: {
+			type: Object,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			value: 0,
+			title: "",
+			subtitle: "",
+			chart: [],
+		};
+	},
+	async mounted() {
+		if (this.func) {
+			this.value = this.func.value;
+			this.title = this.func.title;
+			this.subtitle = this.func.subtitle;
+			this.chart = this.convertToChartData(this.func.chart);
+		}
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

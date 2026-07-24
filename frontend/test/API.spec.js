@@ -1,16 +1,11 @@
-import API from "@/API"
-import { shallowMount, mount } from '@vue/test-utils'
+import { mount, shallowMount } from "@vue/test-utils";
+import API from "@/API";
 
-describe('API Tests', async () => {
+describe("API Tests", async () => {
+	await it("should get core info", async () => {
+		const wrapper = mount(API);
 
-   await it('should get core info', async () => {
-
-       const wrapper = mount(API)
-
-        const core = await wrapper.core()
-        expect(core).toBe(9)
-
-
-    })
-
+		const core = await wrapper.core();
+		expect(core).toBe(9);
+	});
 });

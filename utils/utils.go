@@ -25,8 +25,8 @@ import (
 var Directory string
 
 var (
-	transports = make(map[string]*http.Transport)
-	transMu    sync.RWMutex
+	transports  = make(map[string]*http.Transport)
+	transMu     sync.RWMutex
 	DNSResolver = &net.Resolver{
 		PreferGo: true,
 	}
@@ -56,10 +56,8 @@ func getTransport(verifySSL bool, customTLS *tls.Config) *http.Transport {
 	}
 
 	t := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: !verifySSL,
-			Renegotiation:      tls.RenegotiateOnceAsClient,
-		},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !verifySSL, // #nosec G402
+			Renegotiation: tls.RenegotiateOnceAsClient, MinVersion: tls.VersionTLS13},
 		DisableKeepAlives:     false,
 		MaxIdleConns:          100,
 		MaxIdleConnsPerHost:   10,

@@ -79,7 +79,7 @@ func (c *Core) Create() error {
 }
 
 func (c *Core) Update() error {
-	q := db.UpdateColumns(c)
+	q := db.Model(&Core{}).Where("1 = 1").UpdateColumns(c)
 	return q.Error()
 }
 

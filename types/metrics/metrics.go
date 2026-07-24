@@ -30,7 +30,8 @@ var (
 			Namespace: "statping",
 			Name:      "http_duration_seconds",
 			Help:      "Duration of HTTP requests from the utils package",
-		}, []string{"path"})
+		}, []string{"path"},
+	)
 )
 
 func InitMetrics() {
@@ -48,7 +49,7 @@ func InitMetrics() {
 	)
 }
 
-func Histo(method string, value float64, labels ...interface{}) {
+func Histo(method string, value float64, labels ...any) {
 	switch method {
 	case "duration":
 		utilsHttpRequestDur.WithLabelValues(convert(labels)...).Observe(value)
@@ -57,15 +58,15 @@ func Histo(method string, value float64, labels ...interface{}) {
 	}
 }
 
-func Timer(labels ...interface{}) prometheus.Observer {
+func Timer(labels ...any) prometheus.Observer {
 	return httpDuration.WithLabelValues(convert(labels)...)
 }
 
-func ServiceTimer(labels ...interface{}) prometheus.Observer {
+func ServiceTimer(labels ...any) prometheus.Observer {
 	return serviceDuration.WithLabelValues(convert(labels)...)
 }
 
-func Gauge(method string, value float64, labels ...interface{}) {
+func Gauge(method string, value float64, labels ...any) {
 	switch method {
 	case "status_code":
 		serviceStatusCode.WithLabelValues(convert(labels)...).Set(value)
@@ -74,7 +75,7 @@ func Gauge(method string, value float64, labels ...interface{}) {
 	}
 }
 
-func Inc(method string, labels ...interface{}) {
+func Inc(method string, labels ...any) {
 	switch method {
 	case "failure":
 		serviceFailures.WithLabelValues(convert(labels)...).Inc()
@@ -83,7 +84,7 @@ func Inc(method string, labels ...interface{}) {
 	}
 }
 
-func Add(method string, value float64, labels ...interface{}) {
+func Add(method string, value float64, labels ...any) {
 	switch method {
 	case "failure":
 		serviceFailures.WithLabelValues(convert(labels)...).Add(value)
@@ -92,7 +93,7 @@ func Add(method string, value float64, labels ...interface{}) {
 	}
 }
 
-func convert(vals []interface{}) []string {
+func convert(vals []any) []string {
 	var out []string
 	for _, v := range vals {
 		out = append(out, fmt.Sprintf("%v", v))

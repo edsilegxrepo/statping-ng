@@ -84,82 +84,96 @@
 import Api from "../../API";
 
 export default {
-    name: 'Checkins',
-    data() {
-        return {
-            service: {},
-          ready: false,
-          expanded: false,
-          curl_expanded: false,
-          checkin: {
-            name: "",
-            interval: 1,
-            service_id: 0,
-            hits: [],
-            failures: []
-          }
-        }
-    },
-      computed: {
-        checkins() {
-          return this.$store.getters.serviceCheckins(this.service.id)
-        },
-        core() {
-          return this.$store.getters.core
-        },
-        btn_disabled() {
-          if (this.checkin.name === "" || this.checkin.interval <= 0) {
-            return true
-          }
-          return false
-        },
-      },
-      async created() {
-          if (this.$route.params) {
-            const id = this.$route.params.id
-            this.service = await Api.service(id)
-            this.checkin.service_id = this.service.id
-            this.ready = true
-          }
-      },
-    methods: {
-      records(checkin) {
-        let hits = []
-        let failures = []
-        checkin.hits.forEach((hit) => {
-          hits.push({success: true, created_at: this.parseISO(hit.created_at), id: hit.id})
-        })
-        checkin.failures.forEach((failure) => {
-          failures.push({success: false, created_at: this.parseISO(failure.created_at), id: failure.id})
-        })
-        return hits.concat(failures).sort((a, b) => {return a.created_at-b.created_at}).reverse().slice(0,32)
-      },
-      last_record(checkin) {
-        const r = this.records(checkin)
-        if (r.length === 0) {
-          return {success: false}
-        }
-        return r[0]
-      },
-      fixInts() {
-        const c = this.checkin
-        this.checkin.interval = parseInt(c.interval)
-        return this.checkin
-      },
-      async saveCheckin() {
-        const c = this.fixInts()
-        await Api.checkin_create(c)
-        this.checkin.name = ""
-        await this.load()
-      },
-      async deleteCheckin(checkin) {
-        await Api.checkin_delete(checkin)
-        await this.load()
-      },
-      async load() {
-        const checkins = await Api.checkins()
-        this.$store.commit('setCheckins', checkins)
-      }
-    }
-}
+	name: "Checkins",
+	data() {
+		return {
+			service: {},
+			ready: false,
+			expanded: false,
+			curl_expanded: false,
+			checkin: {
+				name: "",
+				interval: 1,
+				service_id: 0,
+				hits: [],
+				failures: [],
+			},
+		};
+	},
+	computed: {
+		checkins() {
+			return this.$store.getters.serviceCheckins(this.service.id);
+		},
+		core() {
+			return this.$store.getters.core;
+		},
+		btn_disabled() {
+			if (this.checkin.name === "" || this.checkin.interval <= 0) {
+				return true;
+			}
+			return false;
+		},
+	},
+	async created() {
+		if (this.$route.params) {
+			const id = this.$route.params.id;
+			this.service = await Api.service(id);
+			this.checkin.service_id = this.service.id;
+			this.ready = true;
+		}
+	},
+	methods: {
+		records(checkin) {
+			let hits = [];
+			let failures = [];
+			checkin.hits.forEach((hit) => {
+				hits.push({
+					success: true,
+					created_at: this.parseISO(hit.created_at),
+					id: hit.id,
+				});
+			});
+			checkin.failures.forEach((failure) => {
+				failures.push({
+					success: false,
+					created_at: this.parseISO(failure.created_at),
+					id: failure.id,
+				});
+			});
+			return hits
+				.concat(failures)
+				.sort((a, b) => {
+					return a.created_at - b.created_at;
+				})
+				.reverse()
+				.slice(0, 32);
+		},
+		last_record(checkin) {
+			const r = this.records(checkin);
+			if (r.length === 0) {
+				return { success: false };
+			}
+			return r[0];
+		},
+		fixInts() {
+			const c = this.checkin;
+			this.checkin.interval = parseInt(c.interval, 10);
+			return this.checkin;
+		},
+		async saveCheckin() {
+			const c = this.fixInts();
+			await Api.checkin_create(c);
+			this.checkin.name = "";
+			await this.load();
+		},
+		async deleteCheckin(checkin) {
+			await Api.checkin_delete(checkin);
+			await this.load();
+		},
+		async load() {
+			const checkins = await Api.checkins();
+			this.$store.commit("setCheckins", checkins);
+		},
+	},
+};
 </script>

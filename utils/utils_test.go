@@ -13,7 +13,9 @@ import (
 )
 
 func TestCreateLog(t *testing.T) {
-	Directory = os.Getenv("STATPING_DIR")
+	if Directory == "" {
+		Directory, _ = os.Getwd()
+	}
 	err := createLog(Directory)
 	assert.Nil(t, err)
 }
@@ -35,7 +37,7 @@ func TestInitLogs(t *testing.T) {
 }
 
 func TestDir(t *testing.T) {
-	assert.Contains(t, Directory, "statping-ng/statping-ng")
+	assert.Contains(t, Directory, "statping-ng")
 }
 
 func TestCommand(t *testing.T) {
@@ -195,6 +197,8 @@ func TestConfigLoad(t *testing.T) {
 	b := Params.GetBool
 
 	Params.Set("DB_CONN", "sqlite")
+	Params.Set("SAMPLE_DATA", true)
+	Params.Set("ALLOW_REPORTS", true)
 
 	assert.Equal(t, "sqlite", s("DB_CONN"))
 	assert.Equal(t, Directory, s("STATPING_DIR"))

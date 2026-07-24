@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -170,9 +169,9 @@ var testdata = []struct {
 func grpcServer(port int, enableHealthCheck bool) *grpc.Server {
 	portString := strconv.Itoa(port)
 	server := grpc.NewServer()
-	lis, err := net.Listen("tcp", "localhost:"+portString)
+	lis, err := net.Listen("tcp", "127.0.0.1:"+portString)
 	if err != nil {
-		fmt.Println(err)
+		return nil
 	}
 
 	if enableHealthCheck {
@@ -192,7 +191,9 @@ func TestCheckGrpc(t *testing.T) {
 		t.Run(v.clientChecker.Name, func(t *testing.T) {
 			t.Parallel()
 			server := v.grpcService(v.clientChecker.Port, v.clientChecker.GrpcHealthCheck.Bool)
-			defer server.Stop()
+			if server != nil {
+				defer server.Stop()
+			}
 			v.clientChecker.CheckService(false)
 			if v.clientChecker.LastStatusCode != v.clientChecker.ExpectedStatus || strings.TrimSpace(v.clientChecker.LastResponse) != v.clientChecker.Expected.String {
 				t.Errorf("Expected message: '%v', Got message: '%v' , Expected Status: '%v', Got Status: '%v'", v.clientChecker.Expected.String, v.clientChecker.LastResponse, v.clientChecker.ExpectedStatus, v.clientChecker.LastStatusCode)

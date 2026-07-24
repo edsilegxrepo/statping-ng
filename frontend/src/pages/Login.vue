@@ -13,25 +13,19 @@
 </template>
 
 <script>
-  const FormLogin = () => import(/* webpackChunkName: "index" */ '@/forms/Login')
+const FormLogin = () => import(/* webpackChunkName: "index" */ "@/forms/Login");
 
-  export default {
-  name: 'Login',
-  components: {
-      FormLogin
-  },
-  data () {
-    return {
-
-    }
-  },
-    mounted() {
-
-    },
-    methods: {
-
-  }
-}
+export default {
+	name: "Login",
+	components: {
+		FormLogin,
+	},
+	data() {
+		return {};
+	},
+	mounted() {},
+	methods: {},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

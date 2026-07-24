@@ -7,35 +7,30 @@
 </template>
 
 <script>
-
 export default {
-  name: 'InputSwitch',
-  props: {
-    label: {
-      type: String,
-      required: true
-    },
-    value: {
-      type: Boolean,
-      required: true
-    }
-  },
-  data () {
-    return {
-
-    }
-  },
-  mounted() {
-
-  },
-  methods: {
-    toggle() {
-      this.$emit('input', {
-        value: !this.props.value
-      })
-    },
-  }
-}
+	name: "InputSwitch",
+	props: {
+		label: {
+			type: String,
+			required: true,
+		},
+		value: {
+			type: Boolean,
+			required: true,
+		},
+	},
+	data() {
+		return {};
+	},
+	mounted() {},
+	methods: {
+		toggle() {
+			this.$emit("input", {
+				value: !this.props.value,
+			});
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

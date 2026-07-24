@@ -14,46 +14,52 @@
 </template>
 
 <script>
-const ServiceInfo = () => import(/* webpackChunkName: "dashboard" */ '@/components/Dashboard/ServiceInfo')
-
+const ServiceInfo = () =>
+	import(
+		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ServiceInfo"
+	);
 
 export default {
-name: "GroupedServices",
-  components: {
-    ServiceInfo
-  },
-  data() {
-    return {
-      expanded: true
-    }
-  },
-  props: {
-    group: {
-      required: true,
-      type: Object,
-    }
-  },
-  computed: {
-    services_online() {
-      return this.$store.getters.servicesInGroup(this.group.id).filter((s) => s.online)
-    },
-    services_offline() {
-      return this.$store.getters.servicesInGroup(this.group.id).filter((s) => !s.online)
-    },
-    group_services() {
-      return this.$store.getters.servicesInGroup(this.group.id)
-    },
-  },
-  methods: {
-    toggle() {
-      this.expanded = !this.expanded
-    },
-    dashboard_cookies() {
-      const data = [{group: 5, show: false}]
-      if (!this.$cookies.isKey("statping_layout")) {
-        this.$cookies.set("statping_layout", JSON.stringify(data))
-      }
-    }
-  }
-}
+	name: "GroupedServices",
+	components: {
+		ServiceInfo,
+	},
+	data() {
+		return {
+			expanded: true,
+		};
+	},
+	props: {
+		group: {
+			required: true,
+			type: Object,
+		},
+	},
+	computed: {
+		services_online() {
+			return this.$store.getters
+				.servicesInGroup(this.group.id)
+				.filter((s) => s.online);
+		},
+		services_offline() {
+			return this.$store.getters
+				.servicesInGroup(this.group.id)
+				.filter((s) => !s.online);
+		},
+		group_services() {
+			return this.$store.getters.servicesInGroup(this.group.id);
+		},
+	},
+	methods: {
+		toggle() {
+			this.expanded = !this.expanded;
+		},
+		dashboard_cookies() {
+			const data = [{ group: 5, show: false }];
+			if (!this.$cookies.isKey("statping_layout")) {
+				this.$cookies.set("statping_layout", JSON.stringify(data));
+			}
+		},
+	},
+};
 </script>

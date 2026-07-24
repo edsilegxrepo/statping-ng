@@ -57,108 +57,124 @@
 </template>
 
 <script>
-  const Checkin = () => import(/* webpackChunkName: "dashboard" */ '../../forms/Checkin');
-  const FormMessage = () => import(/* webpackChunkName: "dashboard" */ '../../forms/Message');
-  const ServiceFailures = () => import(/* webpackChunkName: "dashboard" */ '../Service/ServiceFailures');
-  const ServiceSparkLine = () => import(/* webpackChunkName: "dashboard" */ "./ServiceSparkLine");
-  import Api from "../../API";
+const Checkin = () =>
+	import(/* webpackChunkName: "dashboard" */ "../../forms/Checkin");
+const FormMessage = () =>
+	import(/* webpackChunkName: "dashboard" */ "../../forms/Message");
+const ServiceFailures = () =>
+	import(/* webpackChunkName: "dashboard" */ "../Service/ServiceFailures");
+const ServiceSparkLine = () =>
+	import(/* webpackChunkName: "dashboard" */ "./ServiceSparkLine");
 
-  const ServiceEvents = () => import(/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ServiceEvents");
+import Api from "../../API";
 
-  export default {
-      name: 'ServiceInfo',
-      components: {
-        ServiceEvents,
-          Checkin,
-          ServiceFailures,
-          FormMessage,
-          ServiceSparkLine
-      },
-      props: {
-          service: {
-              type: Object,
-              required: true
-          }
-      },
-      data() {
-          return {
-              uptime: null,
-              hovered: false,
-              hoverbtn: "",
-              openTab: "",
-              set2: [],
-              loaded: false,
-              set2_name: "",
-              failures: null,
-            visible: false
-          }
-      },
-    watch: {
+const ServiceEvents = () =>
+	import(
+		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ServiceEvents"
+	);
 
-    },
-    mounted() {
-      this.unsetHover()
-    },
-    methods: {
-      setHover(name) {
-        this.hoverbtn = name
-      },
-        unsetHover() {
-          this.hoverbtn = this.$t('uptime') + " "+ this.service.online_7_days + "%"
-        },
-        async setVisible(isVisible, entry) {
-          if (isVisible && !this.visible) {
-            await this.loadInfo()
-            await this.getUptime()
-            this.visible = true
-          }
-        },
-        async getUptime() {
-          const end = this.endOf("day", this.now())
-          const start = this.beginningOf("day", this.nowSubtract(3 * 86400))
-          this.uptime = await Api.service_uptime(this.service.id, this.toUnix(start), this.toUnix(end))
-        },
-        async loadInfo() {
-          this.set2 = await this.getHits(86400 * 3, "60m")
-          this.set2_name = this.calc(this.set2)
-          this.loaded = true
-        },
-          Tab(name) {
-              if (this.openTab === name) {
-                  this.openTab = ''
-                  return
-              }
-              this.openTab=name;
-          },
-        sinceYesterday(data) {
-          let total = 0
-          data.forEach((f) => {
-            total += parseInt(f.y)
-          });
-          total = total / data.length
-        },
-          async getHits(seconds, group) {
-              let start = this.nowSubtract(seconds)
-              let end = this.endOf("today")
-              const startEnd = this.startEndParams(start, end, group)
-              const fetched = await Api.service_hits(this.service.id, startEnd.start, startEnd.end, group, true)
-              const data = this.convertToChartData(fetched, 0.001, true)
-              return [{name: "Latency", ...data}]
-          },
-          calc(s) {
-              let data = s[0].data
+export default {
+	name: "ServiceInfo",
+	components: {
+		ServiceEvents,
+		Checkin,
+		ServiceFailures,
+		FormMessage,
+		ServiceSparkLine,
+	},
+	props: {
+		service: {
+			type: Object,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			uptime: null,
+			hovered: false,
+			hoverbtn: "",
+			openTab: "",
+			set2: [],
+			loaded: false,
+			set2_name: "",
+			failures: null,
+			visible: false,
+		};
+	},
+	watch: {},
+	mounted() {
+		this.unsetHover();
+	},
+	methods: {
+		setHover(name) {
+			this.hoverbtn = name;
+		},
+		unsetHover() {
+			this.hoverbtn = `${this.$t("uptime")} ${this.service.online_7_days}%`;
+		},
+		async setVisible(isVisible, _entry) {
+			if (isVisible && !this.visible) {
+				await this.loadInfo();
+				await this.getUptime();
+				this.visible = true;
+			}
+		},
+		async getUptime() {
+			const end = this.endOf("day", this.now());
+			const start = this.beginningOf("day", this.nowSubtract(3 * 86400));
+			this.uptime = await Api.service_uptime(
+				this.service.id,
+				this.toUnix(start),
+				this.toUnix(end),
+			);
+		},
+		async loadInfo() {
+			this.set2 = await this.getHits(86400 * 3, "60m");
+			this.set2_name = this.calc(this.set2);
+			this.loaded = true;
+		},
+		Tab(name) {
+			if (this.openTab === name) {
+				this.openTab = "";
+				return;
+			}
+			this.openTab = name;
+		},
+		sinceYesterday(data) {
+			let total = 0;
+			data.forEach((f) => {
+				total += parseInt(f.y, 10);
+			});
+			total = total / data.length;
+		},
+		async getHits(seconds, group) {
+			let start = this.nowSubtract(seconds);
+			let end = this.endOf("today");
+			const startEnd = this.startEndParams(start, end, group);
+			const fetched = await Api.service_hits(
+				this.service.id,
+				startEnd.start,
+				startEnd.end,
+				group,
+				true,
+			);
+			const data = this.convertToChartData(fetched, 0.001, true);
+			return [{ name: "Latency", ...data }];
+		},
+		calc(s) {
+			let data = s[0].data;
 
-              if (data) {
-                  let total = 0
-                  data.forEach((f) => {
-                      total += parseInt(f.y)
-                  });
-                  total = total / data.length
-                  return Math.round(total) + " ms"
-              } else {
-                  return "Offline"
-              }
-          }
-      }
-  }
+			if (data) {
+				let total = 0;
+				data.forEach((f) => {
+					total += parseInt(f.y, 10);
+				});
+				total = total / data.length;
+				return `${Math.round(total)} ms`;
+			} else {
+				return "Offline";
+			}
+		},
+	},
+};
 </script>

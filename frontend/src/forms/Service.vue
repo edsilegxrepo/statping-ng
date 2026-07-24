@@ -297,151 +297,153 @@
 </template>
 
 <script>
-  import Api from "../API";
+import Api from "../API";
 
-  export default {
-      name: 'FormService',
-      data () {
-          return {
-              loading: false,
-              service: {
-                  name: "",
-                  type: "cmd",
-                  domain: "",
-                  group_id: 0,
-                  method: "GET",
-                  post_data: "",
-                  headers: "",
-                  expected: "",
-                  expected_status: 0,
-                  port: 80,
-                  check_interval: 60,
-                  timeout: 15,
-                  permalink: "",
-                  order: 1,
-                  verify_ssl: true,
-                  grpc_health_check: false,
-                  redirect: true,
-                  allow_notifications: true,
-                  notify_all_changes: true,
-                  notify_after: 2,
-                  public: true,
-                  tls_cert: "",
-                  tls_cert_key: "",
-                  tls_cert_root: "",
-              },
-              use_tls: false,
-              groups: [],
-          }
-      },
-      props: {
-          in_service: {
-              type: Object
-          }
-      },
-      watch: {
-          in_service(svr, old) {
-            this.service = svr
-            this.use_tls = svr.tls_cert
-          }
-      },
-      async mounted () {
-          if (!this.$store.getters.groups) {
-            const groups = await Api.groups()
-            this.$store.commit('setGroups', groups)
-          }
-        this.update()
-      },
-    created () {
-        this.update()
-    },
-    methods: {
-        update() {
-          if (this.in_service) {
-            this.service = this.in_service
-          }
-          this.use_tls = this.service.tls_cert !== ""
-        },
-        updateDefaultValues() {
-            if (this.service.type === "cmd") {
-                this.service.expected_status = 0
-                this.service.expected = ""
-                this.service.port = 0
-                this.service.verify_ssl = false
-                this.service.method = ""
-            }
-            else if (this.service.type === "grpc") {
-                this.service.expected_status = 1
-                this.service.expected = "status:SERVING"
-                this.service.port = 50051
-                this.service.verify_ssl = false
-                this.service.method = ""
-            } else {
-                this.service.expected_status = 200
-                this.service.expected = ""
-                this.service.port = 80
-                this.service.verify_ssl = true
-                this.service.method = "GET"
-            }
-        },
-          updatePermalink() {
-              const a = 'àáâäæãåāăąçćčđďèéêëēėęěğǵḧîïíīįìłḿñńǹňôöòóœøōõőṕŕřßśšşșťțûüùúūǘůűųẃẍÿýžźż·/_,:;'
-              const b = 'aaaaaaaaaacccddeeeeeeeegghiiiiiilmnnnnoooooooooprrsssssttuuuuuuuuuwxyyzzz------'
-              const p = new RegExp(a.split('').join('|'), 'g')
+export default {
+	name: "FormService",
+	data() {
+		return {
+			loading: false,
+			service: {
+				name: "",
+				type: "cmd",
+				domain: "",
+				group_id: 0,
+				method: "GET",
+				post_data: "",
+				headers: "",
+				expected: "",
+				expected_status: 0,
+				port: 80,
+				check_interval: 60,
+				timeout: 15,
+				permalink: "",
+				order: 1,
+				verify_ssl: true,
+				grpc_health_check: false,
+				redirect: true,
+				allow_notifications: true,
+				notify_all_changes: true,
+				notify_after: 2,
+				public: true,
+				tls_cert: "",
+				tls_cert_key: "",
+				tls_cert_root: "",
+			},
+			use_tls: false,
+			groups: [],
+		};
+	},
+	props: {
+		in_service: {
+			type: Object,
+		},
+	},
+	watch: {
+		in_service(svr, _old) {
+			this.service = svr;
+			this.use_tls = svr.tls_cert;
+		},
+	},
+	async mounted() {
+		if (!this.$store.getters.groups) {
+			const groups = await Api.groups();
+			this.$store.commit("setGroups", groups);
+		}
+		this.update();
+	},
+	created() {
+		this.update();
+	},
+	methods: {
+		update() {
+			if (this.in_service) {
+				this.service = this.in_service;
+			}
+			this.use_tls = this.service.tls_cert !== "";
+		},
+		updateDefaultValues() {
+			if (this.service.type === "cmd") {
+				this.service.expected_status = 0;
+				this.service.expected = "";
+				this.service.port = 0;
+				this.service.verify_ssl = false;
+				this.service.method = "";
+			} else if (this.service.type === "grpc") {
+				this.service.expected_status = 1;
+				this.service.expected = "status:SERVING";
+				this.service.port = 50051;
+				this.service.verify_ssl = false;
+				this.service.method = "";
+			} else {
+				this.service.expected_status = 200;
+				this.service.expected = "";
+				this.service.port = 80;
+				this.service.verify_ssl = true;
+				this.service.method = "GET";
+			}
+		},
+		updatePermalink() {
+			const a =
+				"àáâäæãåāăąçćčđďèéêëēėęěğǵḧîïíīįìłḿñńǹňôöòóœøōõőṕŕřßśšşșťțûüùúūǘůűųẃẍÿýžźż·/_,:;";
+			const b =
+				"aaaaaaaaaacccddeeeeeeeegghiiiiiilmnnnnoooooooooprrsssssttuuuuuuuuuwxyyzzz------";
+			const p = new RegExp(a.split("").join("|"), "g");
 
-              this.service.permalink = this.service.name.toLowerCase()
-                  .replace(/\s+/g, '-') // Replace spaces with -
-                  .replace(p, c => b.charAt(a.indexOf(c))) // Replace special characters
-                  .replace(/&/g, '-and-') // Replace & with 'and'
-                  .replace(/[^\w\-]+/g, '') // Remove all non-word characters
-                  .replace(/\-\-+/g, '-') // Replace multiple - with single -
-                  .replace(/^-+/, '') // Trim - from start of text
-                  .replace(/-+$/, '') // Trim - from end of text
-          },
-          stepVal(val) {
-              if (val > 1800) {
-                  return 300
-              } else if (val > 300) {
-                  return 60
-              } else if (val > 120) {
-                  return 10
-              }
-              return 1
-          },
-          async saveService () {
-              let s = this.service
-              this.loading = true
-              delete s.failures
-              delete s.created_at
-              delete s.updated_at
-              delete s.last_success
-              delete s.latency
-              delete s.online_24_hours
-              s.check_interval = parseInt(s.check_interval)
-              s.timeout = parseInt(s.timeout)
-              s.port = parseInt(s.port)
-              s.notify_after = parseInt(s.notify_after)
-              s.expected_status = parseInt(s.expected_status)
-              s.order = parseInt(s.order)
+			this.service.permalink = this.service.name
+				.toLowerCase()
+				.replace(/\s+/g, "-") // Replace spaces with -
+				.replace(p, (c) => b.charAt(a.indexOf(c))) // Replace special characters
+				.replace(/&/g, "-and-") // Replace & with 'and'
+				.replace(/[^\w-]+/g, "") // Remove all non-word characters
+				.replace(/--+/g, "-") // Replace multiple - with single -
+				.replace(/^-+/, "") // Trim - from start of text
+				.replace(/-+$/, ""); // Trim - from end of text
+		},
+		stepVal(val) {
+			if (val > 1800) {
+				return 300;
+			} else if (val > 300) {
+				return 60;
+			} else if (val > 120) {
+				return 10;
+			}
+			return 1;
+		},
+		async saveService() {
+			let s = this.service;
+			this.loading = true;
+			delete s.failures;
+			delete s.created_at;
+			delete s.updated_at;
+			delete s.last_success;
+			delete s.latency;
+			delete s.online_24_hours;
+			s.check_interval = parseInt(s.check_interval, 10);
+			s.timeout = parseInt(s.timeout, 10);
+			s.port = parseInt(s.port, 10);
+			s.notify_after = parseInt(s.notify_after, 10);
+			s.expected_status = parseInt(s.expected_status, 10);
+			s.order = parseInt(s.order, 10);
 
-              if (s.id) {
-                  await this.updateService(s)
-              } else {
-                  await this.createService(s)
-              }
-              const services = await Api.services()
-              this.$store.commit('setServices', services)
-              this.loading = false
-              this.$router.push('/dashboard/services')
-          },
-          async createService (s) {
-              await Api.service_create(s)
-          },
-          async updateService (s) {
-              await Api.service_update(s)
-          }
-      }
-  }
+			if (s.id) {
+				await this.updateService(s);
+			} else {
+				await this.createService(s);
+			}
+			const services = await Api.services();
+			this.$store.commit("setServices", services);
+			this.loading = false;
+			this.$router.push("/dashboard/services");
+		},
+		async createService(s) {
+			await Api.service_create(s);
+		},
+		async updateService(s) {
+			await Api.service_update(s);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

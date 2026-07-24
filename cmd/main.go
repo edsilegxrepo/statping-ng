@@ -65,12 +65,10 @@ func Close() {
 
 // main will run the Statping application
 func main() {
-	go Execute()
-	<-stopped
-	Close()
+	Execute()
 }
 
-// main will run the Statping application
+// start will run the Statping application server mode
 func start() {
 	go sigterm()
 	var err error
@@ -116,6 +114,9 @@ func start() {
 	if err := mainProcess(); err != nil {
 		exit(err)
 	}
+
+	<-stopped
+	Close()
 }
 
 // sigterm will attempt to close the database connections gracefully

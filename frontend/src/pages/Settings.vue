@@ -111,105 +111,118 @@
 </template>
 
 <script>
-  import Api from '../API';
-  const semver = require('semver')
+import Api from "../API";
 
-  const CoreSettings = () => import(/* webpackChunkName: "dashboard" */ '@/forms/CoreSettings')
-  const FormIntegration = () => import(/* webpackChunkName: "dashboard" */ '@/forms/Integration')
-  const Notifier = () => import(/* webpackChunkName: "dashboard" */ '@/forms/Notifier')
-  const OAuth = () => import(/* webpackChunkName: "dashboard" */ '@/forms/OAuth')
-  const ThemeEditor = () => import(/* webpackChunkName: "dashboard" */ '@/components/Dashboard/ThemeEditor')
-  const Importer = () => import(/* webpackChunkName: "dashboard" */ '@/components/Dashboard/Importer')
-  const Variables = () => import(/* webpackChunkName: "dashboard" */ '@/components/Dashboard/Variables')
-  const Configs = () => import(/* webpackChunkName: "dashboard" */ '@/components/Dashboard/Configs')
+const semver = require("semver");
 
-  export default {
-      name: 'Settings',
-      components: {
-        Configs,
-        Importer,
-        Variables,
-        OAuth,
-          ThemeEditor,
-          FormIntegration,
-          Notifier,
-          CoreSettings
-      },
-      data() {
-          return {
-              tab: "v-pills-home-tab",
-            github: null,
-          }
-      },
-      computed: {
-          core() {
-              return this.$store.getters.core
-          },
-          notifiers() {
-            return this.$store.getters.notifiers
-          },
-        version_below() {
-            if (!this.github || !this.core.version) {
-              return false
-            }
-            return semver.gt(semver.coerce(this.github.tag_name), semver.coerce(this.core.version))
-        }
-      },
-    mounted() {
+const CoreSettings = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/forms/CoreSettings");
+const FormIntegration = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/forms/Integration");
+const Notifier = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/forms/Notifier");
+const OAuth = () => import(/* webpackChunkName: "dashboard" */ "@/forms/OAuth");
+const ThemeEditor = () =>
+	import(
+		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ThemeEditor"
+	);
+const Importer = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/components/Dashboard/Importer");
+const Variables = () =>
+	import(
+		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/Variables"
+	);
+const Configs = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/components/Dashboard/Configs");
 
-      },
-    created() {
-      this.update()
-      },
-      methods: {
-        async update() {
-          await this.getGithub()
-        },
-        async getGithub() {
-          try {
-            this.github = await Api.github_release()
-          } catch(e) {
-            console.error(e)
-          }
-        },
-          changeTab(e) {
-              this.tab = e.target.id
-          },
-          liClass(id) {
-              return this.tab === id
-          },
-        async renew() {
-          await Api.renewApiKeys()
-          const core = await Api.core()
-          this.$store.commit('setCore', core)
-          this.core = core
-          await this.logout()
-        },
-        async renewApiKeys() {
-          const modal = {
-            visible: true,
-            title: "Reset API Key",
-            body: `Are you sure you want to reset the API keys? You will be logged out.`,
-            btnColor: "btn-danger",
-            btnText: "Reset",
-            func: () => this.renew(),
-          }
-          this.$store.commit("setModal", modal)
-        },
-        async logout () {
-          try {
-            await Api.logout()
-          } catch (e) {
-            console.error("Backend logout failed", e)
-          }
-          this.$store.commit('setHasAllData', false)
-          this.$store.commit('setToken', null)
-          this.$store.commit('setAdmin', false)
-          this.$store.commit('setUser', false)
-          this.$store.commit('setLoggedIn', false)
-          this.$cookies.remove("statping_auth")
-          await this.$router.push('/logout')
-        }
-      }
-  }
+export default {
+	name: "Settings",
+	components: {
+		Configs,
+		Importer,
+		Variables,
+		OAuth,
+		ThemeEditor,
+		FormIntegration,
+		Notifier,
+		CoreSettings,
+	},
+	data() {
+		return {
+			tab: "v-pills-home-tab",
+			github: null,
+		};
+	},
+	computed: {
+		core() {
+			return this.$store.getters.core;
+		},
+		notifiers() {
+			return this.$store.getters.notifiers;
+		},
+		version_below() {
+			if (!this.github || !this.core.version) {
+				return false;
+			}
+			return semver.gt(
+				semver.coerce(this.github.tag_name),
+				semver.coerce(this.core.version),
+			);
+		},
+	},
+	mounted() {},
+	created() {
+		this.update();
+	},
+	methods: {
+		async update() {
+			await this.getGithub();
+		},
+		async getGithub() {
+			try {
+				this.github = await Api.github_release();
+			} catch (e) {
+				console.error(e);
+			}
+		},
+		changeTab(e) {
+			this.tab = e.target.id;
+		},
+		liClass(id) {
+			return this.tab === id;
+		},
+		async renew() {
+			await Api.renewApiKeys();
+			const core = await Api.core();
+			this.$store.commit("setCore", core);
+			this.core = core;
+			await this.logout();
+		},
+		async renewApiKeys() {
+			const modal = {
+				visible: true,
+				title: "Reset API Key",
+				body: `Are you sure you want to reset the API keys? You will be logged out.`,
+				btnColor: "btn-danger",
+				btnText: "Reset",
+				func: () => this.renew(),
+			};
+			this.$store.commit("setModal", modal);
+		},
+		async logout() {
+			try {
+				await Api.logout();
+			} catch (e) {
+				console.error("Backend logout failed", e);
+			}
+			this.$store.commit("setHasAllData", false);
+			this.$store.commit("setToken", null);
+			this.$store.commit("setAdmin", false);
+			this.$store.commit("setUser", false);
+			this.$store.commit("setLoggedIn", false);
+			this.$cookies.remove("statping_auth");
+			await this.$router.push("/logout");
+		},
+	},
+};
 </script>

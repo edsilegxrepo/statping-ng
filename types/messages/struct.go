@@ -11,9 +11,9 @@ type Message struct {
 	Id                int64          `gorm:"primary_key;column:id" json:"id"`
 	Title             string         `gorm:"column:title" json:"title"`
 	Description       string         `gorm:"column:description" json:"description"`
-	StartOn           time.Time      `gorm:"column:start_on" json:"start_on"`
-	EndOn             time.Time      `gorm:"column:end_on" json:"end_on"`
-	ServiceId         int64          `gorm:"index;column:service" json:"service"`
+	StartOn           time.Time      `gorm:"index:idx_messages_service_dates,priority:2;column:start_on" json:"start_on"`
+	EndOn             time.Time      `gorm:"index:idx_messages_service_dates,priority:3;column:end_on" json:"end_on"`
+	ServiceId         int64          `gorm:"index:idx_messages_service_dates,priority:1;index;column:service" json:"service"`
 	NotifyUsers       null.NullBool  `gorm:"column:notify_users" json:"notify_users" scope:"user,admin"`
 	NotifyMethod      string         `gorm:"column:notify_method" json:"notify_method" scope:"user,admin"`
 	NotifyBefore      null.NullInt64 `gorm:"column:notify_before" json:"notify_before" scope:"user,admin"`

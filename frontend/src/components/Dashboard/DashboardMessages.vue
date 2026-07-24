@@ -46,59 +46,61 @@
 </template>
 
 <script>
-  import Api from "../../API"
-  const FormMessage = () => import(/* webpackChunkName: "dashboard" */ "../../forms/Message");
+import Api from "../../API";
 
-  export default {
-  name: 'DashboardMessages',
-    components: {FormMessage},
-    data () {
-    return {
-      edit: false,
-      message: {}
-    }
-  },
-    computed: {
-        messages() {
-          return this.$store.getters.messages
-        }
-    },
-  methods: {
-    goto(to) {
-      this.$router.push(to)
-    },
-    editChange(v) {
-      this.message = {}
-      this.edit = v
-    },
-    editMessage(m, mode) {
-      this.message = m
-      this.edit = !mode
-    },
-    service (id) {
-      return this.$store.getters.serviceById(id) || {}
-    },
-    serviceName (service) {
-      return service.name || "Global Message"
-    },
-    async delete(m) {
-      await Api.message_delete(m.id)
-      const messages = await Api.messages()
-      this.$store.commit('setMessages', messages)
-    },
-    async deleteMessage(m) {
-      const modal = {
-        visible: true,
-        title: "Delete Announcement",
-        body: `Are you sure you want to delete Announcement ${m.title}?`,
-        btnColor: "btn-danger",
-        btnText: "Delete Announcement",
-        func: () => this.delete(m),
-      }
-      this.$store.commit("setModal", modal)
-    }
-  }
-}
+const FormMessage = () =>
+	import(/* webpackChunkName: "dashboard" */ "../../forms/Message");
+
+export default {
+	name: "DashboardMessages",
+	components: { FormMessage },
+	data() {
+		return {
+			edit: false,
+			message: {},
+		};
+	},
+	computed: {
+		messages() {
+			return this.$store.getters.messages;
+		},
+	},
+	methods: {
+		goto(to) {
+			this.$router.push(to);
+		},
+		editChange(v) {
+			this.message = {};
+			this.edit = v;
+		},
+		editMessage(m, mode) {
+			this.message = m;
+			this.edit = !mode;
+		},
+		service(id) {
+			return this.$store.getters.serviceById(id) || {};
+		},
+		serviceName(service) {
+			return service.name || "Global Message";
+		},
+		async delete(m) {
+			await Api.message_delete(m.id);
+			const messages = await Api.messages();
+			this.$store.commit("setMessages", messages);
+		},
+		async deleteMessage(m) {
+			const modal = {
+				visible: true,
+				title: "Delete Announcement",
+				body: `Are you sure you want to delete Announcement ${m.title}?`,
+				btnColor: "btn-danger",
+				btnText: "Delete Announcement",
+				func: () => this.delete(m),
+			};
+			this.$store.commit("setModal", modal);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

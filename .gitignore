@@ -43,4 +43,32 @@ services.yml
 statping.wiki
 statping_test
 version.txt
+*.secrets
+
+# Binaries & Executables
+/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Secrets, Certificates & Keys
+*.key
+*.pem
+*.crt
+*.p12
+*.gpg
+*.secret
+secrets/
+key/
+keys/
+
+# Lint Caches & Transient Test Files
+golangci-lint*
+gosec*
+*.test
+*.out
+*.tmp
 commit.txt
+temp/
+out/

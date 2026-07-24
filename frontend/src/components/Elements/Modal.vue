@@ -19,30 +19,26 @@
 
 <script>
 export default {
-name: "Modal",
-  data () {
-    return {
-
-    }
-  },
-  computed: {
-    modal() {
-     return this.$store.getters.modal
-    }
-  },
-  mounted() {
-
-  },
-  methods: {
-    runFunc() {
-      this.$store.getters.modal.func()
-      this.close()
-    },
-    close() {
-      this.$store.commit("setModal", {visible: false})
-    }
-  }
-}
+	name: "Modal",
+	data() {
+		return {};
+	},
+	computed: {
+		modal() {
+			return this.$store.getters.modal;
+		},
+	},
+	mounted() {},
+	methods: {
+		runFunc() {
+			this.$store.getters.modal.func();
+			this.close();
+		},
+		close() {
+			this.$store.commit("setModal", { visible: false });
+		},
+	},
+};
 </script>
 
 <style scoped>

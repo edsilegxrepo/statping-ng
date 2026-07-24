@@ -1,22 +1,37 @@
 package services
 
 import (
+	"sync"
+
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/types/notifications"
 )
 
-var allNotifiers = make(map[string]ServiceNotifier)
+var (
+	allNotifiers  = make(map[string]ServiceNotifier)
+	notifiersLock sync.RWMutex
+)
 
 func AllNotifiers() map[string]ServiceNotifier {
-	return allNotifiers
+	notifiersLock.RLock()
+	defer notifiersLock.RUnlock()
+	list := make(map[string]ServiceNotifier, len(allNotifiers))
+	for k, v := range allNotifiers {
+		list[k] = v
+	}
+	return list
 }
 
 func ReturnNotifier(method string) ServiceNotifier {
+	notifiersLock.RLock()
+	defer notifiersLock.RUnlock()
 	return allNotifiers[method]
 }
 
 func FindNotifier(method string) *notifications.Notification {
+	notifiersLock.RLock()
 	n := allNotifiers[method]
+	notifiersLock.RUnlock()
 	if n != nil {
 		notif := n.Select()
 		no, err := notifications.Find(notif.Method)

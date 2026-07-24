@@ -125,8 +125,8 @@
 
 <script>
 export default {
-    name: 'Help'
-}
+	name: "Help",
+};
 </script>
 
 <style scoped>

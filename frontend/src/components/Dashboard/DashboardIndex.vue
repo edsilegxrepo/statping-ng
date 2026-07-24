@@ -46,45 +46,52 @@
 </template>
 
 <script>
-  import GroupedServices from "@/components/Dashboard/GroupedServices";
-  const ServiceInfo = () => import(/* webpackChunkName: "dashboard" */ '@/components/Dashboard/ServiceInfo')
+import GroupedServices from "@/components/Dashboard/GroupedServices";
 
-  export default {
-      name: 'DashboardIndex',
-      components: {
-        GroupedServices,
-          ServiceInfo
-      },
-    data() {
-        return {
-          visible: false
-        }
-    },
-      computed: {
-        messagesInRange() {
-          return this.$store.getters.globalMessages.filter(m => this.isAfter(this.now(), m.start_on) && this.isBefore(this.now(), m.end_on))
-        },
-          services() {
-              return this.$store.getters.services
-          },
-        services_no_group() {
-          return this.$store.getters.servicesNoGroup
-        },
-        groups() {
-          return this.$store.getters.groupsInOrder
-        },
-      },
-      methods: {
-          failuresLast24Hours() {
-              let total = 0;
-              this.services.map((s) => {
-                  total += s.failures_24_hours
-              })
-              return total
-          },
+const ServiceInfo = () =>
+	import(
+		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ServiceInfo"
+	);
 
-      }
-  }
+export default {
+	name: "DashboardIndex",
+	components: {
+		GroupedServices,
+		ServiceInfo,
+	},
+	data() {
+		return {
+			visible: false,
+		};
+	},
+	computed: {
+		messagesInRange() {
+			return this.$store.getters.globalMessages.filter(
+				(m) =>
+					this.isAfter(this.now(), m.start_on) &&
+					this.isBefore(this.now(), m.end_on),
+			);
+		},
+		services() {
+			return this.$store.getters.services;
+		},
+		services_no_group() {
+			return this.$store.getters.servicesNoGroup;
+		},
+		groups() {
+			return this.$store.getters.groupsInOrder;
+		},
+	},
+	methods: {
+		failuresLast24Hours() {
+			let total = 0;
+			this.services.forEach((s) => {
+				total += s.failures_24_hours;
+			});
+			return total;
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

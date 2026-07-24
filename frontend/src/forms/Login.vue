@@ -45,84 +45,85 @@
 </template>
 
 <script>
-  import Api from "../API";
+import Api from "../API";
 
-  export default {
-      name: 'FormLogin',
-      computed: {
-        core() {
-          return this.$store.getters.core
-        },
-        oauth() {
-          return this.$store.getters.oauth
-        }
-      },
-      data() {
-          return {
-            username: "",
-            password: "",
-            auth: {},
-            loading: false,
-            error: false,
-            disabled: true,
-            google_scope: "https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email",
-            slack_scope: "identity.email,identity.basic"
-          }
-      },
-    mounted() {
-      this.$cookies.remove("statping_auth")
-    },
-    methods: {
-          checkForm() {
-              if (!this.username || !this.password) {
-                  this.disabled = true
-              } else {
-                  this.disabled = false
-              }
-          },
-          async login() {
-              this.loading = true
-              this.error = false
-              const auth = await Api.login(this.username, this.password)
-              if (auth.error) {
-                  this.error = true
-              } else if (auth.token) {
-                  this.$cookies.set("statping_auth", auth.token)
-                  await this.$store.dispatch('loadAdmin')
-                  this.$store.commit('setAdmin', auth.admin)
-                  this.$store.commit('setLoggedIn', true)
-                  this.$router.push('/dashboard')
-              }
-              this.loading = false
-          },
-      encode(val) {
-            return encodeURI(val)
-      },
-      custom_scopes() {
-        let scopes = []
-        if (this.oauth.custom_open_id) {
-          scopes.push("openid")
-        }
-        scopes.push(this.oauth.custom_scopes.split(","))
-        if (scopes.length !== 0) {
-          return "&scope="+scopes.join(" ")
-        }
-        return ""
-      },
-        GHlogin() {
-            window.location = `https://github.com/login/oauth/authorize?client_id=${this.oauth.gh_client_id}&redirect_uri=${this.encode(this.core.domain+"/oauth/github")}&scope=read:user,read:org`
-        },
-        Slacklogin() {
-          window.location = `https://slack.com/oauth/authorize?client_id=${this.oauth.slack_client_id}&redirect_uri=${this.encode(this.core.domain+"/oauth/slack")}&scope=identity.basic`
-        },
-        Googlelogin() {
-          window.location = `https://accounts.google.com/signin/oauth?client_id=${this.oauth.google_client_id}&redirect_uri=${this.encode(this.core.domain+"/oauth/google")}&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email`
-        },
-        Customlogin() {
-          window.location = `${this.oauth.custom_endpoint_auth}?client_id=${this.oauth.custom_client_id}&redirect_uri=${this.encode(this.core.domain+"/oauth/custom")}&response_type=code${this.custom_scopes()}`
-        }
-      }
-  }
+export default {
+	name: "FormLogin",
+	computed: {
+		core() {
+			return this.$store.getters.core;
+		},
+		oauth() {
+			return this.$store.getters.oauth;
+		},
+	},
+	data() {
+		return {
+			username: "",
+			password: "",
+			auth: {},
+			loading: false,
+			error: false,
+			disabled: true,
+			google_scope:
+				"https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email",
+			slack_scope: "identity.email,identity.basic",
+		};
+	},
+	mounted() {
+		this.$cookies.remove("statping_auth");
+	},
+	methods: {
+		checkForm() {
+			if (!this.username || !this.password) {
+				this.disabled = true;
+			} else {
+				this.disabled = false;
+			}
+		},
+		async login() {
+			this.loading = true;
+			this.error = false;
+			const auth = await Api.login(this.username, this.password);
+			if (auth.error) {
+				this.error = true;
+			} else if (auth.token) {
+				this.$cookies.set("statping_auth", auth.token);
+				await this.$store.dispatch("loadAdmin");
+				this.$store.commit("setAdmin", auth.admin);
+				this.$store.commit("setLoggedIn", true);
+				this.$router.push("/dashboard");
+			}
+			this.loading = false;
+		},
+		encode(val) {
+			return encodeURI(val);
+		},
+		custom_scopes() {
+			let scopes = [];
+			if (this.oauth.custom_open_id) {
+				scopes.push("openid");
+			}
+			scopes.push(this.oauth.custom_scopes.split(","));
+			if (scopes.length !== 0) {
+				return `&scope=${scopes.join(" ")}`;
+			}
+			return "";
+		},
+		GHlogin() {
+			window.location = `https://github.com/login/oauth/authorize?client_id=${this.oauth.gh_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/github`)}&scope=read:user,read:org`;
+		},
+		Slacklogin() {
+			window.location = `https://slack.com/oauth/authorize?client_id=${this.oauth.slack_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/slack`)}&scope=identity.basic`;
+		},
+		Googlelogin() {
+			window.location = `https://accounts.google.com/signin/oauth?client_id=${this.oauth.google_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/google`)}&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email`;
+		},
+		Customlogin() {
+			window.location = `${this.oauth.custom_endpoint_auth}?client_id=${this.oauth.custom_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/custom`)}&response_type=code${this.custom_scopes()}`;
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

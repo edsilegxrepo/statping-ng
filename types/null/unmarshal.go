@@ -31,7 +31,7 @@ func (s *NullString) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalYAML for NullInt64
-func (i *NullInt64) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (i *NullInt64) UnmarshalYAML(unmarshal func(any) error) error {
 	var val int64
 	if err := unmarshal(&val); err != nil {
 		return err
@@ -41,7 +41,7 @@ func (i *NullInt64) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 // UnmarshalYAML for NullFloat64
-func (f *NullFloat64) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (f *NullFloat64) UnmarshalYAML(unmarshal func(any) error) error {
 	var val float64
 	if err := unmarshal(&val); err != nil {
 		return err
@@ -51,7 +51,7 @@ func (f *NullFloat64) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 // UnmarshalYAML for NullBool
-func (bb *NullBool) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (bb *NullBool) UnmarshalYAML(unmarshal func(any) error) error {
 	var val bool
 	if err := unmarshal(&val); err != nil {
 		return err
@@ -61,7 +61,7 @@ func (bb *NullBool) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 // UnmarshalYAML for NullFloat64
-func (s *NullString) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (s *NullString) UnmarshalYAML(unmarshal func(any) error) error {
 	var val string
 	if err := unmarshal(&val); err != nil {
 		return err

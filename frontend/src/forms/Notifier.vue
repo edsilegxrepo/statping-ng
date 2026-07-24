@@ -172,157 +172,169 @@
 </template>
 
 <script>
+/* webpackChunkName: "codemirror" */
+import { codemirror } from "vue-codemirror";
 import Api from "../API";
 /* webpackChunkName: "codemirror" */
-import {codemirror} from 'vue-codemirror'
+import "codemirror/mode/javascript/javascript.js";
 /* webpackChunkName: "codemirror" */
-import 'codemirror/mode/javascript/javascript.js'
+import "codemirror/lib/codemirror.css";
 /* webpackChunkName: "codemirror" */
-import 'codemirror/lib/codemirror.css'
+import "codemirror/theme/neat.css";
 /* webpackChunkName: "codemirror" */
-import 'codemirror/theme/neat.css'
-/* webpackChunkName: "codemirror" */
-import '../codemirror_json'
+import "../codemirror_json";
 
-const beautify = require('js-beautify').js
+const beautify = require("js-beautify").js;
 
 export default {
-  name: 'Notifier',
-  components: {
-    codemirror
-  },
-  props: {
-    notifier: {
-      type: Object,
-      required: true
-    }
-  },
-  watch: {},
-  data() {
-    return {
-      loading: false,
-      loadingTest: false,
-      error: null,
-      response: null,
-      request: null,
-      success: false,
-      saved: false,
-      expanded: false,
-      expanded_logs: false,
-      success_data: null,
-      failure_data: null,
-      form: {},
-      cmOptions: {
-        height: 700,
-        tabSize: 2,
-        lineNumbers: true,
-        line: true,
-        class: "json-field",
-        theme: 'neat',
-        mode: "mymode",
-        lineWrapping: true,
-        json: this.notifier.data_type === "json",
-        autoRefresh: true,
-        mime: this.notifier.data_type === "json" ? "application/json" : "text/plain"
-      },
-      beautifySettings: {indent_size: 2, space_in_empty_paren: true},
-    }
-  },
-  computed: {
-    core() {
-      return this.$store.getters.core
-    },
-    qrcode() {
-      const u = `statping://setup?domain=${this.core.domain}&api=${this.core.api_secret}`
-      return "https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl=" + encodeURIComponent(u)
-    }
-  },
-  methods: {
-    formVisible(want, form) {
-      return !!want.includes(form.type);
-    },
-    visible(isVisible, entry) {
-      if (isVisible) {
-        this.$refs.cmfailure.codemirror.refresh()
-        this.$refs.cmsuccess.codemirror.refresh()
-      }
-    },
-    onCmSuccessReady(cm) {
-      this.success_data = this.notifier.success_data
-      if (this.notifier.data_type === "json") {
-        this.success_data = beautify(this.notifier.success_data, this.beautifySettings)
-      }
-      setTimeout(function () {
-        cm.refresh();
-      }, 1);
-    },
-    onCmFailureReady(cm) {
-      this.failure_data = this.notifier.failure_data
-      if (this.notifier.data_type === "json") {
-        this.failure_data = beautify(this.notifier.failure_data, this.beautifySettings)
-      }
-      setTimeout(function () {
-        cm.refresh();
-      }, 1);
-    },
-    async enableToggle() {
-      this.notifier.enabled = !!this.notifier.enabled
-      const form = {
-        enabled: !this.notifier.enabled,
-        method: this.notifier.method,
-      }
-      await Api.notifier_save(form)
-    },
-    async saveNotifier() {
-      this.loading = true
-      this.form.enabled = this.notifier.enabled
-      this.form.limits = parseInt(this.notifier.limits)
-      this.form.method = this.notifier.method
-      if (this.notifier.form) {
-        this.notifier.form.forEach((f) => {
-          let field = f.field.toLowerCase()
-          let val = this.notifier[field]
-          if (this.isNumeric(val) && this.form.method!='telegram') {
-            val = parseInt(val)
-          }
-          this.form[field] = val
-        });
-      }
-      this.form.success_data = this.success_data
-      this.form.failure_data = this.failure_data
-      await Api.notifier_save(this.form)
-      const notifiers = await Api.notifiers()
-      await this.$store.commit('setNotifiers', notifiers)
-      this.saved = true
-      this.loading = false
-    },
-    async testNotifier(method = "success") {
-      this.success = false
-      this.loadingTest = true
-      this.form.method = this.notifier.method
-      if (this.notifier.form) {
-        this.notifier.form.forEach((f) => {
-          let field = f.field.toLowerCase()
-          let val = this.notifier[field]
-          if (this.isNumeric(val) && this.form.method!='telegram') {
-            val = parseInt(val)
-          }
-          this.form[field] = val
-        });
-      }
-      let req = {
-        notifier: this.form,
-        method: method,
-      }
-      const tested = await Api.notifier_test(req, this.notifier.method)
-      if (tested.success) {
-        this.success = true
-      } else {
-        this.error = tested.error
-      }
-      this.response = tested.response
-      this.loadingTest = false
-    },
-  }
-}
+	name: "Notifier",
+	components: {
+		codemirror,
+	},
+	props: {
+		notifier: {
+			type: Object,
+			required: true,
+		},
+	},
+	watch: {},
+	data() {
+		return {
+			loading: false,
+			loadingTest: false,
+			error: null,
+			response: null,
+			request: null,
+			success: false,
+			saved: false,
+			expanded: false,
+			expanded_logs: false,
+			success_data: null,
+			failure_data: null,
+			form: {},
+			cmOptions: {
+				height: 700,
+				tabSize: 2,
+				lineNumbers: true,
+				line: true,
+				class: "json-field",
+				theme: "neat",
+				mode: "mymode",
+				lineWrapping: true,
+				json: this.notifier.data_type === "json",
+				autoRefresh: true,
+				mime:
+					this.notifier.data_type === "json"
+						? "application/json"
+						: "text/plain",
+			},
+			beautifySettings: { indent_size: 2, space_in_empty_paren: true },
+		};
+	},
+	computed: {
+		core() {
+			return this.$store.getters.core;
+		},
+		qrcode() {
+			const u = `statping://setup?domain=${this.core.domain}&api=${this.core.api_secret}`;
+			return (
+				"https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl=" +
+				encodeURIComponent(u)
+			);
+		},
+	},
+	methods: {
+		formVisible(want, form) {
+			return !!want.includes(form.type);
+		},
+		visible(isVisible, _entry) {
+			if (isVisible) {
+				this.$refs.cmfailure.codemirror.refresh();
+				this.$refs.cmsuccess.codemirror.refresh();
+			}
+		},
+		onCmSuccessReady(cm) {
+			this.success_data = this.notifier.success_data;
+			if (this.notifier.data_type === "json") {
+				this.success_data = beautify(
+					this.notifier.success_data,
+					this.beautifySettings,
+				);
+			}
+			setTimeout(() => {
+				cm.refresh();
+			}, 1);
+		},
+		onCmFailureReady(cm) {
+			this.failure_data = this.notifier.failure_data;
+			if (this.notifier.data_type === "json") {
+				this.failure_data = beautify(
+					this.notifier.failure_data,
+					this.beautifySettings,
+				);
+			}
+			setTimeout(() => {
+				cm.refresh();
+			}, 1);
+		},
+		async enableToggle() {
+			this.notifier.enabled = !!this.notifier.enabled;
+			const form = {
+				enabled: !this.notifier.enabled,
+				method: this.notifier.method,
+			};
+			await Api.notifier_save(form);
+		},
+		async saveNotifier() {
+			this.loading = true;
+			this.form.enabled = this.notifier.enabled;
+			this.form.limits = parseInt(this.notifier.limits, 10);
+			this.form.method = this.notifier.method;
+			if (this.notifier.form) {
+				this.notifier.form.forEach((f) => {
+					let field = f.field.toLowerCase();
+					let val = this.notifier[field];
+					if (this.isNumeric(val) && this.form.method !== "telegram") {
+						val = parseInt(val, 10);
+					}
+					this.form[field] = val;
+				});
+			}
+			this.form.success_data = this.success_data;
+			this.form.failure_data = this.failure_data;
+			await Api.notifier_save(this.form);
+			const notifiers = await Api.notifiers();
+			await this.$store.commit("setNotifiers", notifiers);
+			this.saved = true;
+			this.loading = false;
+		},
+		async testNotifier(method = "success") {
+			this.success = false;
+			this.loadingTest = true;
+			this.form.method = this.notifier.method;
+			if (this.notifier.form) {
+				this.notifier.form.forEach((f) => {
+					let field = f.field.toLowerCase();
+					let val = this.notifier[field];
+					if (this.isNumeric(val) && this.form.method !== "telegram") {
+						val = parseInt(val, 10);
+					}
+					this.form[field] = val;
+				});
+			}
+			let req = {
+				notifier: this.form,
+				method: method,
+			};
+			const tested = await Api.notifier_test(req, this.notifier.method);
+			if (tested.success) {
+				this.success = true;
+			} else {
+				this.error = tested.error;
+			}
+			this.response = tested.response;
+			this.loadingTest = false;
+		},
+	},
+};
 </script>

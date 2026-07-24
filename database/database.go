@@ -216,6 +216,14 @@ func Openw(dialect string, args ...interface{}) (db Database, err error) {
 	return database, err
 }
 
+func Get() Database {
+	return database
+}
+
+func Set(db Database) {
+	database = db
+}
+
 func OpenTester() (Database, error) {
 	testDB := utils.Params.GetString("DB_CONN")
 	var dbString string
@@ -266,7 +274,7 @@ func (it *Db) wrap(db *gorm.DB) Database {
 func Wrap(db *gorm.DB) Database {
 	name := "sqlite3"
 	if db != nil && db.Dialector != nil {
-		name = db.Dialector.Name()
+		name = db.Name()
 	}
 	return &Db{
 		Database: db,
@@ -526,7 +534,7 @@ func (it *Db) CreateTable(values ...interface{}) Database {
 	if it.ReadOnly {
 		return it
 	}
-	if err := it.Database.Migrator().CreateTable(values...); err != nil {
+	if err := it.Database.AutoMigrate(values...); err != nil {
 		it.Database.Error = err
 	}
 	return it

@@ -46,52 +46,54 @@
 </template>
 
 <script>
-  import Api from "../../API"
-  const FormUser = () => import(/* webpackChunkName: "dashboard" */ '@/forms/User')
+import Api from "../../API";
 
-  export default {
-  name: 'DashboardUsers',
-    components: {FormUser},
-    data () {
-    return {
-      edit: false,
-      user: {}
-    }
-  },
-      computed: {
-        users() {
-            return this.$store.getters.users
-        }
-      },
-  methods: {
-    editChange(v) {
-      this.user = {}
-      this.edit = v
-    },
-    editUser(u, mode) {
-      delete(u.password)
-      delete(u.confirm_password)
-      this.user = u
-      this.edit = !mode
-    },
-    async delete(u) {
-      await Api.user_delete(u.id)
-      const users = await Api.users()
-      this.$store.commit('setUsers', users)
-    },
-    async deleteUser(u) {
-      const modal = {
-        visible: true,
-        title: "Delete User",
-        body: `Are you sure you want to delete user ${u.username}?`,
-        btnColor: "btn-danger",
-        btnText: "Delete User",
-        func: () => this.delete(u),
-      }
-      this.$store.commit("setModal", modal)
-    }
-  }
-}
+const FormUser = () =>
+	import(/* webpackChunkName: "dashboard" */ "@/forms/User");
+
+export default {
+	name: "DashboardUsers",
+	components: { FormUser },
+	data() {
+		return {
+			edit: false,
+			user: {},
+		};
+	},
+	computed: {
+		users() {
+			return this.$store.getters.users;
+		},
+	},
+	methods: {
+		editChange(v) {
+			this.user = {};
+			this.edit = v;
+		},
+		editUser(u, mode) {
+			delete u.password;
+			delete u.confirm_password;
+			this.user = u;
+			this.edit = !mode;
+		},
+		async delete(u) {
+			await Api.user_delete(u.id);
+			const users = await Api.users();
+			this.$store.commit("setUsers", users);
+		},
+		async deleteUser(u) {
+			const modal = {
+				visible: true,
+				title: "Delete User",
+				body: `Are you sure you want to delete user ${u.username}?`,
+				btnColor: "btn-danger",
+				btnText: "Delete User",
+				func: () => this.delete(u),
+			};
+			this.$store.commit("setModal", modal);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

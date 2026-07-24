@@ -7,19 +7,23 @@
 
 <script>
 export default {
-  name: 'MessagesIcon',
-    props: {
-        messages: {
-            type: Object,
-            required: true,
-        }
-    },
-    methods: {
-        activeMessages(msgs) {
-            return msgs.filter(m => this.isAfter(this.now(), m.start_on) && this.isBefore(this.now(), m.end_on)).length
-        }
-    }
-}
+	name: "MessagesIcon",
+	props: {
+		messages: {
+			type: Object,
+			required: true,
+		},
+	},
+	methods: {
+		activeMessages(msgs) {
+			return msgs.filter(
+				(m) =>
+					this.isAfter(this.now(), m.start_on) &&
+					this.isBefore(this.now(), m.end_on),
+			).length;
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

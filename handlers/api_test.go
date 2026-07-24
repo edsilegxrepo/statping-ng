@@ -56,7 +56,7 @@ func TestSetupRoutes(t *testing.T) {
 	form.Add("db_port", utils.Params.GetString("DB_PORT"))
 	form.Add("project", "Tester")
 	form.Add("username", "admin")
-	form.Add("password", "password123")
+	form.Add("password", "Password123456789012345678901234567890")
 	form.Add("sample_data", "on")
 	form.Add("description", "This is an awesome test")
 	form.Add("domain", "http://localhost:8080")
@@ -375,9 +375,41 @@ func Request(test HTTPTest) (*httptest.ResponseRecorder, error) {
 			req.Header.Set(splits[0], splits[1])
 		}
 	}
+	if utils.Params.Get("GO_ENV") == "test" && core.App != nil && core.App.ApiSecret != "" && req.Header.Get("Authorization") == "" && !strings.Contains(test.URL, "api=") {
+		req.Header.Set("Authorization", "Bearer "+core.App.ApiSecret)
+	}
 	rr := httptest.NewRecorder()
 	Router().ServeHTTP(rr, req)
 	return rr, err
+}
+
+func ensureHandlerSetup(t *testing.T) {
+	if len(services.Services()) >= 6 {
+		return
+	}
+	core.App.Setup = false
+	form := url.Values{}
+	form.Add("db_host", utils.Params.GetString("DB_HOST"))
+	form.Add("db_user", utils.Params.GetString("DB_USER"))
+	form.Add("db_password", utils.Params.GetString("DB_PASS"))
+	form.Add("db_database", utils.Params.GetString("DB_DATABASE"))
+	form.Add("db_connection", utils.Params.GetString("DB_CONN"))
+	form.Add("db_port", utils.Params.GetString("DB_PORT"))
+	form.Add("project", "Tester")
+	form.Add("username", "admin")
+	form.Add("password", "Password123456789012345678901234567890")
+	form.Add("sample_data", "on")
+	form.Add("description", "This is an awesome test")
+	form.Add("domain", "http://localhost:8080")
+	form.Add("email", "info@statping.com")
+
+	req, err := http.NewRequest("POST", "/api/setup", strings.NewReader(form.Encode()))
+	require.Nil(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rr := httptest.NewRecorder()
+	Router().ServeHTTP(rr, req)
+	require.Equal(t, 200, rr.Code)
+	utils.Params.Set("GO_ENV", "production")
 }
 
 func SetTestENV(t *testing.T) error {

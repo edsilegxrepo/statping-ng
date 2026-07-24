@@ -98,86 +98,94 @@
 </template>
 
 <script>
+import flatPickr from "vue-flatpickr-component";
 import Api from "../../API";
-import flatPickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import "flatpickr/dist/flatpickr.css";
 
 export default {
-    name: 'Failures',
-      components: {
-        flatPickr
-      },
-    data() {
-        return {
-          loading: true,
-          search: "",
-          show_checkins: false,
-          service: null,
-          fails: [],
-          limit: 64,
-          offset: 0,
-          total: 0,
-          page: 1,
-          start_time: this.nowSubtract(216000).toISOString(),
-          end_time: this.nowSubtract(0).toISOString(),
-        }
-    },
-      watch: {
-        '$route': 'reloadTimes',
-      },
-      computed: {
-        failures() {
-          let sorted = this.fails
-          if (this.show_checkins) {
-            sorted = sorted.filter(f => f.method === "checkin");
-          } else {
-            sorted = sorted.filter(f => f.method !== "checkin");
-          }
-          if (this.search !== "") {
-            sorted = sorted.filter(f => f.issue.toLowerCase().includes(this.search));
-          }
-          return sorted
-        },
-        pages() {
-          return Math.floor(this.total / this.limit)
-        },
-        maxPages() {
-          return Math.floor(this.total / this.limit)
-        }
-      },
-      async created() {
-        this.service = await Api.service(this.$route.params.id)
-        this.total = this.service.stats.failures
-        await this.gotoPage(1)
-      },
-    methods: {
-      async delete() {
-        await Api.service_failures_delete(this.service)
-        this.service = await Api.service(this.service.id)
-        this.total = 0
-        await this.load()
-      },
-      async deleteFailures() {
-        const modal = {
-          visible: true,
-          title: "Delete All Failures",
-          body: `Are you sure you want to delete all Failures for service ${this.service.title}?`,
-          btnColor: "btn-danger",
-          btnText: "Delete Failures",
-          func: () => this.delete(),
-        }
-        this.$store.commit("setModal", modal)
-      },
-      async gotoPage(page) {
-        this.page = page;
-        this.offset = (page-1) * this.limit;
-        await this.load()
-      },
-      async load() {
-        this.loading = true
-        this.fails = await Api.service_failures(this.service.id, this.toUnix(this.parseISO(this.start_time)), this.toUnix(this.parseISO(this.end_time)), this.limit, this.offset)
-        this.loading = false
-      }
-    }
-}
+	name: "Failures",
+	components: {
+		flatPickr,
+	},
+	data() {
+		return {
+			loading: true,
+			search: "",
+			show_checkins: false,
+			service: null,
+			fails: [],
+			limit: 64,
+			offset: 0,
+			total: 0,
+			page: 1,
+			start_time: this.nowSubtract(216000).toISOString(),
+			end_time: this.nowSubtract(0).toISOString(),
+		};
+	},
+	watch: {
+		$route: "reloadTimes",
+	},
+	computed: {
+		failures() {
+			let sorted = this.fails;
+			if (this.show_checkins) {
+				sorted = sorted.filter((f) => f.method === "checkin");
+			} else {
+				sorted = sorted.filter((f) => f.method !== "checkin");
+			}
+			if (this.search !== "") {
+				sorted = sorted.filter((f) =>
+					f.issue.toLowerCase().includes(this.search),
+				);
+			}
+			return sorted;
+		},
+		pages() {
+			return Math.floor(this.total / this.limit);
+		},
+		maxPages() {
+			return Math.floor(this.total / this.limit);
+		},
+	},
+	async created() {
+		this.service = await Api.service(this.$route.params.id);
+		this.total = this.service.stats.failures;
+		await this.gotoPage(1);
+	},
+	methods: {
+		async delete() {
+			await Api.service_failures_delete(this.service);
+			this.service = await Api.service(this.service.id);
+			this.total = 0;
+			await this.load();
+		},
+		async deleteFailures() {
+			const modal = {
+				visible: true,
+				title: "Delete All Failures",
+				body: `Are you sure you want to delete all Failures for service ${this.service.title}?`,
+				btnColor: "btn-danger",
+				btnText: "Delete Failures",
+				func: () => this.delete(),
+			};
+			this.$store.commit("setModal", modal);
+		},
+		async gotoPage(page) {
+			this.page = page;
+			this.offset = (page - 1) * this.limit;
+			await this.load();
+		},
+		async load() {
+			this.loading = true;
+			this.fails = await Api.service_failures(
+				this.service.id,
+				this.toUnix(this.parseISO(this.start_time)),
+				this.toUnix(this.parseISO(this.end_time)),
+				this.limit,
+				this.offset,
+			);
+			this.loading = false;
+		},
+	},
+};
 </script>

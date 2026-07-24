@@ -7,8 +7,8 @@ import (
 
 func Samples() (map[string]string, error) {
 	log.Infoln("Inserting Sample Users...")
-	pass1 := utils.RandomString(32)
-	pass2 := utils.RandomString(32)
+	pass1 := utils.RandomString(28) + "Aa1!"
+	pass2 := utils.RandomString(28) + "Bb2!"
 
 	u2 := &User{
 		Username: "testadmin",

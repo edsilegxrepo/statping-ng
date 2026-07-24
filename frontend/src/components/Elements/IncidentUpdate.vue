@@ -11,30 +11,30 @@
 </template>
 
 <script>
-  import Api from "@/API";
+import Api from "@/API";
 
-  export default {
-    name: "IncidentUpdate",
-    props: {
-      update: {
-        required: true
-      },
-      admin: {
-        required: true
-      },
-      onUpdate: {
-        required: false
-      }
-    },
-    methods: {
-      async delete_update(update) {
-        this.res = await Api.incident_update_delete(update)
-        if (this.res.status === "success") {
-         this.onUpdate()
-        }
-      },
-    }
-  }
+export default {
+	name: "IncidentUpdate",
+	props: {
+		update: {
+			required: true,
+		},
+		admin: {
+			required: true,
+		},
+		onUpdate: {
+			required: false,
+		},
+	},
+	methods: {
+		async delete_update(update) {
+			this.res = await Api.incident_update_delete(update);
+			if (this.res.status === "success") {
+				this.onUpdate();
+			}
+		},
+	},
+};
 </script>
 
 <style scoped>

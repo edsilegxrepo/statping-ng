@@ -20,8 +20,8 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
-// initModels sets the database for each Statping type packages
-func initModels(db database.Database) {
+// InitModels sets the database for each Statping type packages
+func InitModels(db database.Database) {
 	core.SetDB(db)
 	services.SetDB(db)
 	hits.SetDB(db)
@@ -74,7 +74,7 @@ func Connect(configs *DbConfig, retry bool) error {
 
 	configs.Db = dbSession
 
-	initModels(configs.Db)
+	InitModels(configs.Db)
 
 	return err
 }

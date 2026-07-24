@@ -83,6 +83,7 @@ type NotificationForm struct {
 type NotificationOrder []Notification
 
 // Sort interface for resorting the Notifications in order
-func (c NotificationOrder) Len() int           { return len(c) }
+func (c NotificationOrder) Len() int { return len(c) }
+
 func (c NotificationOrder) Swap(i, j int)      { c[int64(i)], c[int64(j)] = c[int64(j)], c[int64(i)] }
 func (c NotificationOrder) Less(i, j int) bool { return c[i].Id < c[j].Id }

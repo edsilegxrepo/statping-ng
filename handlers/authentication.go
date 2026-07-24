@@ -7,17 +7,12 @@ import (
 
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/users"
-	"github.com/statping-ng/statping-ng/utils"
 )
 
-// hasSetupEnv checks to see if the GO_ENV is set to 'true'
-// or if the Statping instance has not been setup yet
+// hasSetupEnv checks to see if the Statping instance has not been setup yet
 func hasSetupEnv() bool {
-	if utils.Params.Get("GO_ENV") == "test" {
-		return true
-	}
 	if core.App == nil {
-		return true
+		return false
 	}
 	if !core.App.Setup {
 		return false
@@ -35,13 +30,13 @@ func hasAPIQuery(r *http.Request) bool {
 	if subtle.ConstantTimeCompare([]byte(key), []byte(core.App.ApiSecret)) == 1 {
 		return true
 	}
-	// find user with API key
+	// find user with API key and verify Admin status
 	user, err := users.FindByAPIKey(key)
-	if err != nil {
+	if err != nil || user == nil {
 		return false
 	}
 	if subtle.ConstantTimeCompare([]byte(key), []byte(user.ApiKey)) == 1 {
-		return true
+		return user.Admin.Bool
 	}
 	return false
 }
@@ -55,6 +50,10 @@ func hasAuthorizationHeader(r *http.Request) bool {
 		token = strings.TrimPrefix(token, "Bearer ")
 		if subtle.ConstantTimeCompare([]byte(token), []byte(core.App.ApiSecret)) == 1 {
 			return true
+		}
+		user, err := users.FindByAPIKey(token)
+		if err == nil && user != nil {
+			return user.Admin.Bool
 		}
 	}
 	return false

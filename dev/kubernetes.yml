@@ -24,8 +24,12 @@ spec:
       labels:
         app: statping
     spec:
+      securityContext:
+        runAsNonRoot: true #:
       containers:
         - image: statping/statping
+          securityContext:
+            allowPrivilegeEscalation: false
           name: statping
           env:
             - name: ALLOW_REPORTS

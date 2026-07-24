@@ -38,66 +38,66 @@
 </template>
 
 <script>
-  import Api from "../API";
+import Api from "../API";
 
-  export default {
-      name: 'FormGroup',
-      props: {
-          in_group: {
-              type: Object
-          },
-          edit: {
-              type: Function
-          }
-      },
-      data() {
-          return {
-              loading: false,
-              group: {
-                  name: "",
-                  public: true
-              }
-          }
-      },
-      watch: {
-          in_group() {
-              this.group = this.in_group
-          }
-      },
-      methods: {
-          removeEdit() {
-              this.group = {}
-              this.edit(false)
-          },
-          async saveGroup() {
-              this.loading = true
-              if (this.group.id) {
-                  await this.updateGroup()
-              } else {
-                  await this.createGroup()
-              }
-              this.loading = false
-          },
-          async createGroup() {
-              const g = this.group
-              const data = {name: g.name, public: g.public}
-              await Api.group_create(data)
-              await this.update()
-              this.group = {}
-          },
-          async updateGroup() {
-              const g = this.group
-              const data = {id: g.id, name: g.name, public: g.public}
-              await Api.group_update(data)
-              await this.update()
-              this.edit(false)
-          },
-          async update() {
-              const groups = await Api.groups()
-              this.$store.commit('setGroups', groups)
-          }
-      }
-  }
+export default {
+	name: "FormGroup",
+	props: {
+		in_group: {
+			type: Object,
+		},
+		edit: {
+			type: Function,
+		},
+	},
+	data() {
+		return {
+			loading: false,
+			group: {
+				name: "",
+				public: true,
+			},
+		};
+	},
+	watch: {
+		in_group() {
+			this.group = this.in_group;
+		},
+	},
+	methods: {
+		removeEdit() {
+			this.group = {};
+			this.edit(false);
+		},
+		async saveGroup() {
+			this.loading = true;
+			if (this.group.id) {
+				await this.updateGroup();
+			} else {
+				await this.createGroup();
+			}
+			this.loading = false;
+		},
+		async createGroup() {
+			const g = this.group;
+			const data = { name: g.name, public: g.public };
+			await Api.group_create(data);
+			await this.update();
+			this.group = {};
+		},
+		async updateGroup() {
+			const g = this.group;
+			const data = { id: g.id, name: g.name, public: g.public };
+			await Api.group_update(data);
+			await this.update();
+			this.edit(false);
+		},
+		async update() {
+			const groups = await Api.groups();
+			this.$store.commit("setGroups", groups);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

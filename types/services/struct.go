@@ -27,12 +27,12 @@ type Service struct {
 	VerifySSL           null.NullBool         `gorm:"default:false;column:verify_ssl" json:"verify_ssl" scope:"user,admin" yaml:"verify_ssl"`
 	GrpcHealthCheck     null.NullBool         `gorm:"default:false;column:grpc_health_check" json:"grpc_health_check" scope:"user,admin" yaml:"grpc_health_check"`
 	Public              null.NullBool         `gorm:"default:true;column:public" json:"public" yaml:"public"`
-	GroupId             int                   `gorm:"default:0;column:group_id" json:"group_id" yaml:"group_id"`
+	GroupId             int                   `gorm:"index;default:0;column:group_id" json:"group_id" yaml:"group_id"`
 	TLSCert             null.NullString       `gorm:"column:tls_cert" json:"tls_cert" scope:"user,admin" yaml:"tls_cert"`
 	TLSCertKey          null.NullString       `gorm:"column:tls_cert_key" json:"tls_cert_key" scope:"user,admin" yaml:"tls_cert_key"`
 	TLSCertRoot         null.NullString       `gorm:"column:tls_cert_root" json:"tls_cert_root" scope:"user,admin" yaml:"tls_cert_root"`
 	Headers             null.NullString       `gorm:"column:headers" json:"headers" scope:"user,admin" yaml:"headers"`
-	Permalink           null.NullString       `gorm:"column:permalink" json:"permalink" yaml:"permalink"`
+	Permalink           null.NullString       `gorm:"index;column:permalink" json:"permalink" yaml:"permalink"`
 	Redirect            null.NullBool         `gorm:"default:false;column:redirect" json:"redirect" scope:"user,admin" yaml:"redirect"`
 	CreatedAt           time.Time             `gorm:"column:created_at" json:"created_at" yaml:"-"`
 	UpdatedAt           time.Time             `gorm:"column:updated_at" json:"updated_at" yaml:"-"`
@@ -59,9 +59,9 @@ type Service struct {
 	LastOnline          time.Time             `gorm:"-" json:"last_success" yaml:"-"`
 	LastOffline         time.Time             `gorm:"-" json:"last_error" yaml:"-"`
 	Stats               *Stats                `gorm:"-" json:"stats,omitempty" yaml:"-"`
-	Messages            []*messages.Message   `gorm:"foreignkey:service;association_foreignkey:id" json:"messages,omitempty" yaml:"messages"`
-	Incidents           []*incidents.Incident `gorm:"foreignkey:service;association_foreignkey:id" json:"incidents,omitempty" yaml:"incidents"`
-	Checkins            []*checkins.Checkin   `gorm:"foreignkey:service;association_foreignkey:id" json:"checkins,omitempty" yaml:"-" scope:"user,admin"`
+	Messages            []*messages.Message   `gorm:"foreignKey:Service;references:Id" json:"messages,omitempty" yaml:"messages"`
+	Incidents           []*incidents.Incident `gorm:"foreignKey:Service;references:Id" json:"incidents,omitempty" yaml:"incidents"`
+	Checkins            []*checkins.Checkin   `gorm:"foreignKey:Service;references:Id" json:"checkins,omitempty" yaml:"-" scope:"user,admin"`
 	Failures            []*failures.Failure   `gorm:"-" json:"failures,omitempty" yaml:"-" scope:"user,admin"`
 
 	notifyAfterCount int64 `gorm:"-" json:"-" yaml:"-"`

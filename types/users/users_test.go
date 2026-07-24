@@ -10,10 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testPassword = "Password123456789012345678901234567890"
+
 var example = &User{
 	Username: "example_user",
-	Email:    "Description here",
-	Password: "password123",
+	Email:    "info@example.com",
+	Password: testPassword,
 	Admin:    null.NewNullBool(true),
 }
 
@@ -23,8 +25,9 @@ func TestInit(t *testing.T) {
 	db, err := database.OpenTester()
 	require.Nil(t, err)
 	db.CreateTable(&User{})
-	db.Create(&example)
 	SetDB(db)
+	err = example.Create()
+	require.Nil(t, err)
 }
 
 func TestFind(t *testing.T) {
@@ -32,7 +35,7 @@ func TestFind(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, "example_user", item.Username)
 	assert.NotEmpty(t, item.ApiKey)
-	assert.NotEqual(t, "password123", item.Password)
+	assert.NotEqual(t, testPassword, item.Password)
 	assert.True(t, item.Admin.Bool)
 }
 
@@ -41,7 +44,7 @@ func TestFindByUsername(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, "example_user", item.Username)
 	assert.NotEmpty(t, item.ApiKey)
-	assert.NotEqual(t, "password123", item.Password)
+	assert.NotEqual(t, testPassword, item.Password)
 	assert.True(t, item.Admin.Bool)
 }
 
@@ -53,14 +56,14 @@ func TestAll(t *testing.T) {
 func TestCreate(t *testing.T) {
 	example := &User{
 		Username: "exampleuser2",
-		Password: "password12345",
+		Password: testPassword,
 		Email:    "info@yahoo.com",
 	}
 	err := example.Create()
 	require.Nil(t, err)
 	assert.NotZero(t, example.Id)
 	assert.Equal(t, "exampleuser2", example.Username)
-	assert.NotEqual(t, "password12345", example.Password)
+	assert.NotEqual(t, testPassword, example.Password)
 	assert.NotZero(t, example.CreatedAt)
 	assert.NotEmpty(t, example.ApiKey)
 }

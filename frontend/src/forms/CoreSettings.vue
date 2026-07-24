@@ -75,34 +75,34 @@
 </template>
 
 <script>
-  import Api from '../API'
+import Api from "../API";
 
-  export default {
-      name: 'CoreSettings',
-    data () {
-      return {
-        loading: false
-      }
-    },
-      computed: {
-          core() {
-              return this.$store.getters.core
-          }
-      },
-      methods: {
-          async saveSettings() {
-            this.loading = true
-              const c = this.core
-              await Api.core_save(c)
-              this.$store.commit('setCore', c)
-            this.$i18n.locale = c.language || "en";
-            this.loading = false
-          },
-          selectAll() {
-              this.$refs.input.select();
-          }
-      }
-  }
+export default {
+	name: "CoreSettings",
+	data() {
+		return {
+			loading: false,
+		};
+	},
+	computed: {
+		core() {
+			return this.$store.getters.core;
+		},
+	},
+	methods: {
+		async saveSettings() {
+			this.loading = true;
+			const c = this.core;
+			await Api.core_save(c);
+			this.$store.commit("setCore", c);
+			this.$i18n.locale = c.language || "en";
+			this.loading = false;
+		},
+		selectAll() {
+			this.$refs.input.select();
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

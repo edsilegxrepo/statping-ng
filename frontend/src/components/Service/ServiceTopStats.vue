@@ -20,20 +20,20 @@
 </template>
 
 <script>
-    export default {
-        name: 'ServiceTopStats',
-        props: {
-            service: {
-                type: Object,
-                required: true
-            },
-        },
-        computed: {
-            showResponseTime() {
-                return this.service.avg_response !== 0 || this.service.type !== 'static'
-            },
-        },
-    }
+export default {
+	name: "ServiceTopStats",
+	props: {
+		service: {
+			type: Object,
+			required: true,
+		},
+	},
+	computed: {
+		showResponseTime() {
+			return this.service.avg_response !== 0 || this.service.type !== "static";
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

@@ -8,13 +8,19 @@ import (
 
 func AddNotifier(n ServiceNotifier) {
 	notif := n.Select()
+	notifiersLock.Lock()
 	allNotifiers[notif.Method] = n
+	notifiersLock.Unlock()
 }
 
 func UpdateNotifiers() {
 	for _, n := range notifications.All() {
+		notifiersLock.RLock()
 		notifier := allNotifiers[n.Method]
-		notifier.Select().UpdateFields(n)
+		notifiersLock.RUnlock()
+		if notifier != nil {
+			notifier.Select().UpdateFields(n)
+		}
 	}
 }
 
@@ -30,7 +36,7 @@ func sendSuccess(s *Service) {
 	}
 	s.prevOnline = true
 
-	for _, n := range allNotifiers {
+	for _, n := range AllNotifiers() {
 		notif := n.Select()
 		if notif.CanSend() {
 			log.Infof("Sending notification to: %s!", notif.Method)
@@ -65,7 +71,7 @@ func sendFailure(s *Service, f *failures.Failure) {
 
 	s.prevOnline = false
 
-	for _, n := range allNotifiers {
+	for _, n := range AllNotifiers() {
 		notif := n.Select()
 		if notif.CanSend() {
 			log.Infof("Sending Failure notification to: %s!", notif.Method)
@@ -84,6 +90,9 @@ func sendFailure(s *Service, f *failures.Failure) {
 
 func logMessage(method string, msg string, error error, onSuccesss bool, serviceId int64) {
 	notif := FindNotifier(method)
+	if notif == nil {
+		return
+	}
 	l := &notifications.NotificationLog{
 		Message:   msg,
 		Error:     error,

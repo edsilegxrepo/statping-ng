@@ -63,6 +63,9 @@ func setJwtToken(user *users.User, w http.ResponseWriter) (JwtClaim, string) {
 func parseToken(token string) (JwtClaim, error) {
 	var claims JwtClaim
 	tkn, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return jwtKey, nil
 	})
 	if err != nil {

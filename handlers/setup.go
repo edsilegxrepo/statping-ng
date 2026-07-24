@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"github.com/statping-ng/statping-ng/notifiers"
@@ -40,7 +39,7 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	description := r.PostForm.Get("description")
 	domain := r.PostForm.Get("domain")
 	sendReports, _ := strconv.ParseBool(r.PostForm.Get("send_reports"))
-	sampleData, _ := strconv.ParseBool(r.PostForm.Get("sample_data"))
+	sampleData := r.PostForm.Get("sample_data") == "on" || r.PostForm.Get("sample_data") == "true" || r.PostForm.Get("sample_data") == "1"
 
 	log.WithFields(utils.ToFields(core.App, confgs)).Debugln("new configs posted")
 
@@ -57,10 +56,9 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var adminPass string
-	exists := confgs.Db.HasTable("core")
 	var samplePasses map[string]string
 
-	if !exists {
+	if !core.App.Setup {
 		if err := confgs.DropDatabase(); err != nil {
 			sendErrorJson(err, w, r)
 			return
@@ -71,11 +69,19 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err = confgs.MigrateDatabase(); err != nil {
+			sendErrorJson(err, w, r)
+			return
+		}
+
 		adminPass, err = configs.CreateAdminUser()
 		if err != nil {
 			sendErrorJson(err, w, r)
 			return
 		}
+
+		log.Infoln("Migrating Notifiers...")
+		notifiers.InitNotifiers()
 
 		if sampleData {
 			samplePasses, err = configs.TriggerSamples()
@@ -86,14 +92,6 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		confgs.SampleData = false
 	}
-
-	if err = confgs.MigrateDatabase(); err != nil {
-		sendErrorJson(err, w, r)
-		return
-	}
-
-	log.Infoln("Migrating Notifiers...")
-	notifiers.InitNotifiers()
 
 	c := &core.Core{
 		Name:         project,
@@ -144,19 +142,4 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 		samplePasses,
 	}
 	returnJson(out, w, r)
-}
-
-func registerNews(email, domain string) error {
-	if email == "" {
-		return nil
-	}
-	v := url.Values{}
-	v.Set("email", email)
-	v.Set("domain", domain)
-	v.Set("timezone", "UTC")
-	resp, err := http.PostForm("https://news.statping.com/new", v)
-	if err != nil {
-		return err
-	}
-	return resp.Body.Close()
 }

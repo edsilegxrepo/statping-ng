@@ -32,7 +32,7 @@ var (
 	ErrorJSONParse = returnErrCode("could not parse JSON request", http.StatusBadRequest)
 )
 
-type Errorer interface{}
+type Errorer any
 
 type Error struct {
 	err  error
@@ -60,7 +60,7 @@ func returnErr(str string) Error {
 	}
 }
 
-func convertError(val interface{}) string {
+func convertError(val any) string {
 	switch v := val.(type) {
 	case *Error:
 		return v.Error()
@@ -75,14 +75,14 @@ type errorer interface {
 	Error() string
 }
 
-func ErrWrap(err errorer, format interface{}, args ...interface{}) Error {
+func ErrWrap(err errorer, format any, args ...any) Error {
 	return Error{
 		err:  errors.Wrapf(err, convertError(format), args...),
 		code: 0,
 	}
 }
 
-func Err(err errorer, format interface{}) Error {
+func Err(err errorer, format any) Error {
 	return Error{
 		err:  errors.Wrap(err, convertError(format)),
 		code: 0,

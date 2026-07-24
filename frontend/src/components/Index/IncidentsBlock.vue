@@ -12,47 +12,47 @@
 </template>
 
 <script>
-import Api from '../../API';
 import IncidentUpdate from "@/components/Elements/IncidentUpdate";
+import Api from "../../API";
 
 export default {
-  name: 'IncidentsBlock',
-  components: {
-    IncidentUpdate
-  },
-  props: {
-        service: {
-            type: Object,
-            required: true
-        }
-    },
-    data() {
-        return {
-            incidents: null,
-        }
-    },
-    mounted () {
-        this.getIncidents()
-    },
-    methods: {
-        badgeClass(val) {
-          switch (val.toLowerCase()) {
-            case "resolved":
-              return "badge-success"
-            case "update":
-              return "badge-info"
-            case "investigating":
-              return "badge-danger"
-          }
-        },
-      async getIncidents() {
-        this.incidents = await Api.incidents_service(this.service.id)
-      },
-      async incident_updates(incident) {
-        return await Api.incident_updates(incident)
-      }
-    }
-}
+	name: "IncidentsBlock",
+	components: {
+		IncidentUpdate,
+	},
+	props: {
+		service: {
+			type: Object,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			incidents: null,
+		};
+	},
+	mounted() {
+		this.getIncidents();
+	},
+	methods: {
+		badgeClass(val) {
+			switch (val.toLowerCase()) {
+				case "resolved":
+					return "badge-success";
+				case "update":
+					return "badge-info";
+				case "investigating":
+					return "badge-danger";
+			}
+		},
+		async getIncidents() {
+			this.incidents = await Api.incidents_service(this.service.id);
+		},
+		async incident_updates(incident) {
+			return await Api.incident_updates(incident);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

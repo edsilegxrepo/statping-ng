@@ -1,32 +1,28 @@
-import { shallowMount, mount } from '@vue/test-utils'
+import { mount, shallowMount } from "@vue/test-utils";
 
-import FormLogin from "../../src/forms/Login.vue"
+import FormLogin from "../../src/forms/Login.vue";
 
-const wrapper = shallowMount(FormLogin)
+const wrapper = shallowMount(FormLogin);
 
-describe('Login Form', () => {
+describe("Login Form", () => {
+	it("has a created hook", () => {
+		expect(typeof FormLogin.methods.checkForm).toBe("function");
+	});
 
-    it('has a created hook', () => {
-        expect(typeof FormLogin.methods.checkForm).toBe('function')
-    })
+	it("should login", async () => {
+		expect(wrapper.vm.$data.loading).toBe(false);
 
-    it('should login', async () => {
+		expect(wrapper.vm.$data.username).toBe("");
+		expect(wrapper.vm.$data.password).toBe("");
 
-        expect(wrapper.vm.$data.loading).toBe(false)
+		wrapper.setData({ username: "admin" });
+		wrapper.setData({ password: "admin" });
 
-        expect(wrapper.vm.$data.username).toBe('')
-        expect(wrapper.vm.$data.password).toBe('')
+		wrapper.find("button").trigger("click");
 
-        wrapper.setData({ username: 'admin' })
-        wrapper.setData({ password: 'admin' })
+		await wrapper.vm.$nextTick();
 
-        wrapper.find('button').trigger('click')
-
-        await wrapper.vm.$nextTick()
-
-        expect(wrapper.vm.$data.loading).toBe(true)
-        done()
-
-    })
-
+		expect(wrapper.vm.$data.loading).toBe(true);
+		done();
+	});
 });

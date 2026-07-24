@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,7 +54,7 @@ func TestUnAuthenticatedUserRoutes(t *testing.T) {
 func TestApiUsersRoutes(t *testing.T) {
 	form := url.Values{}
 	form.Add("username", "adminupdated")
-	form.Add("password", "password12345")
+	form.Add("password", "Password123456789012345678901234567890")
 
 	badForm := url.Values{}
 	badForm.Add("username", "adminupdated")
@@ -80,19 +81,20 @@ func TestApiUsersRoutes(t *testing.T) {
 			Name:           "Statping All Users",
 			URL:            "/api/users",
 			Method:         "GET",
+			HttpHeaders:    []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedStatus: 200,
-			ResponseLen:    1,
+			ResponseLen:    3,
 			BeforeTest:     SetTestENV,
 		},
 		{
 			Name:        "Statping Create User",
 			URL:         "/api/users",
-			HttpHeaders: []string{"Content-Type=application/json"},
+			HttpHeaders: []string{"Content-Type=application/json", "Authorization=" + core.App.ApiSecret},
 			Method:      "POST",
 			Body: `{
 					"username": "adminuser2",
 					"email": "info@adminemail.com",
-					"password": "passsword123",
+					"password": "Password123456789012345678901234567890",
 					"admin": true
 				}`,
 			ExpectedStatus:   200,
@@ -102,28 +104,32 @@ func TestApiUsersRoutes(t *testing.T) {
 			Name:           "Statping View User",
 			URL:            "/api/users/1",
 			Method:         "GET",
+			HttpHeaders:    []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedStatus: 200,
 		},
 		{
 			Name:           "Statping Incorrect User ID",
 			URL:            "/api/users/NOinteger",
 			Method:         "GET",
+			HttpHeaders:    []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedStatus: 422,
 		},
 		{
 			Name:           "Statping Missing User",
 			URL:            "/api/users/9393939393",
 			Method:         "GET",
+			HttpHeaders:    []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedStatus: 404,
 		},
 		{
-			Name:   "Statping Update User",
-			URL:    "/api/users/1",
-			Method: "POST",
+			Name:        "Statping Update User",
+			URL:         "/api/users/1",
+			Method:      "POST",
+			HttpHeaders: []string{"Authorization=" + core.App.ApiSecret},
 			Body: `{
 					"username": "adminupdated",
 					"email": "info@email.com",
-					"password": "password12345",
+					"password": "Password123456789012345678901234567890",
 					"admin": true
 				}`,
 			ExpectedStatus:   200,
@@ -133,6 +139,7 @@ func TestApiUsersRoutes(t *testing.T) {
 			Name:             "Statping Delete User",
 			URL:              "/api/users/2",
 			Method:           "DELETE",
+			HttpHeaders:      []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedStatus:   200,
 			ExpectedContains: []string{Success, MethodDelete},
 		},
@@ -158,12 +165,14 @@ func TestApiUsersRoutes(t *testing.T) {
 			Name:           "Statping Logout",
 			URL:            "/api/logout",
 			Method:         "GET",
+			HttpHeaders:    []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedStatus: 200,
 		},
 		{
 			Name:             "Incorrect JSON POST",
 			URL:              "/api/users",
 			Body:             BadJSON,
+			HttpHeaders:      []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedContains: []string{BadJSONResponse},
 			BeforeTest:       SetTestENV,
 			Method:           "POST",

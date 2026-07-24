@@ -185,123 +185,145 @@
 </template>
 
 <script>
-  import Api from "../API";
+import Api from "../API";
 
-  export default {
-  name: 'Setup',
-  data () {
-    return {
-      error: null,
-      loading: false,
-      disabled: true,
-      passnomatch: false,
-      passTooWeak: false,
-      finished: false,
-      generatedAdmin: "",
-      generatedSamples: {},
-      setup: {
-        language: "en",
-        db_connection: "sqlite",
-        db_host: "",
-        db_port: "",
-        db_user: "",
-        db_password: "",
-        db_database: "",
-        project: "",
-        description: "",
-        domain: "",
-        username: "",
-        password: "",
-        confirm_password: "",
-        sample_data: false,
-        send_reports: false,
-        email: "",
-      }
-    }
-  },
-  async created() {
-    const core = await Api.core()
-    if (core.setup) {
-        if (!this.$store.getters.hasPublicData) {
-            await this.$store.dispatch('loadRequired')
-        }
-        this.$router.push('/')
-    }
-  },
-  mounted() {
-    this.changeLanguages()
-    this.setup.domain = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ":"+window.location.port : "")
-  },
-  methods: {
-    changeLanguages() {
-      this.$i18n.locale = this.setup.language
-    },
-      canSubmit() {
-          this.error = null
-          const s = this.setup
-        if (s.confirm_password.length > 0 && s.confirm_password !== s.password) {
-          this.passnomatch = true
-        } else {
-          this.passnomatch = false
-        }
+export default {
+	name: "Setup",
+	data() {
+		return {
+			error: null,
+			loading: false,
+			disabled: true,
+			passnomatch: false,
+			passTooWeak: false,
+			finished: false,
+			generatedAdmin: "",
+			generatedSamples: {},
+			setup: {
+				language: "en",
+				db_connection: "sqlite",
+				db_host: "",
+				db_port: "",
+				db_user: "",
+				db_password: "",
+				db_database: "",
+				project: "",
+				description: "",
+				domain: "",
+				username: "",
+				password: "",
+				confirm_password: "",
+				sample_data: false,
+				send_reports: false,
+				email: "",
+			},
+		};
+	},
+	async created() {
+		const core = await Api.core();
+		if (core.setup) {
+			if (!this.$store.getters.hasPublicData) {
+				await this.$store.dispatch("loadRequired");
+			}
+			this.$router.push("/");
+		}
+	},
+	mounted() {
+		this.changeLanguages();
+		this.setup.domain =
+			window.location.protocol +
+			"//" +
+			window.location.hostname +
+			(window.location.port ? `:${window.location.port}` : "");
+	},
+	methods: {
+		changeLanguages() {
+			this.$i18n.locale = this.setup.language;
+		},
+		canSubmit() {
+			this.error = null;
+			const s = this.setup;
+			if (s.confirm_password.length > 0 && s.confirm_password !== s.password) {
+				this.passnomatch = true;
+			} else {
+				this.passnomatch = false;
+			}
 
-        if (s.password.length > 0) {
-            const hasUpper = /[A-Z]/.test(s.password);
-            const hasLower = /[a-z]/.test(s.password);
-            const hasDigit = /[0-9]/.test(s.password);
-            if (s.password.length < 30 || !hasUpper || !hasLower || !hasDigit) {
-                this.passTooWeak = true
-            } else {
-                this.passTooWeak = false
-            }
-        } else {
-            this.passTooWeak = false
-        }
+			if (s.password.length > 0) {
+				const hasUpper = /[A-Z]/.test(s.password);
+				const hasLower = /[a-z]/.test(s.password);
+				const hasDigit = /[0-9]/.test(s.password);
+				if (s.password.length < 30 || !hasUpper || !hasLower || !hasDigit) {
+					this.passTooWeak = true;
+				} else {
+					this.passTooWeak = false;
+				}
+			} else {
+				this.passTooWeak = false;
+			}
 
-          if (s.db_connection !== 'sqlite') {
-              if (!s.db_host || !s.db_port || !s.db_user || !s.db_password || !s.db_database) {
-                  this.disabled = true
-                  return
-              }
-          }
-          if (!s.project || !s.domain || !s.username || !s.password || !s.confirm_password || !s.email || this.passTooWeak) {
-              this.disabled = true
-              return
-          }
-          if (s.password !== s.confirm_password) {
-              this.disabled = true
-              return
-          }
-          this.disabled = false
-      },
-    async saveSetup() {
-      this.loading = true
-      let resp
-      try {
-        resp = await Api.setup_save(this.setup)
-      } catch(e) {
-        resp = {status: 'error', error: e.response.data.error}
-      }
-      if (resp.status === 'error') {
-        this.error = resp.error
-        this.loading = false
-        return
-      }
+			if (s.db_connection !== "sqlite") {
+				if (
+					!s.db_host ||
+					!s.db_port ||
+					!s.db_user ||
+					!s.db_password ||
+					!s.db_database
+				) {
+					this.disabled = true;
+					return;
+				}
+			}
+			if (
+				!s.project ||
+				!s.domain ||
+				!s.username ||
+				!s.password ||
+				!s.confirm_password ||
+				!s.email ||
+				this.passTooWeak
+			) {
+				this.disabled = true;
+				return;
+			}
+			if (s.password !== s.confirm_password) {
+				this.disabled = true;
+				return;
+			}
+			this.disabled = false;
+		},
+		async saveSetup() {
+			this.loading = true;
+			let resp;
+			try {
+				resp = await Api.setup_save(this.setup);
+			} catch (e) {
+				resp = { status: "error", error: e.response.data.error };
+			}
+			if (resp.status === "error") {
+				this.error = resp.error;
+				this.loading = false;
+				return;
+			}
 
-      this.generatedAdmin = resp.admin_password
-      this.generatedSamples = resp.sample_passwords
-      this.finished = true
+			this.generatedAdmin = resp.admin_password;
+			this.generatedSamples = resp.sample_passwords;
+			this.finished = true;
 
-      await this.$store.dispatch('loadCore')
-      await this.$store.dispatch('loadRequired')
+			await this.$store.dispatch("loadCore");
+			await this.$store.dispatch("loadRequired");
 
-      this.loading = false
-      if (!this.generatedAdmin && (!this.generatedSamples || Object.keys(this.generatedSamples).length === 0)) {
-          this.$router.push('/')
-      }
-    }
-  }
-}
+			this.loading = false;
+			if (
+				!this.generatedAdmin &&
+				(!this.generatedSamples ||
+					Object.keys(this.generatedSamples).length === 0)
+			) {
+				this.$router.push("/");
+			}
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

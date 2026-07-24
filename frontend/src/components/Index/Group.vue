@@ -23,27 +23,30 @@
 </template>
 
 <script>
-    const GroupServiceFailures = () => import(/* webpackChunkName: "index" */ './GroupServiceFailures');
-    const IncidentsBlock = () => import(/* webpackChunkName: "index" */ './IncidentsBlock');
-    const MessagesIcon = () => import(/* webpackChunkName: "index" */ '@/components/Index/MessagesIcon')
+const GroupServiceFailures = () =>
+	import(/* webpackChunkName: "index" */ "./GroupServiceFailures");
+const IncidentsBlock = () =>
+	import(/* webpackChunkName: "index" */ "./IncidentsBlock");
+const MessagesIcon = () =>
+	import(/* webpackChunkName: "index" */ "@/components/Index/MessagesIcon");
 
 export default {
-  name: 'Group',
-  components: {
-      IncidentsBlock,
-      GroupServiceFailures,
-      MessagesIcon
-  },
-  props: {
-    group: {
-      type: Object,
-      required: true,
-    }
-  },
-  computed: {
-    services() {
-      return this.$store.getters.servicesInGroup(this.group.id)
-    }
-  }
-}
+	name: "Group",
+	components: {
+		IncidentsBlock,
+		GroupServiceFailures,
+		MessagesIcon,
+	},
+	props: {
+		group: {
+			type: Object,
+			required: true,
+		},
+	},
+	computed: {
+		services() {
+			return this.$store.getters.servicesInGroup(this.group.id);
+		},
+	},
+};
 </script>

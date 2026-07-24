@@ -42,37 +42,37 @@
 </template>
 
 <script>
-  import Api from "../../API"
+import Api from "../../API";
 
-  export default {
-  name: 'TopNav',
-      data () {
-          return {
-              navopen: false
-          }
-      },
-    computed: {
-      admin() {
-        return this.$store.state.admin
-      }
-    },
-      methods: {
-        async logout () {
-          try {
-            await Api.logout()
-          } catch (e) {
-            console.error("Backend logout failed", e)
-          }
-          this.$store.commit('setHasAllData', false)
-          this.$store.commit('setToken', null)
-          this.$store.commit('setAdmin', false)
-          this.$store.commit('setUser', false)
-          this.$store.commit('setLoggedIn', false)
-          this.$cookies.remove("statping_auth")
-          await this.$router.push('/logout')
-        }
-    }
-}
+export default {
+	name: "TopNav",
+	data() {
+		return {
+			navopen: false,
+		};
+	},
+	computed: {
+		admin() {
+			return this.$store.state.admin;
+		},
+	},
+	methods: {
+		async logout() {
+			try {
+				await Api.logout();
+			} catch (e) {
+				console.error("Backend logout failed", e);
+			}
+			this.$store.commit("setHasAllData", false);
+			this.$store.commit("setToken", null);
+			this.$store.commit("setAdmin", false);
+			this.$store.commit("setUser", false);
+			this.$store.commit("setLoggedIn", false);
+			this.$cookies.remove("statping_auth");
+			await this.$router.push("/logout");
+		},
+	},
+};
 </script>
 
 <style scoped>

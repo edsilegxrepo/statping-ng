@@ -27,63 +27,65 @@
 import Api from "../API";
 
 export default {
-    name: 'Logs',
-    data() {
-        return {
-            logs_record: [],
-            last: "",
-            search: "",
-            t: null
-        }
-    },
-  computed: {
-      logs() {
-        if (this.search) {
-          return this.logs_record.filter(o => o.message.includes(this.search));
-        } else {
-          return this.logs_record
-        }
-      }
-  },
-    async created() {
-        await this.getLogs()
-        if (!this.t) {
-            this.t = setInterval(async () => {
-                await this.lastLog()
-            }, 1000)
-        }
-    },
-    beforeDestroy() {
-        clearInterval(this.t)
-    },
-    methods: {
-        parseLog(data) {
-          const ts = data.match(/[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]/gm)
-          return {
-            time: ts[0],
-            message: data.split(ts+": ")[1] || ''
-          }
-        },
-        cleanLog(l) {
-            const splitLog = l.split(": ")
-            const last = splitLog.slice(1);
-            return last.join(": ")
-        },
-        async getLogs() {
-            const l = await Api.logs()
-          l.forEach((d) => {
-            this.logs_record.push(this.parseLog(d))
-          })
-            this.last = this.cleanLog(l[l.length - 1])
-        },
-        async lastLog() {
-            const log = await Api.logs_last()
-            const cleanLast = this.cleanLog(log)
-            if (this.last !== cleanLast) {
-                this.last = cleanLast
-                this.logs_record.unshift(this.parseLog(log))
-            }
-        }
-    }
-}
+	name: "Logs",
+	data() {
+		return {
+			logs_record: [],
+			last: "",
+			search: "",
+			t: null,
+		};
+	},
+	computed: {
+		logs() {
+			if (this.search) {
+				return this.logs_record.filter((o) => o.message.includes(this.search));
+			} else {
+				return this.logs_record;
+			}
+		},
+	},
+	async created() {
+		await this.getLogs();
+		if (!this.t) {
+			this.t = setInterval(async () => {
+				await this.lastLog();
+			}, 1000);
+		}
+	},
+	beforeDestroy() {
+		clearInterval(this.t);
+	},
+	methods: {
+		parseLog(data) {
+			const ts = data.match(
+				/[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]/gm,
+			);
+			return {
+				time: ts[0],
+				message: data.split(`${ts}: `)[1] || "",
+			};
+		},
+		cleanLog(l) {
+			const splitLog = l.split(": ");
+			const last = splitLog.slice(1);
+			return last.join(": ");
+		},
+		async getLogs() {
+			const l = await Api.logs();
+			l.forEach((d) => {
+				this.logs_record.push(this.parseLog(d));
+			});
+			this.last = this.cleanLog(l[l.length - 1]);
+		},
+		async lastLog() {
+			const log = await Api.logs_last();
+			const cleanLast = this.cleanLog(log);
+			if (this.last !== cleanLast) {
+				this.last = cleanLast;
+				this.logs_record.unshift(this.parseLog(log));
+			}
+		},
+	},
+};
 </script>

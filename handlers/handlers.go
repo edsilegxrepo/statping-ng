@@ -77,8 +77,7 @@ func IsReadAuthenticated(r *http.Request) bool {
 	return err == nil
 }
 
-// IsFullAuthenticated returns true if the HTTP request is authenticated. You can set the environment variable GO_ENV=test
-// to bypass the admin authenticate to the dashboard features.
+// IsFullAuthenticated returns true if the HTTP request is authenticated as administrator.
 func IsFullAuthenticated(r *http.Request) bool {
 	if ok := hasSetupEnv(); ok {
 		return true
@@ -124,9 +123,15 @@ func IsAdmin(r *http.Request) bool {
 	return claim.Admin
 }
 
-// IsUser returns true if the user is registered
+// IsUser returns true if the user is registered or request is authenticated with API Key or token
 func IsUser(r *http.Request) bool {
 	if ok := hasSetupEnv(); ok {
+		return true
+	}
+	if ok := hasAPIQuery(r); ok {
+		return true
+	}
+	if ok := hasAuthorizationHeader(r); ok {
 		return true
 	}
 	_, err := getJwtToken(r)

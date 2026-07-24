@@ -10,11 +10,11 @@
 
 <script>
 export default {
-  name: 'Header',
-    computed: {
-      core() {
-          return this.$store.getters.core
-      }
-    }
-}
+	name: "Header",
+	computed: {
+		core() {
+			return this.$store.getters.core;
+		},
+	},
+};
 </script>

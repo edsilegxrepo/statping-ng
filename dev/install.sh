@@ -1,26 +1,25 @@
 #!/usr/bin/env bash
 OS=osx
 ARCH=x64
-REPO=github.com/statping/statping
+REPO=github.com/statping-ng/statping-ng
 VERSION=$(curl -s "https://$REPO/releases/latest" | grep -o 'tag/[v.0-9]*' | awk -F/ '{print $2}')
-if [ `getconf LONG_BIT` = "64" ]
-then
-    ARCH=x64
+if [ "$(getconf LONG_BIT)" = "64" ]; then
+  ARCH=x64
 else
-    ARCH=x32
+  ARCH=x32
 fi
 unameOut="$(uname -s)"
 case "${unameOut}" in
-    Linux*)     OS=linux;;
-    Darwin*)    OS=osx;;
-    CYGWIN*)    OS=windows;;
-    MINGW*)     OS=windows;;
-    *)          OS="UNKNOWN:${unameOut}"
+  Linux*) OS=linux ;;
+  Darwin*) OS=osx ;;
+  CYGWIN*) OS=windows ;;
+  MINGW*) OS=windows ;;
+  *) OS="UNKNOWN:${unameOut}" ;;
 esac
-printf "Installing $VERSION for $OS $ARCH...\n"
+printf "Installing %s for %s %s...\n" "$VERSION" "$OS" "$ARCH"
 FILE="https://$REPO/releases/download/$VERSION/statping-$OS-$ARCH.tar.gz"
-printf "Downloading latest version URL: $FILE\n"
-curl -L -sS $FILE -o statping.tar.gz && tar xzf statping.tar.gz && rm statping.tar.gz
+printf "Downloading latest version URL: %s\n" "$FILE"
+curl -L -sS "$FILE" -o statping.tar.gz && tar xzf statping.tar.gz && rm statping.tar.gz
 chmod +x statping
 echo "Installing Statping to directory: /usr/local/bin/"
 mv statping /usr/local/bin/

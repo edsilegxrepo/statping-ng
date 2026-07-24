@@ -48,7 +48,7 @@ var (
 	}
 )
 
-func Missing(object interface{}, id interface{}) error {
+func Missing(object any, id any) error {
 	outErr := fmt.Errorf("%s with id %v was not found", splitVar(object), id)
 	return &appError{
 		Err:  outErr.Error(),
@@ -56,7 +56,7 @@ func Missing(object interface{}, id interface{}) error {
 	}
 }
 
-func splitVar(val interface{}) string {
+func splitVar(val any) string {
 	s := strings.Split(fmt.Sprintf("%T", val), ".")
 	return strings.ToLower(s[len(s)-1])
 }

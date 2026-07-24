@@ -5,8 +5,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
-	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/database"
+	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/utils"
 	_ "gorm.io/driver/mysql"
@@ -101,7 +101,7 @@ func (d *DbConfig) DatabaseChanges() error {
 			}
 		}
 
-		if err := d.Db.Exec(fmt.Sprintf("UPDATE core SET migration_id = %d", latestMigration)).Error(); err != nil {
+		if err := d.Db.Exec("UPDATE core SET migration_id = ?", latestMigration).Error(); err != nil {
 			return err
 		}
 
@@ -139,10 +139,10 @@ func (d *DbConfig) MigrateDatabase() error {
 		}
 	}()
 	for _, table := range DbModels {
-		tx = tx.AutoMigrate(table)
-		if tx.Error() != nil {
-			log.Errorln(tx.Error())
-			return tx.Error()
+		if err := tx.AutoMigrate(table).Error(); err != nil {
+			tx.Rollback()
+			log.Errorln(err)
+			return err
 		}
 	}
 

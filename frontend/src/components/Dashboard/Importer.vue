@@ -171,78 +171,77 @@
 </template>
 
 <script>
-import Api from '../../API';
+import Api from "../../API";
 
 export default {
-name: "Importer",
-  data () {
-    return {
-      error: null,
-      file: null,
-      loaded: false,
-      output: null,
-      all: {
-        notifiers: false,
-        services: false,
-        groups: false,
-      }
-    }
-  },
-  methods: {
-  clean_elem(elem) {
-    if (!elem) {
-      return null
-    }
-    elem.map(e => delete(e.enabled) && delete(e.id))
-    return elem
-  },
-  async import_all() {
-    this.error = null
-    const outgoing = {
-      core: this.output.core,
-      users: this.clean_elem(this.output.users),
-      services: this.clean_elem(this.output.services),
-      groups: this.clean_elem(this.output.groups),
-      notifiers: this.clean_elem(this.output.notifiers),
-      checkins: this.clean_elem(this.output.checkins),
-    }
-    try {
-      await Api.import(outgoing)
-    } catch(e) {
-      this.error = e
-    }
-  },
-  toggle_all(elem) {
-    elem.map(s => s.enabled = true)
-    this.update()
-  },
-    update() {
-      this.output = {
-        core: this.file.core.enabled ? this.file.core : null,
-        users: this.file.users.filter(s => s.enabled),
-        services: this.file.services.filter(s => s.enabled),
-        groups: this.file.groups.filter(s => s.enabled),
-        notifiers: this.file.notifiers.filter(s => s.enabled),
-        checkins: this.file.checkins.filter(s => s.enabled),
-      }
-    },
-    onFileChange(e) {
-      let files = e.target.files || e.dataTransfer.files;
-      if (!files.length)
-        return;
-      this.processJSON(files[0]);
-    },
-    processJSON(file) {
-      let reader = new FileReader();
-      reader.onload = (e) => {
-        this.file = JSON.parse(e.target.result);
-        this.file.core.enabled = false
-      };
-      reader.readAsText(file);
-      this.loaded = true
-    },
-  }
-}
+	name: "Importer",
+	data() {
+		return {
+			error: null,
+			file: null,
+			loaded: false,
+			output: null,
+			all: {
+				notifiers: false,
+				services: false,
+				groups: false,
+			},
+		};
+	},
+	methods: {
+		clean_elem(elem) {
+			if (!elem) {
+				return null;
+			}
+			elem.map((e) => delete e.enabled && delete e.id);
+			return elem;
+		},
+		async import_all() {
+			this.error = null;
+			const outgoing = {
+				core: this.output.core,
+				users: this.clean_elem(this.output.users),
+				services: this.clean_elem(this.output.services),
+				groups: this.clean_elem(this.output.groups),
+				notifiers: this.clean_elem(this.output.notifiers),
+				checkins: this.clean_elem(this.output.checkins),
+			};
+			try {
+				await Api.import(outgoing);
+			} catch (e) {
+				this.error = e;
+			}
+		},
+		toggle_all(elem) {
+			elem.map((s) => (s.enabled = true));
+			this.update();
+		},
+		update() {
+			this.output = {
+				core: this.file.core.enabled ? this.file.core : null,
+				users: this.file.users.filter((s) => s.enabled),
+				services: this.file.services.filter((s) => s.enabled),
+				groups: this.file.groups.filter((s) => s.enabled),
+				notifiers: this.file.notifiers.filter((s) => s.enabled),
+				checkins: this.file.checkins.filter((s) => s.enabled),
+			};
+		},
+		onFileChange(e) {
+			let files = e.target.files || e.dataTransfer.files;
+			if (!files.length) return;
+			this.processJSON(files[0]);
+		},
+		processJSON(file) {
+			let reader = new FileReader();
+			reader.onload = (e) => {
+				this.file = JSON.parse(e.target.result);
+				this.file.core.enabled = false;
+			};
+			reader.readAsText(file);
+			this.loaded = true;
+		},
+	},
+};
 </script>
 
 <style scoped>

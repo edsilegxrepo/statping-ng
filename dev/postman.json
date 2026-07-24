@@ -39,9 +39,7 @@
 							"listen": "prerequest",
 							"script": {
 								"id": "e5e9ea08-21d1-48d6-b019-9b4f93e813e5",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -139,13 +137,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/setup",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"setup"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "setup"]
 						},
 						"description": "This endpoint will setup the database, users, sample data, and all other elements for a brand new installation of Statping. By default, the admin login is `admin` `admin`, if you don't include a username/password.\n\n###### If the server has already been setup, this endpoint will return an error.\n```json\n{\n    \"error\": \"Statping has already been setup\"\n}\n```\n\n### Database Fields\n- `db_connection` - Database connection type. (sqlite, mysql, postgres)\n- `db_user` - Username for database\n- `db_password` - Password for database\n- `db_database` - Database name for Statping\n- `db_port` - Port number for the database\n- `db_host` - Hostname or IP for the running database server"
 					},
@@ -159,9 +152,7 @@
 					"script": {
 						"id": "ee74f82f-761a-46ae-a183-044b3d17c416",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -169,9 +160,7 @@
 					"script": {
 						"id": "99e1ad44-98bc-431c-bec6-d5b4ea3b94ac",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -217,12 +206,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api"]
 						},
 						"description": "The root API endpoint to view basic Statping configuration including Name, URL, database type, and other useful fields."
 					},
@@ -234,12 +219,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api"]
 								}
 							},
 							"status": "OK",
@@ -295,13 +276,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/logs",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"logs"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "logs"]
 						},
 						"description": "This endpoint will return a list of the last 1,000 logs."
 					},
@@ -313,12 +289,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api"]
 								}
 							},
 							"status": "OK",
@@ -374,14 +346,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/settings/configs",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"settings",
-								"configs"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "settings", "configs"]
 						},
 						"description": "This endpoint will return the config.yml configuration without database credentials."
 					},
@@ -393,14 +359,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/settings/configs",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"settings",
-										"configs"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "settings", "configs"]
 								}
 							},
 							"status": "OK",
@@ -470,14 +430,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/settings/configs",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"settings",
-								"configs"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "settings", "configs"]
 						},
 						"description": "This endpoint will update the config.yml configuration."
 					},
@@ -514,13 +468,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/logs",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"logs"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "logs"]
 						},
 						"description": "This endpoint will return the last line in the logs."
 					},
@@ -532,12 +481,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api"]
 								}
 							},
 							"status": "OK",
@@ -592,12 +537,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/health",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"health"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["health"]
 						},
 						"description": "Check the status of your Statping instance. If everything is healthy, it will return a status code of 200 with the following JSON response."
 					},
@@ -609,12 +550,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/health",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"health"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["health"]
 								}
 							},
 							"status": "OK",
@@ -660,12 +597,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/metrics",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"metrics"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["metrics"]
 						},
 						"description": "Point your Prometheus endpoint to `/metrics`, it will include most data from all elements including golang processes. View more information by checking out the [Prometheus Wiki](https://github.com/statping-ng/statping-ng/wiki/Prometheus-Exporter)."
 					},
@@ -677,12 +610,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/metrics",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"metrics"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["metrics"]
 								}
 							},
 							"status": "OK",
@@ -714,9 +643,7 @@
 							"listen": "test",
 							"script": {
 								"id": "8ee8bf21-4243-4f15-8a03-2189224360c7",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -730,16 +657,8 @@
 						"url": {
 							"raw": "https://img.shields.io/badge/dynamic/json?color=blue&label=Statping Uptime 24/hr&query=$.online_24_hours&url=https://demo.statping.com/api/services/1&suffix=%",
 							"protocol": "https",
-							"host": [
-								"img",
-								"shields",
-								"io"
-							],
-							"path": [
-								"badge",
-								"dynamic",
-								"json"
-							],
+							"host": ["img", "shields", "io"],
+							"path": ["badge", "dynamic", "json"],
 							"query": [
 								{
 									"key": "color",
@@ -785,9 +704,7 @@
 					"script": {
 						"id": "00ffb460-8bfc-4221-af12-b155a34c11fc",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -795,9 +712,7 @@
 					"script": {
 						"id": "ffe44bf8-4bf3-4175-bb4b-3c3910c674c3",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -842,13 +757,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/services",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services"]
 						},
 						"description": "View an array of all Services added to your Statping instance."
 					},
@@ -860,13 +770,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/services",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services"]
 								}
 							},
 							"status": "OK",
@@ -934,14 +839,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/services/1",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"1"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "1"]
 						},
 						"description": "View a specific service, this will include the service's failures and checkins."
 					},
@@ -960,14 +859,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/services/1",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"1"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "1"]
 								}
 							},
 							"status": "OK",
@@ -1030,15 +923,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/services/1/hits_data?start={{start_time}}&end={{end_time}}&group=1h",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"1",
-								"hits_data"
-							],
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "1", "hits_data"],
 							"query": [
 								{
 									"key": "start",
@@ -1074,15 +960,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/services/1/hits_data?start=0&end=99999999999&group=1h",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"1",
-										"hits_data"
-									],
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "1", "hits_data"],
 									"query": [
 										{
 											"key": "start",
@@ -1166,15 +1045,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/services/1/ping_data?start={{start_time}}&end={{end_time}}&group=12h",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"1",
-								"ping_data"
-							],
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "1", "ping_data"],
 							"query": [
 								{
 									"key": "start",
@@ -1210,15 +1082,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/services/1/ping_data?start=0&end=999999999999&group=12h",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"1",
-										"ping_data"
-									],
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "1", "ping_data"],
 									"query": [
 										{
 											"key": "start",
@@ -1302,15 +1167,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/services/1/failure_data?start={{start_time}}&end={{end_time}}&group=12h",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"1",
-								"failure_data"
-							],
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "1", "failure_data"],
 							"query": [
 								{
 									"key": "start",
@@ -1346,15 +1204,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/services/1/failure_data?start=0&end=999999999999&group=12h",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"1",
-										"failure_data"
-									],
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "1", "failure_data"],
 									"query": [
 										{
 											"key": "start",
@@ -1438,15 +1289,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/services/1/failures?start={{start_time}}&end={{end_time}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"1",
-								"failures"
-							],
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "1", "failures"],
 							"query": [
 								{
 									"key": "start",
@@ -1507,15 +1351,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/services/1/hits?start={{start_time}}&end={{end_time}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"1",
-								"hits"
-							],
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "1", "hits"],
 							"query": [
 								{
 									"key": "start",
@@ -1576,14 +1413,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/reorder/services",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"reorder",
-								"services"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "reorder", "services"]
 						},
 						"description": "Reorder services in a specific order for the index page."
 					},
@@ -1604,14 +1435,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/services/reorder",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"reorder"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "reorder"]
 								}
 							},
 							"status": "OK",
@@ -1689,13 +1514,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/services",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services"]
 						},
 						"description": "View a specific service, this will include the service's failures and checkins.\n\n#### Service Type Field\n- `http` - HTTP Service\n- `tcp` - TCP Service\n- `udp` - UDP Service\n- `icmp` - ICMP Service\n- `grpc` - gRPC Service\n- `static` - Static Service"
 					},
@@ -1716,13 +1536,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/services",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services"]
 								}
 							},
 							"status": "OK",
@@ -1799,14 +1614,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/services/{{service_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"{{service_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "{{service_id}}"]
 						},
 						"description": "Update a service with new values and begin monitoring."
 					},
@@ -1827,14 +1636,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/services/{{service_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"{{service_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "{{service_id}}"]
 								}
 							},
 							"status": "OK",
@@ -1909,14 +1712,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/services/7",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"7"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "7"]
 						},
 						"description": "Update a Static Service by setting it's online status to true or false. If false, you can include a issue string in the `issue` JSON field."
 					},
@@ -1960,15 +1757,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/services/{{service_id}}/failures",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"{{service_id}}",
-								"failures"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "{{service_id}}", "failures"]
 						},
 						"description": "Delete all the service failures."
 					},
@@ -2019,14 +1809,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/services/{{service_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"{{service_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "{{service_id}}"]
 						},
 						"description": "Delete a service and stops monitoring."
 					},
@@ -2042,14 +1826,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/services/{{service_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"{{service_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "{{service_id}}"]
 								}
 							},
 							"status": "OK",
@@ -2092,9 +1870,7 @@
 					"script": {
 						"id": "2d965d82-4d9e-4c37-a3d2-286c75ae00de",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -2102,9 +1878,7 @@
 					"script": {
 						"id": "f3cd55c0-923e-43fa-ab6b-e26df9f20e0a",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -2151,15 +1925,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/services/1/incidents",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"1",
-								"incidents"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "1", "incidents"]
 						},
 						"description": "View all incidents for a single service."
 					},
@@ -2178,15 +1945,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/services/1/incidents",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"1",
-										"incidents"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "1", "incidents"]
 								}
 							},
 							"status": "OK",
@@ -2268,15 +2028,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/services/3/incidents",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"services",
-								"3",
-								"incidents"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "services", "3", "incidents"]
 						},
 						"description": "Create an incident for a service."
 					},
@@ -2304,15 +2057,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/services/1/incidents",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"services",
-										"1",
-										"incidents"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "services", "1", "incidents"]
 								}
 							},
 							"status": "OK",
@@ -2386,15 +2132,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/incidents/2/updates",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"incidents",
-								"2",
-								"updates"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "incidents", "2", "updates"]
 						},
 						"description": "View all incidents for a single service."
 					},
@@ -2417,15 +2156,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/incidents/2/updates",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"incidents",
-										"2",
-										"updates"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "incidents", "2", "updates"]
 								}
 							},
 							"status": "OK",
@@ -2492,15 +2224,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/incidents/2/updates",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"incidents",
-								"2",
-								"updates"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "incidents", "2", "updates"]
 						},
 						"description": "View all incidents for a single service."
 					},
@@ -2551,14 +2276,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/incidents/1",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"incidents",
-								"1"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "incidents", "1"]
 						},
 						"description": "View all incidents for a single service."
 					},
@@ -2602,16 +2321,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/incidents/2/updates/1",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"incidents",
-								"2",
-								"updates",
-								"1"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "incidents", "2", "updates", "1"]
 						},
 						"description": "View all incidents for a single service."
 					},
@@ -2630,16 +2341,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/incidents/2/updates/1",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"incidents",
-										"2",
-										"updates",
-										"1"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "incidents", "2", "updates", "1"]
 								}
 							},
 							"status": "OK",
@@ -2706,14 +2409,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/incidents/1",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"incidents",
-								"1"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "incidents", "1"]
 						},
 						"description": "View all incidents for a single service."
 					},
@@ -2732,14 +2429,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/incidents/2",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"incidents",
-										"2"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "incidents", "2"]
 								}
 							},
 							"status": "OK",
@@ -2806,13 +2497,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/groups",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"groups"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "groups"]
 						},
 						"description": "View an array of all Groups added to your Statping instance."
 					},
@@ -2824,13 +2510,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/groups",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"groups"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "groups"]
 								}
 							},
 							"status": "OK",
@@ -2898,14 +2579,8 @@
 						],
 						"url": {
 							"raw": "{{endpoint}}/api/groups/1",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"groups",
-								"1"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "groups", "1"]
 						},
 						"description": "View a specific group"
 					},
@@ -2924,14 +2599,8 @@
 								],
 								"url": {
 									"raw": "{{endpoint}}/api/groups/1",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"groups",
-										"1"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "groups", "1"]
 								}
 							},
 							"status": "OK",
@@ -3005,13 +2674,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/groups",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"groups"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "groups"]
 						},
 						"description": "Create a new Group to organize services."
 					},
@@ -3032,13 +2696,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/groups",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"groups"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "groups"]
 								}
 							},
 							"status": "OK",
@@ -3106,14 +2765,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/reorder/groups",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"reorder",
-								"groups"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "reorder", "groups"]
 						},
 						"description": "Reorder services in a specific order for the index page."
 					},
@@ -3164,14 +2817,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/groups/{{group_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"groups",
-								"{{group_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "groups", "{{group_id}}"]
 						},
 						"description": "Delete a group and removes all services attached to this group."
 					},
@@ -3187,14 +2834,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/groups/{{group_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"groups",
-										"{{group_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "groups", "{{group_id}}"]
 								}
 							},
 							"status": "OK",
@@ -3237,9 +2878,7 @@
 					"script": {
 						"id": "abe8dbf2-9e63-49b5-b5d3-7a50217c87a3",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -3247,9 +2886,7 @@
 					"script": {
 						"id": "de397a38-c190-4928-92f0-393ab85e5342",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -3314,13 +2951,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/login",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"login"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "login"]
 						},
 						"description": "This endpoint will login a user and set a JWT token for future requests."
 					},
@@ -3357,13 +2989,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/login",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"login"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "login"]
 								}
 							},
 							"status": "OK",
@@ -3447,14 +3074,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/users/token",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"token"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "users", "token"]
 						},
 						"description": "Send your JWT token from login to this endpoint to return the JSON values."
 					},
@@ -3476,14 +3097,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/users/token",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"token"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "users", "token"]
 								}
 							},
 							"status": "OK",
@@ -3519,9 +3134,7 @@
 							"listen": "test",
 							"script": {
 								"id": "f858d94a-6534-452b-9197-99c64d7b4009",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -3544,13 +3157,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/logout",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"logout"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "logout"]
 						},
 						"description": "This endpoint will logout a user and redirect to the index page."
 					},
@@ -3596,13 +3204,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/users",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"users"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "users"]
 						},
 						"description": "View all users on your Statping instance."
 					},
@@ -3614,13 +3217,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/users",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"users"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "users"]
 								}
 							},
 							"status": "OK",
@@ -3696,13 +3294,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/users",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"users"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "users"]
 						},
 						"description": "Create a new Statping user"
 					},
@@ -3723,13 +3316,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/users",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"users"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "users"]
 								}
 							},
 							"status": "OK",
@@ -3794,14 +3382,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/users/{{user_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "users", "{{user_id}}"]
 						}
 					},
 					"response": [
@@ -3812,14 +3394,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/users/{{user_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"{{user_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "users", "{{user_id}}"]
 								}
 							},
 							"status": "OK",
@@ -3851,9 +3427,7 @@
 							"listen": "prerequest",
 							"script": {
 								"id": "2802ca86-12c2-41ce-947d-e086fcb7c753",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						},
@@ -3902,14 +3476,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/users/{{user_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "users", "{{user_id}}"]
 						},
 						"description": "Update a user's information including username, email, password, and if they are an admin or not."
 					},
@@ -3930,14 +3498,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/users/{{user_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"{{user_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "users", "{{user_id}}"]
 								}
 							},
 							"status": "OK",
@@ -4002,14 +3564,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/users/{{user_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "users", "{{user_id}}"]
 						},
 						"description": "Delete a specific user from the database."
 					},
@@ -4021,14 +3577,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/users/{{user_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"users",
-										"{{user_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "users", "{{user_id}}"]
 								}
 							},
 							"status": "OK",
@@ -4071,9 +3621,7 @@
 					"script": {
 						"id": "8cef4ad5-1c96-46e8-8fc9-9e9e044730dc",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -4081,9 +3629,7 @@
 					"script": {
 						"id": "872da99f-a57d-4a54-bd5e-18b5529c715f",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -4128,13 +3674,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/notifiers",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"notifiers"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "notifiers"]
 						},
 						"description": "View an array of all the Notifiers including all details about the notifier."
 					},
@@ -4146,13 +3687,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/notifiers",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"notifiers"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "notifiers"]
 								}
 							},
 							"status": "OK",
@@ -4214,14 +3750,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/notifier/slack",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"notifier",
-								"slack"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "notifier", "slack"]
 						},
 						"description": "View a specific notifier and it's details."
 					},
@@ -4233,14 +3763,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/notifier/slack",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"notifier",
-										"slack"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "notifier", "slack"]
 								}
 							},
 							"status": "OK",
@@ -4317,14 +3841,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/notifier/slack",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"notifier",
-								"slack"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "notifier", "slack"]
 						},
 						"description": "Update a notifier to change it's values."
 					},
@@ -4347,14 +3865,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/notifier/slack",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"notifier",
-										"slack"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "notifier", "slack"]
 								}
 							},
 							"status": "OK",
@@ -4429,15 +3941,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/notifier/slack/test",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"notifier",
-								"slack",
-								"test"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "notifier", "slack", "test"]
 						},
 						"description": "Update a notifier to change it's values."
 					},
@@ -4463,15 +3968,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/notifier/slack/test",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"notifier",
-										"slack",
-										"test"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "notifier", "slack", "test"]
 								}
 							},
 							"status": "OK",
@@ -4518,9 +4016,7 @@
 					"script": {
 						"id": "8f3b2e75-ce23-4294-b5bb-05b1248b9ef3",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -4528,9 +4024,7 @@
 					"script": {
 						"id": "06653dbc-888b-4016-8964-82d25e0273e3",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -4568,13 +4062,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/messages",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"messages"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "messages"]
 						},
 						"description": "View an array of all messages inserted into the database."
 					},
@@ -4586,13 +4075,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/messages",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"messages"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "messages"]
 								}
 							},
 							"status": "OK",
@@ -4663,13 +4147,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/messages",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"messages"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "messages"]
 						},
 						"description": "Create a new message show show on index page, or on a service."
 					},
@@ -4692,13 +4171,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/messages",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"messages"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "messages"]
 								}
 							},
 							"status": "OK",
@@ -4750,14 +4224,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/messages/{{message_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"messages",
-								"{{message_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "messages", "{{message_id}}"]
 						},
 						"description": "View a specific message and it's details."
 					},
@@ -4769,14 +4237,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/messages/{{message_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"messages",
-										"{{message_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "messages", "{{message_id}}"]
 								}
 							},
 							"status": "OK",
@@ -4846,14 +4308,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/messages/{{message_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"messages",
-								"{{message_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "messages", "{{message_id}}"]
 						},
 						"description": "Update a specific message with new details."
 					},
@@ -4876,14 +4332,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/messages/{{message_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"messages",
-										"{{message_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "messages", "{{message_id}}"]
 								}
 							},
 							"status": "OK",
@@ -4945,14 +4395,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/messages/{{message_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"messages",
-								"{{message_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "messages", "{{message_id}}"]
 						},
 						"description": "Delete a specific message from the database."
 					},
@@ -4968,14 +4412,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/messages/{{message_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"messages",
-										"{{message_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "messages", "{{message_id}}"]
 								}
 							},
 							"status": "OK",
@@ -5018,9 +4456,7 @@
 					"script": {
 						"id": "b2160e12-ca83-4454-be33-7eac6f32e16b",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -5028,9 +4464,7 @@
 					"script": {
 						"id": "a140fc05-3ec2-40dc-a5c5-93d055242995",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -5068,13 +4502,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/checkins",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"checkins"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "checkins"]
 						},
 						"description": "View an array of all the Checkin's inserted into the system."
 					},
@@ -5086,13 +4515,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/checkins",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"checkins"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "checkins"]
 								}
 							},
 							"status": "OK",
@@ -5172,13 +4596,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/checkins",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"checkins"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "checkins"]
 						},
 						"description": "Create a new Checkin."
 					},
@@ -5201,13 +4620,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/checkin",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"checkin"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "checkin"]
 								}
 							},
 							"status": "OK",
@@ -5259,13 +4673,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/checkin/{{checkin_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"checkin",
-								"{{checkin_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["checkin", "{{checkin_id}}"]
 						},
 						"description": "Initiate the Checkin request to your Statping instance. This request will come from your service and will trigger a failure if your service does not hit this URL in the routine interval set.\n\n- `checkin_id` is the ID for the checkin"
 					},
@@ -5277,13 +4686,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/checkin/{{checkin_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"checkin",
-										"{{checkin_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["checkin", "{{checkin_id}}"]
 								}
 							},
 							"status": "OK",
@@ -5337,14 +4741,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/checkins/{{checkin_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"checkins",
-								"{{checkin_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "checkins", "{{checkin_id}}"]
 						},
 						"description": "View a specific checkin and it's details."
 					},
@@ -5356,14 +4754,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/checkin/{{checkin_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"checkin",
-										"{{checkin_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "checkin", "{{checkin_id}}"]
 								}
 							},
 							"status": "OK",
@@ -5435,14 +4827,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/checkins/{{checkin_id}}",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"checkins",
-								"{{checkin_id}}"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "checkins", "{{checkin_id}}"]
 						},
 						"description": "Delete a checkin from database and stop failures from service not hitting the checkin URL."
 					},
@@ -5458,14 +4844,8 @@
 								},
 								"url": {
 									"raw": "{{endpoint}}/api/checkin/{{checkin_id}}",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"checkin",
-										"{{checkin_id}}"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "checkin", "{{checkin_id}}"]
 								}
 							},
 							"status": "OK",
@@ -5508,9 +4888,7 @@
 					"script": {
 						"id": "d880b73c-1edd-40d7-aac5-6ef0d2e2704b",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -5518,9 +4896,7 @@
 					"script": {
 						"id": "adf70343-e8f3-4162-8eeb-6fb71784ef57",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -5536,9 +4912,7 @@
 							"listen": "test",
 							"script": {
 								"id": "11f52299-58b7-4a57-9842-252e2d8e139e",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -5558,14 +4932,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/theme/create",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"theme",
-								"create"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "theme", "create"]
 						},
 						"description": "This endpoint will create the `assets` folder and dump all css, js, and image assets into that folder. If assets have already been created, it will return an error.\n\n```json\n{\n  \"error\": \"assets have already been created\"\n}\n```"
 					},
@@ -5578,9 +4946,7 @@
 							"listen": "test",
 							"script": {
 								"id": "8dace46e-1e0d-4d7c-90f0-c5a29cd2f0c0",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -5600,13 +4966,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/theme",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"theme"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "theme"]
 						},
 						"description": "This endpoint will return the path where the assets are stored, and the raw data for each sass files. \n- base.scss\n- variables.scss\n- mobile.scss"
 					},
@@ -5619,9 +4980,7 @@
 							"listen": "test",
 							"script": {
 								"id": "b18f4b1d-3019-4b96-8203-d1876deab89f",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -5650,13 +5009,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/theme",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"theme"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "theme"]
 						},
 						"description": "This endpoint will update the sass files and compile sass into css."
 					},
@@ -5669,9 +5023,7 @@
 							"listen": "test",
 							"script": {
 								"id": "5e59d318-3e11-44be-9d78-85398d35e9be",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -5691,13 +5043,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/theme",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"theme"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "theme"]
 						},
 						"description": "This endpoint will delete the `assets` folder."
 					},
@@ -5709,13 +5056,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api/theme",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"theme"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api", "theme"]
 								}
 							},
 							"status": "OK",
@@ -5758,9 +5100,7 @@
 					"script": {
 						"id": "8512f9f2-50af-4c7c-90af-4feb43908ac9",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -5768,9 +5108,7 @@
 					"script": {
 						"id": "f28d8c39-84fa-4e20-9bd9-e8f8a0158919",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -5786,9 +5124,7 @@
 							"listen": "test",
 							"script": {
 								"id": "3b2cf616-7e7d-4e11-beee-7027e0ed6dd2",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -5817,13 +5153,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/api/oauth",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"oauth"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "oauth"]
 						},
 						"description": "This endpoint will return the last line in the logs."
 					},
@@ -5835,12 +5166,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api"]
 								}
 							},
 							"status": "OK",
@@ -5872,9 +5199,7 @@
 							"listen": "test",
 							"script": {
 								"id": "a3dd164d-56dc-43c9-80ae-ad42ced9542f",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -5894,13 +5219,8 @@
 						"header": [],
 						"url": {
 							"raw": "{{endpoint}}/api/oauth",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"oauth"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["api", "oauth"]
 						},
 						"description": "This endpoint will return the last line in the logs."
 					},
@@ -5912,12 +5232,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api"]
 								}
 							},
 							"status": "OK",
@@ -5949,9 +5265,7 @@
 							"listen": "test",
 							"script": {
 								"id": "2d5f11de-4041-4667-b094-4e1934195649",
-								"exec": [
-									""
-								],
+								"exec": [""],
 								"type": "text/javascript"
 							}
 						}
@@ -5985,13 +5299,8 @@
 						},
 						"url": {
 							"raw": "{{endpoint}}/oauth/slack",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"oauth",
-								"slack"
-							]
+							"host": ["{{endpoint}}"],
+							"path": ["oauth", "slack"]
 						},
 						"description": "This endpoint will return the last line in the logs."
 					},
@@ -6003,12 +5312,8 @@
 								"header": [],
 								"url": {
 									"raw": "{{endpoint}}/api",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api"
-									]
+									"host": ["{{endpoint}}"],
+									"path": ["api"]
 								}
 							},
 							"status": "OK",
@@ -6041,9 +5346,7 @@
 					"script": {
 						"id": "2792fd81-5e3a-434b-8f51-992bea3a2b49",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				},
 				{
@@ -6051,9 +5354,7 @@
 					"script": {
 						"id": "467bdaac-344d-451e-a4b4-825aec80ceef",
 						"type": "text/javascript",
-						"exec": [
-							""
-						]
+						"exec": [""]
 					}
 				}
 			],
@@ -6076,9 +5377,7 @@
 			"script": {
 				"id": "a88caffc-d042-4f68-9757-3b5b3e628737",
 				"type": "text/javascript",
-				"exec": [
-					""
-				]
+				"exec": [""]
 			}
 		},
 		{
@@ -6086,9 +5385,7 @@
 			"script": {
 				"id": "dc71e455-8623-429d-890b-0cfc3bb9f8d1",
 				"type": "text/javascript",
-				"exec": [
-					""
-				]
+				"exec": [""]
 			}
 		}
 	],

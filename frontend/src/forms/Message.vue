@@ -92,92 +92,92 @@
 </template>
 
 <script>
-  import Api from "../API";
-  import flatPickr from 'vue-flatpickr-component';
-  import 'flatpickr/dist/flatpickr.css';
+import flatPickr from "vue-flatpickr-component";
+import Api from "../API";
+import "flatpickr/dist/flatpickr.css";
 
-  export default {
-  name: 'FormMessage',
-  components: {
-    flatPickr
-  },
-  props: {
-    in_message: {
-      type: Object
-    },
-      service: {
-          type: Object
-      },
-    edit: {
-      type: Function
-    }
-  },
-  data () {
-    return {
-      message: {
-        title: "",
-        description: "",
-        start_on: new Date(),
-        end_on: new Date(),
-        service_id: 0,
-        service: 0,
-        notify_method: "",
-        notify: false,
-        notify_before: 0,
-        notify_before_scale: "minute",
-      },
-      config: {
-        altFormat: "l M J, \\at h:iK",
-        altInput: true,
-        enableTime: true,
-        dateFormat: "Z",
-      },
-      temp: {}
-    }
-  },
-  watch: {
-    in_message() {
-      this.message = this.in_message
-    }
-  },
-  mounted () {
-    if (this.service) {
-        this.service_id = this.service.id
-    }
-  },
-  methods: {
-    startChange(e) {
-      window.console.log(e)
-    },
-    endChange(e) {
-        window.console.log(e)
-    },
-    removeEdit() {
-      this.message = {}
-      this.edit(false)
-    },
-    async saveMessage(e) {
-      e.preventDefault();
-      if (this.message.id) {
-        await this.updateMessage()
-      } else {
-        await this.createMessage()
-      }
-    },
-    async createMessage() {
-      await Api.message_create(this.message)
-      const messages = await Api.messages()
-      this.$store.commit('setMessages', messages)
-      this.message = {}
-    },
-    async updateMessage() {
-      await Api.message_update(this.message)
-      const messages = await Api.messages()
-      this.$store.commit('setMessages', messages)
-      this.edit(false)
-    }
-  }
-}
+export default {
+	name: "FormMessage",
+	components: {
+		flatPickr,
+	},
+	props: {
+		in_message: {
+			type: Object,
+		},
+		service: {
+			type: Object,
+		},
+		edit: {
+			type: Function,
+		},
+	},
+	data() {
+		return {
+			message: {
+				title: "",
+				description: "",
+				start_on: new Date(),
+				end_on: new Date(),
+				service_id: 0,
+				service: 0,
+				notify_method: "",
+				notify: false,
+				notify_before: 0,
+				notify_before_scale: "minute",
+			},
+			config: {
+				altFormat: "l M J, \\at h:iK",
+				altInput: true,
+				enableTime: true,
+				dateFormat: "Z",
+			},
+			temp: {},
+		};
+	},
+	watch: {
+		in_message() {
+			this.message = this.in_message;
+		},
+	},
+	mounted() {
+		if (this.service) {
+			this.service_id = this.service.id;
+		}
+	},
+	methods: {
+		startChange(e) {
+			window.console.log(e);
+		},
+		endChange(e) {
+			window.console.log(e);
+		},
+		removeEdit() {
+			this.message = {};
+			this.edit(false);
+		},
+		async saveMessage(e) {
+			e.preventDefault();
+			if (this.message.id) {
+				await this.updateMessage();
+			} else {
+				await this.createMessage();
+			}
+		},
+		async createMessage() {
+			await Api.message_create(this.message);
+			const messages = await Api.messages();
+			this.$store.commit("setMessages", messages);
+			this.message = {};
+		},
+		async updateMessage() {
+			await Api.message_update(this.message);
+			const messages = await Api.messages();
+			this.$store.commit("setMessages", messages);
+			this.edit(false);
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

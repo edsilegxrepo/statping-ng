@@ -152,9 +152,9 @@
 </template>
 
 <script>
-  export default {
-  name: 'Variables',
-}
+export default {
+	name: "Variables",
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

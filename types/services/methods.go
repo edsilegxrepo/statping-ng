@@ -49,7 +49,7 @@ func (s *Service) LoadTLSCert() (config *tls.Config, err error) {
 	}
 
 	if config == nil {
-		config = &tls.Config{}
+		config = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 	config.Certificates = []tls.Certificate{cert}
 	config.InsecureSkipVerify = config.InsecureSkipVerify || s.TLSCertRoot.String == ""
@@ -78,7 +78,7 @@ func (s Service) configureTLS() (config *tls.Config, err error) {
 	}
 	config = &tls.Config{
 		ServerName:         s.Domain,
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: false, MinVersion: tls.VersionTLS13,
 	}
 
 	return

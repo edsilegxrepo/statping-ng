@@ -13,43 +13,49 @@
 </template>
 
 <script>
-  const FormGroup = () => import(/* webpackChunkName: "dashboard" */ "../../forms/Group");
-  import Api from "../../API";
-  const ToggleSwitch = () => import(/* webpackChunkName: "dashboard" */ "../../forms/ToggleSwitch");
-  const draggable = () => import(/* webpackChunkName: "dashboard" */ 'vuedraggable')
-  const FormService = () => import(/* webpackChunkName: "dashboard" */ "../../forms/Service");
+const FormGroup = () =>
+	import(/* webpackChunkName: "dashboard" */ "../../forms/Group");
 
-  export default {
-    name: 'EditService',
-    components: {
-      FormService,
-      ToggleSwitch,
-      FormGroup,
-      draggable
-    },
-    created() {
-        this.fetchData()
-    },
-    watch: {
-      '$route': 'fetchData'
-    },
-    data () {
-      return {
-        service: null,
-        ready: false
-      }
-    },
-    methods: {
-      async fetchData () {
-        if (!this.$route.params.id) {
-          this.ready = true
-          return
-        }
-        this.service = await Api.service(this.$route.params.id)
-        this.ready = true
-      }
-    }
-  }
+import Api from "../../API";
+
+const ToggleSwitch = () =>
+	import(/* webpackChunkName: "dashboard" */ "../../forms/ToggleSwitch");
+const draggable = () =>
+	import(/* webpackChunkName: "dashboard" */ "vuedraggable");
+const FormService = () =>
+	import(/* webpackChunkName: "dashboard" */ "../../forms/Service");
+
+export default {
+	name: "EditService",
+	components: {
+		FormService,
+		ToggleSwitch,
+		FormGroup,
+		draggable,
+	},
+	created() {
+		this.fetchData();
+	},
+	watch: {
+		$route: "fetchData",
+	},
+	data() {
+		return {
+			service: null,
+			ready: false,
+		};
+	},
+	methods: {
+		async fetchData() {
+			if (!this.$route.params.id) {
+				this.ready = true;
+				return;
+			}
+			this.service = await Api.service(this.$route.params.id);
+			this.ready = true;
+		},
+	},
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

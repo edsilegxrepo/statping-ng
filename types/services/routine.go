@@ -320,7 +320,7 @@ func CheckGrpc(s *Service, record bool) (*Service, error) {
 	// Upgrade GRPC connection if using TLS
 	// Force to connect on HTTP2 with TLS. Needed when using a reverse proxy such as nginx.
 	if s.VerifySSL.Bool {
-		h2creds := credentials.NewTLS(&tls.Config{NextProtos: []string{"h2"}})
+		h2creds := credentials.NewTLS(&tls.Config{NextProtos: []string{"h2"}, MinVersion: tls.VersionTLS13})
 		grpcOption = grpc.WithTransportCredentials(h2creds)
 	}
 
@@ -803,7 +803,8 @@ func RecordSuccess(s *Service) {
 		log.Error(err)
 	}
 	log.WithFields(utils.ToFields(hit, s)).Infoln(
-		fmt.Sprintf("Service #%d '%v' Successful Response: %s | Lookup in: %s | Online: %v | Interval: %d seconds", s.Id, s.Name, utils.HumanMicro(hit.Latency), utils.HumanMicro(hit.PingTime), s.Online, s.Interval))
+		fmt.Sprintf("Service #%d '%v' Successful Response: %s | Lookup in: %s | Online: %v | Interval: %d seconds", s.Id, s.Name, utils.HumanMicro(hit.Latency), utils.HumanMicro(hit.PingTime), s.Online, s.Interval),
+	)
 	s.LastLookupTime = hit.PingTime
 	s.LastLatency = hit.Latency
 	metrics.Gauge("online", 1., s.Name, s.Type)
@@ -816,7 +817,8 @@ func RecordCheckinSuccess(s *Service, checkin *checkins.Checkin, hit *checkins.C
 	s.LastOnline = hit.CreatedAt
 	s.Online = true
 	log.WithFields(utils.ToFields(hit, s)).Infoln(
-		fmt.Sprintf("Service #%d '%v' Successful Checkin: Difference to expected checkin: %s | Interval: %d seconds", s.Id, s.Name, utils.HumanMicro(latency), s.Interval))
+		fmt.Sprintf("Service #%d '%v' Successful Checkin: Difference to expected checkin: %s | Interval: %d seconds", s.Id, s.Name, utils.HumanMicro(latency), s.Interval),
+	)
 	s.LastLookupTime = latency
 	s.LastLatency = latency
 	metrics.Gauge("online", 1., s.Name, s.Type)

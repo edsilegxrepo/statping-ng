@@ -25,7 +25,7 @@ type Checkin struct {
 // CheckinHit is a successful response from a Checkin
 type CheckinHit struct {
 	Id        int64     `gorm:"primary_key;column:id" json:"id"`
-	Checkin   int64     `gorm:"index;column:checkin" json:"-"`
+	Checkin   int64     `gorm:"index:idx_checkinhits_checkin_created_at,priority:1;index;column:checkin" json:"-"`
 	From      string    `gorm:"column:from_location" json:"from"`
-	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
+	CreatedAt time.Time `gorm:"index:idx_checkinhits_checkin_created_at,priority:2;column:created_at" json:"created_at"`
 }
