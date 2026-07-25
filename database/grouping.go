@@ -255,7 +255,25 @@ func ParseQueriesForTable(r *http.Request, o isObject, whereTable string) (*Grou
 	q = q.Where(fmt.Sprintf("%screated_at BETWEEN ? AND ?", whereTable), q.FormatTime(query.Start), q.FormatTime(query.End))
 
 	if query.Order != "" {
-		q = q.Order(query.Order)
+		// Whitelist allowed order columns to prevent SQL injection/information disclosure
+		allowedOrderColumns := map[string]bool{
+			"id":         true,
+			"id DESC":    true,
+			"id ASC":     true,
+			"created_at": true,
+			"created_at DESC": true,
+			"created_at ASC":  true,
+			"order_id":        true,
+			"order_id DESC":   true,
+			"order_id ASC":    true,
+			"name":            true,
+			"name DESC":       true,
+			"name ASC":        true,
+		}
+		if allowedOrderColumns[query.Order] {
+			q = q.Order(query.Order)
+		}
+		// Invalid order values are silently ignored (default ordering used)
 	}
 	query.db = q
 
@@ -263,6 +281,8 @@ func ParseQueriesForTable(r *http.Request, o isObject, whereTable string) (*Grou
 }
 
 func parseGet(r *http.Request) url.Values {
-	_ = r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		log.Warnln("Error parsing form:", err)
+	}
 	return r.Form
 }

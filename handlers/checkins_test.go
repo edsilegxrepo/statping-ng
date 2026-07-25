@@ -12,15 +12,15 @@ func TestUnAuthenticatedCheckinRoutes(t *testing.T) {
 			Name:           "No Authentication - New Checkin",
 			URL:            "/api/checkins",
 			Method:         "POST",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Checkin",
 			URL:            "/api/checkins/1",
 			Method:         "DELETE",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 	}
 
@@ -103,6 +103,7 @@ func TestApiCheckinRoutes(t *testing.T) {
 			ExpectedContains: []string{BadJSONResponse},
 			Method:           "POST",
 			ExpectedStatus:   422,
+			BeforeTest:       SetTestENV,
 		},
 	}
 

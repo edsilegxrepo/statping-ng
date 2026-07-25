@@ -54,6 +54,12 @@ func FindByAPIKey(key string) (*User, error) {
 	return &user, q.Error()
 }
 
+func FindByEmail(email string) (*User, error) {
+	var user User
+	q := db.Where("email = ?", email).First(&user)
+	return &user, q.Error()
+}
+
 func All() []*User {
 	var users []*User
 	db.Find(&users)

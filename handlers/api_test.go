@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -25,12 +26,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var dir string
+var (
+	dir             string
+	setupOnce       sync.Once
+	setupErr        error
+	testSetupMutex  sync.Mutex
+)
 
 func init() {
 	_ = utils.InitLogs()
 	_ = source.Assets()
-	dir = utils.Directory
 	core.New("test", "testcommithere")
 }
 
@@ -280,6 +285,7 @@ type HTTPTest struct {
 	GreaterThan         int
 	SecureRoute         bool
 	Skip                bool
+	NoAuth              bool // Skip auto-adding authentication and CSRF tokens
 }
 
 func logTest(t *testing.T, err error) error {
@@ -364,7 +370,31 @@ func RunHTTPTest(test HTTPTest, t *testing.T) (string, *testing.T, error) {
 	return stringBody, t, logTest(t, err)
 }
 
+// getCSRFToken fetches a CSRF token from the server for authenticated requests
+func getCSRFToken() (string, []*http.Cookie, error) {
+	req, err := http.NewRequest("GET", "/api/csrf", nil)
+	if err != nil {
+		return "", nil, err
+	}
+	rr := httptest.NewRecorder()
+	Router().ServeHTTP(rr, req)
+
+	// Extract token from response body
+	var tokenResp struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &tokenResp); err != nil {
+		return "", nil, err
+	}
+
+	return tokenResp.Token, rr.Result().Cookies(), nil
+}
+
 func Request(test HTTPTest) (*httptest.ResponseRecorder, error) {
+	return RequestWithAuth(test, !test.NoAuth)
+}
+
+func RequestWithAuth(test HTTPTest, addAuth bool) (*httptest.ResponseRecorder, error) {
 	req, err := http.NewRequest(test.Method, test.URL, strings.NewReader(test.Body))
 	if err != nil {
 		return nil, err
@@ -375,18 +405,58 @@ func Request(test HTTPTest) (*httptest.ResponseRecorder, error) {
 			req.Header.Set(splits[0], splits[1])
 		}
 	}
-	if utils.Params.Get("GO_ENV") == "test" && core.App != nil && core.App.ApiSecret != "" && req.Header.Get("Authorization") == "" && !strings.Contains(test.URL, "api=") {
+
+	// Skip if addAuth is false (unauthenticated route tests)
+	if !addAuth {
+		rr := httptest.NewRecorder()
+		Router().ServeHTTP(rr, req)
+		return rr, nil
+	}
+
+	// For authenticated requests, add auth header if not already set
+	if core.App != nil && core.App.ApiSecret != "" && req.Header.Get("Authorization") == "" && !strings.Contains(test.URL, "api=") {
 		req.Header.Set("Authorization", "Bearer "+core.App.ApiSecret)
 	}
+
+	// For state-changing methods with auth, get and include CSRF token
+	if test.Method != "GET" && test.Method != "HEAD" && test.Method != "OPTIONS" {
+		csrfToken, cookies, err := getCSRFToken()
+		if err == nil && csrfToken != "" {
+			req.Header.Set("X-CSRF-Token", csrfToken)
+			for _, cookie := range cookies {
+				req.AddCookie(cookie)
+			}
+		}
+	}
+
 	rr := httptest.NewRecorder()
 	Router().ServeHTTP(rr, req)
 	return rr, err
 }
 
 func ensureHandlerSetup(t *testing.T) {
-	if len(services.Services()) >= 6 {
-		return
+	testSetupMutex.Lock()
+	defer testSetupMutex.Unlock()
+
+	// Use sync.Once to ensure setup runs exactly once per test run
+	setupOnce.Do(func() {
+		setupErr = doHandlerSetup(t)
+	})
+
+	if setupErr != nil {
+		t.Fatalf("handler setup failed: %v", setupErr)
 	}
+
+	// Verify setup completed correctly
+	if len(services.Services()) < 6 {
+		t.Fatalf("handler setup incomplete: expected >= 6 services, got %d", len(services.Services()))
+	}
+}
+
+func doHandlerSetup(t *testing.T) error {
+	// Clear any stale cache state
+	services.ClearCache()
+
 	core.App.Setup = false
 	form := url.Values{}
 	form.Add("db_host", utils.Params.GetString("DB_HOST"))
@@ -404,21 +474,25 @@ func ensureHandlerSetup(t *testing.T) {
 	form.Add("email", "info@statping.com")
 
 	req, err := http.NewRequest("POST", "/api/setup", strings.NewReader(form.Encode()))
-	require.Nil(t, err)
+	if err != nil {
+		return err
+	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 	Router().ServeHTTP(rr, req)
-	require.Equal(t, 200, rr.Code)
-	utils.Params.Set("GO_ENV", "production")
+	if rr.Code != 200 {
+		return fmt.Errorf("setup returned status %d: %s", rr.Code, rr.Body.String())
+	}
+	return nil
 }
 
 func SetTestENV(t *testing.T) error {
-	utils.Params.Set("GO_ENV", "test")
+	// No-op: tests use production behavior with proper CSRF handling
 	return nil
 }
 
 func UnsetTestENV(t *testing.T) error {
-	utils.Params.Set("GO_ENV", "production")
+	// No-op: tests use production behavior with proper CSRF handling
 	return nil
 }
 

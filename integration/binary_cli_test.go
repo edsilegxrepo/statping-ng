@@ -22,6 +22,9 @@ func TestMain(m *testing.M) {
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	binFile := filepath.Join(tmpDir, "statping-ng")
+	if isWindows() {
+		binFile += ".exe"
+	}
 	buildCmd := exec.Command("go", "build", "-o", binFile, "../cmd")
 	if err := buildCmd.Run(); err != nil {
 		os.Exit(1)
@@ -29,6 +32,10 @@ func TestMain(m *testing.M) {
 	binaryPath = binFile
 
 	os.Exit(m.Run())
+}
+
+func isWindows() bool {
+	return os.PathSeparator == '\\' && os.PathListSeparator == ';'
 }
 
 func TestBinaryCLI_Version(t *testing.T) {

@@ -21,7 +21,14 @@ type serviceOrder struct {
 
 func findService(r *http.Request) (*services.Service, error) {
 	vars := mux.Vars(r)
-	id := utils.ToInt(vars["id"])
+	idStr := vars["id"]
+	if utils.NotNumber(idStr) {
+		return nil, errors.NotNumber
+	}
+	id := utils.ToInt(idStr)
+	if id <= 0 {
+		return nil, errors.NotNumber
+	}
 	servicer, err := services.Find(id)
 	if err != nil {
 		return nil, err
@@ -33,7 +40,10 @@ func findService(r *http.Request) (*services.Service, error) {
 }
 
 func reorderServiceHandler(w http.ResponseWriter, r *http.Request) {
-	_ = r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		sendErrorJson(err, w, r)
+		return
+	}
 	var newOrder []*serviceOrder
 	if err := DecodeJSON(r, &newOrder); err != nil {
 		sendErrorJson(err, w, r)

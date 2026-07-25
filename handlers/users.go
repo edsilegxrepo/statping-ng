@@ -82,7 +82,10 @@ func apiAllUsersHandler(r *http.Request) interface{} {
 }
 
 func apiCheckUserTokenHandler(w http.ResponseWriter, r *http.Request) {
-	_ = r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		sendErrorJson(err, w, r)
+		return
+	}
 	token := r.PostForm.Get("token")
 	if token == "" {
 		sendErrorJson(errors.New("missing token parameter"), w, r)

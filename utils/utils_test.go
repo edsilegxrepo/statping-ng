@@ -157,6 +157,8 @@ func TestRandomString(t *testing.T) {
 }
 
 func TestDeleteDirectory(t *testing.T) {
+	// Close log file handles before deleting logs directory (required on Windows)
+	CloseLogs()
 	assert.Nil(t, DeleteDirectory(Directory+"/logs"))
 }
 

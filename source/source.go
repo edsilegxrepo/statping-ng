@@ -49,11 +49,13 @@ func Assets() error {
 }
 
 func scssRendered(name string) string {
-	spl := strings.Split(name, "/")
-	path := spl[:len(spl)-2]
-	file := spl[len(spl)-1]
-	splFile := strings.Split(file, ".")
-	return filepath.Join(strings.Join(path, "/"), "css", splFile[len(splFile)-2]+".css")
+	// Use filepath.Dir and filepath.Base for cross-platform compatibility
+	dir := filepath.Dir(name)          // e.g., .../assets/scss
+	parentDir := filepath.Dir(dir)     // e.g., .../assets
+	file := filepath.Base(name)        // e.g., index.scss
+	ext := filepath.Ext(file)          // e.g., .scss
+	baseName := file[:len(file)-len(ext)] // e.g., index
+	return filepath.Join(parentDir, "css", baseName+".css")
 }
 
 // CompileSASS will attempt to compile the SASS files into CSS

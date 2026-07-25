@@ -57,7 +57,7 @@ func getTransport(verifySSL bool, customTLS *tls.Config) *http.Transport {
 
 	t := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !verifySSL, // #nosec G402
-			Renegotiation: tls.RenegotiateOnceAsClient, MinVersion: tls.VersionTLS13},
+			Renegotiation: tls.RenegotiateOnceAsClient, MinVersion: tls.VersionTLS12},
 		DisableKeepAlives:     false,
 		MaxIdleConns:          100,
 		MaxIdleConnsPerHost:   10,

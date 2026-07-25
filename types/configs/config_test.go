@@ -13,17 +13,27 @@ func init() {
 }
 
 func TestSQLiteConfig(t *testing.T) {
+	tmpDir := t.TempDir()
 	sqlite := &DbConfig{
-		DbConn: "sqlite",
-		DbHost: "localhost",
-		DbUser: "",
-		DbPass: "",
-		DbData: "",
-		DbPort: 0,
+		DbConn:   "sqlite",
+		DbHost:   "localhost",
+		DbUser:   "",
+		DbPass:   "",
+		DbData:   "statping.db",
+		DbPort:   0,
+		Location: tmpDir,
 	}
 
 	err := Connect(sqlite, false)
 	require.Nil(t, err)
+
+	// Close the database connection so t.TempDir() can clean up
+	if sqlite.Db != nil {
+		db, _ := sqlite.Db.DB()
+		if db != nil {
+			_ = db.Close()
+		}
+	}
 }
 
 func TestMySQLConfig(t *testing.T) {
@@ -59,7 +69,13 @@ func TestPostgresConfig(t *testing.T) {
 }
 
 func TestFileSQLFile(t *testing.T) {
-	file, err := findSQLin(utils.Directory)
+	tmpDir := t.TempDir()
+	// Create a test db file in the temp directory
+	testDbPath := tmpDir + "/statping.db"
+	err := utils.SaveFile(testDbPath, []byte("test"))
+	require.Nil(t, err)
+
+	file, err := findSQLin(tmpDir)
 	require.Nil(t, err)
 	assert.Equal(t, "statping.db", file)
 }

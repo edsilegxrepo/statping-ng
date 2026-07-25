@@ -161,6 +161,8 @@ func resetCli() error {
 
 	logDir := d + "/logs"
 	if utils.FolderExists(logDir) {
+		// Close log file handles before deleting (required on Windows)
+		utils.CloseLogs()
 		fmt.Printf("Deleting %s directory.\n", logDir)
 		if err := utils.DeleteDirectory(logDir); err != nil {
 			return err

@@ -103,7 +103,10 @@ type groupOrder struct {
 }
 
 func apiGroupReorderHandler(w http.ResponseWriter, r *http.Request) {
-	_ = r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		sendErrorJson(err, w, r)
+		return
+	}
 	var newOrder []*groupOrder
 
 	if err := DecodeJSON(r, &newOrder); err != nil {

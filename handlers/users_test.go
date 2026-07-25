@@ -16,29 +16,29 @@ func TestUnAuthenticatedUserRoutes(t *testing.T) {
 			Name:           "No Authentication - New User",
 			URL:            "/api/users",
 			Method:         "POST",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Update User",
 			URL:            "/api/users/1",
 			Method:         "POST",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - View User",
 			URL:            "/api/users/1",
 			Method:         "GET",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 401, // GET doesn't need CSRF, so auth check runs
+			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete User",
 			URL:            "/api/users/1",
 			Method:         "DELETE",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 	}
 

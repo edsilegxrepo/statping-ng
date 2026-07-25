@@ -1,6 +1,7 @@
 package notifiers
 
 import (
+	"runtime"
 	"testing"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 
 func TestCommandNotifier(t *testing.T) {
 	t.Parallel()
-	t.SkipNow()
 	err := utils.InitLogs()
 	require.Nil(t, err)
 	db, err := database.OpenTester()
@@ -26,41 +26,90 @@ func TestCommandNotifier(t *testing.T) {
 	notifications.SetDB(db)
 	core.Example()
 
+	// Use platform-appropriate echo command
+	var echoCmd string
+	if runtime.GOOS == "windows" {
+		echoCmd = "cmd"
+	} else {
+		echoCmd = "/bin/echo"
+	}
+
+	// Create a fresh command notifier for testing
+	testCommand := &commandLine{&notifications.Notification{
+		Method:      "command",
+		Title:       "Command",
+		Description: "Test command notifier",
+		Author:      "Hunter Long",
+		Delay:       time.Duration(100 * time.Millisecond),
+		Limits:      99,
+		Host:        null.NewNullString(echoCmd),
+		Var1:        null.NewNullString("service {{.Service.Domain}} is online"),
+		Var2:        null.NewNullString("service {{.Service.Domain}} is offline"),
+		Enabled:     null.NewNullBool(true),
+	}}
+
 	t.Run("Load Command", func(t *testing.T) {
-		Command.Host = null.NewNullString("/bin/echo")
-		Command.Var1 = null.NewNullString("service {{.Service.Domain}} is online")
-		Command.Var2 = null.NewNullString("service {{.Service.Domain}} is offline")
-		Command.Delay = time.Duration(100 * time.Millisecond)
-		Command.Limits = 99
-		Command.Enabled = null.NewNullBool(true)
-
-		Add(Command)
-
-		assert.Equal(t, "Hunter Long", Command.Author)
-		assert.Equal(t, "/bin/echo", Command.Host)
+		Add(testCommand)
+		assert.Equal(t, "Hunter Long", testCommand.Author)
+		assert.Equal(t, echoCmd, testCommand.Host.String)
 	})
 
-	t.Run("Command Notifier Tester", func(t *testing.T) {
-		assert.True(t, Command.CanSend())
+	t.Run("Command Notifier CanSend", func(t *testing.T) {
+		assert.True(t, testCommand.CanSend())
+	})
+
+	t.Run("Command Valid", func(t *testing.T) {
+		err := testCommand.Valid(notifications.Values{})
+		assert.Nil(t, err)
+	})
+
+	t.Run("Command Select", func(t *testing.T) {
+		notif := testCommand.Select()
+		assert.NotNil(t, notif)
+		assert.Equal(t, "command", notif.Method)
 	})
 
 	t.Run("Command OnSave", func(t *testing.T) {
-		_, err := Command.OnSave()
+		_, err := testCommand.OnSave()
 		assert.Nil(t, err)
 	})
 
-	t.Run("Command OnFailure", func(t *testing.T) {
-		_, err := Command.OnFailure(services.Example(false), failures.Example())
+	// Skip actual command execution tests on Windows (different command syntax)
+	if runtime.GOOS != "windows" {
+		t.Run("Command OnFailure", func(t *testing.T) {
+			_, err := testCommand.OnFailure(services.Example(false), failures.Example())
+			assert.Nil(t, err)
+		})
+
+		t.Run("Command OnSuccess", func(t *testing.T) {
+			_, err := testCommand.OnSuccess(services.Example(true))
+			assert.Nil(t, err)
+		})
+
+		t.Run("Command OnTest", func(t *testing.T) {
+			_, err := testCommand.OnTest()
+			assert.Nil(t, err)
+		})
+	}
+}
+
+func TestRunCommand(t *testing.T) {
+	err := utils.InitLogs()
+	require.Nil(t, err)
+
+	// Skip on Windows since command syntax differs
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping runCommand test on Windows")
+	}
+
+	t.Run("valid command", func(t *testing.T) {
+		out, _, err := runCommand("echo hello")
 		assert.Nil(t, err)
+		assert.Contains(t, out, "hello")
 	})
 
-	t.Run("Command OnSuccess", func(t *testing.T) {
-		_, err := Command.OnSuccess(services.Example(true))
-		assert.Nil(t, err)
-	})
-
-	t.Run("Command Test", func(t *testing.T) {
-		_, err := Command.OnTest()
-		assert.Nil(t, err)
+	t.Run("empty command returns error", func(t *testing.T) {
+		_, _, err := runCommand("")
+		assert.Error(t, err)
 	})
 }

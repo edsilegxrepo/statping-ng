@@ -26,18 +26,34 @@ func ConnectConfigs(configs *DbConfig, retry bool) error {
 // findDbFile will attempt to find the "statping.db" database file in the current
 // working directory, or from STATPING_DIR env.
 func findDbFile(configs *DbConfig) (string, error) {
-	location := utils.Directory + "/" + SqliteFilename
+	// Use Location from config if set, otherwise fall back to utils.Directory
+	baseDir := utils.Directory
+	if configs != nil && configs.Location != "" {
+		baseDir = configs.Location
+	}
+
+	// If SqlFile is explicitly set, use it directly
+	if configs != nil && configs.SqlFile != "" {
+		return configs.SqlFile, nil
+	}
+
+	// Build the default location
+	dbFilename := SqliteFilename
+	if configs != nil && configs.DbData != "" {
+		dbFilename = configs.DbData
+	}
+	location := baseDir + "/" + dbFilename
+
+	// If no config provided, try to find existing db file
 	if configs == nil {
-		file, err := findSQLin(utils.Directory)
+		file, err := findSQLin(baseDir)
 		if err != nil {
 			log.Errorln(err)
 			return location, nil
 		}
-		location = file
+		return file, nil
 	}
-	if configs != nil && configs.SqlFile != "" {
-		return configs.SqlFile, nil
-	}
+
 	return location, nil
 }
 

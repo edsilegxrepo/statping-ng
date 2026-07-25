@@ -12,22 +12,22 @@ func TestUnAuthenticatedMessageRoutes(t *testing.T) {
 			Name:           "No Authentication - New Message",
 			URL:            "/api/messages",
 			Method:         "POST",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Update Message",
 			URL:            "/api/messages/1",
 			Method:         "POST",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Message",
 			URL:            "/api/messages/1",
 			Method:         "DELETE",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 	}
 

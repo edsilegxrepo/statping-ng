@@ -60,10 +60,11 @@ func (s *Service) BeforeUpdate(tx *gorm.DB) (err error) {
 	return s.Validate()
 }
 
+// AfterFind is called after finding a service
+// Note: Related data (Incidents, Messages, Checkins) should be loaded using
+// Preload() in the query, not in AfterFind, to avoid N+1 query problems.
+// Use FindWithRelations() for loading services with all related data.
 func (s *Service) AfterFind(tx *gorm.DB) (err error) {
-	tx.Where("service = ?", s.Id).Find(&s.Incidents)
-	tx.Where("service = ?", s.Id).Find(&s.Messages)
-	tx.Where("service = ?", s.Id).Find(&s.Checkins)
 	metrics.Query("service", "find")
 	return nil
 }
@@ -88,6 +89,14 @@ func (s *Service) AfterDelete(tx *gorm.DB) (err error) {
 }
 
 func init() {
+	allServices = make(map[int64]*Service)
+}
+
+// ClearCache clears the in-memory services cache.
+// Used for testing to ensure fresh state.
+func ClearCache() {
+	servicesLock.Lock()
+	defer servicesLock.Unlock()
 	allServices = make(map[int64]*Service)
 }
 
@@ -127,6 +136,26 @@ func all() []*Service {
 	var services []*Service
 	db.Find(&services)
 	return services
+}
+
+// allWithRelations loads all services with their related data using Preload
+// This avoids N+1 query problems by batching related data queries
+func allWithRelations() []*Service {
+	var services []*Service
+	db.Preload("Incidents").Preload("Messages").Preload("Checkins").Find(&services)
+	return services
+}
+
+// FindWithRelations finds a service by ID with all related data preloaded
+func FindWithRelations(id int64) (*Service, error) {
+	var service Service
+	if err := db.Preload("Incidents").Preload("Messages").Preload("Checkins").First(&service, id).Error(); err != nil {
+		return nil, errors.Missing(&Service{}, id)
+	}
+	servicesLock.Lock()
+	allServices[service.Id] = &service
+	servicesLock.Unlock()
+	return &service, nil
 }
 
 func All() map[int64]*Service {

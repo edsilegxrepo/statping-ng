@@ -320,7 +320,7 @@ func CheckGrpc(s *Service, record bool) (*Service, error) {
 	// Upgrade GRPC connection if using TLS
 	// Force to connect on HTTP2 with TLS. Needed when using a reverse proxy such as nginx.
 	if s.VerifySSL.Bool {
-		h2creds := credentials.NewTLS(&tls.Config{NextProtos: []string{"h2"}, MinVersion: tls.VersionTLS13})
+		h2creds := credentials.NewTLS(&tls.Config{NextProtos: []string{"h2"}, MinVersion: tls.VersionTLS12})
 		grpcOption = grpc.WithTransportCredentials(h2creds)
 	}
 

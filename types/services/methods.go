@@ -78,7 +78,7 @@ func (s Service) configureTLS() (config *tls.Config, err error) {
 	}
 	config = &tls.Config{
 		ServerName:         s.Domain,
-		InsecureSkipVerify: false, MinVersion: tls.VersionTLS13,
+		InsecureSkipVerify: false, MinVersion: tls.VersionTLS12,
 	}
 
 	return
@@ -239,20 +239,44 @@ func (s *Service) IsRunning() bool {
 // SelectAllServices returns a slice of *core.Service to be store on []*core.Services
 // should only be called once on startup.
 func SelectAllServices(start bool) (map[int64]*Service, error) {
+	servicesLock.RLock()
 	if len(allServices) > 0 {
-		return allServices, nil
+		// Return a copy to prevent external modification
+		result := make(map[int64]*Service, len(allServices))
+		for k, v := range allServices {
+			result[k] = v
+		}
+		servicesLock.RUnlock()
+		return result, nil
 	}
-	for _, s := range all() {
+	servicesLock.RUnlock()
+
+	// Load services from database with related data (using Preload to avoid N+1)
+	services := allWithRelations()
+
+	servicesLock.Lock()
+	for _, s := range services {
 		s.Failures = s.AllFailures().LastAmount(limitedFailures)
 		s.prevOnline = true
 		// collect initial service stats
 		s.UpdateStats()
 		allServices[s.Id] = s
-		if start {
+	}
+	// Make a copy to return
+	result := make(map[int64]*Service, len(allServices))
+	for k, v := range allServices {
+		result[k] = v
+	}
+	servicesLock.Unlock()
+
+	// Start checkin processes outside the lock
+	if start {
+		for _, s := range services {
 			CheckinProcess(s)
 		}
 	}
-	return allServices, nil
+
+	return result, nil
 }
 
 func (s *Service) UpdateStats() *Service {

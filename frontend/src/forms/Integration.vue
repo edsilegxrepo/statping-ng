@@ -1,7 +1,7 @@
 <template>
     <form @submit="updateIntegration">
         <h4 class="text-capitalize">{{integration.full_name}}</h4>
-        <p class="small text-muted" v-html="integration.description"></p>
+        <p class="small text-muted" v-html="sanitizeHtml(integration.description)"></p>
 
         <div v-for="(field, index) in integration.fields" v-bind:key="index" class="form-group">
 
@@ -11,7 +11,7 @@
 
             <input v-else :type="field.type" v-model="field.value" class="form-control">
 
-            <small class="form-text text-muted" v-html="field.description"></small>
+            <small class="form-text text-muted" v-html="sanitizeHtml(field.description)"></small>
         </div>
 
         <div class="col-12">

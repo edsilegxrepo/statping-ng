@@ -1,4 +1,37 @@
-# 0.96.0 (07-24-2026)
+# 0.96.6 (07-25-2026, unreleased)
+- **Security Hardening**:
+  - Added CSRF double-submit cookie protection with cryptographic tokens
+  - Added rate limiting middleware (5 requests/minute for login endpoint)
+  - Added OAuth state validation with one-time use enforcement and expiry cleanup
+  - Added input validation for service types (HTTP, TCP, gRPC, ICMP, static, command)
+- **Test Architecture Overhaul**:
+  - Switched from in-memory SQLite to file-based SQLite with WAL mode for test isolation
+  - Added `sync.Once` pattern for thread-safe handler test setup, eliminating race conditions
+  - Added `services.ClearCache()` to reset stale cache before test database setup
+  - Added 94MB production-scale test fixture (607K hits, 11K failures) in `testdata/`
+  - Test coverage improved from ~36% to 45.2%
+- **New Test Coverage**:
+  - `database/database_test.go`: 18 comprehensive database layer tests
+  - `handlers/csrf_test.go`: CSRF token generation and validation tests
+  - `handlers/ratelimit_test.go`: Rate limiting allow/block/reset tests
+  - `handlers/dashboard_test.go`: Theme and config API tests
+  - `types/services/check_test.go`: HTTP/TCP/Command check tests with mocks
+  - `types/services/validation_test.go`: Service validation with edge cases
+  - `types/core/core_test.go`, `types/hits/hits_test.go`, `types/metrics/metrics_test.go`, `types/notifications/notifications_test.go`
+- **Documentation**:
+  - Added `ARCHITECTURE.md` with Mermaid diagrams (system, data flow, deployment)
+  - Rewrote `README.md` with security assessment, CLI args, deployment examples
+  - Added `TESTING.md` with complete test matrix, coverage stats, troubleshooting
+  - Renamed original README.md to `LEGACY.md`
+- **Bug Fixes**:
+  - Fixed `dashboard.go` config file path: `configs.yml` → `config.yml`
+- **Frontend**:
+  - Added CSRF token handling to `API.js`
+  - Improved form validation and error handling in Login.vue
+
+# 0.96.0 (07-24-2026, unreleased)
+
+# 0.95.0 (07-23-2026, unreleased)
 - **Security & Backdoor Removal**:
   - Removed `GO_ENV=test` authentication backdoor in `handlers/authentication.go` for 100% environment parity.
   - Fixed `IsUser()` API key and Bearer token privilege resolution on private service queries.
@@ -13,9 +46,7 @@
   - Resolved all JS/Vue diagnostics across 84 application source files (`oxlint` / `biome` 0 errors).
 - **Tooling & Code Hygiene**:
   - Cleaned all repository shell scripts (`install.sh`, `dev/*.sh`) for 100% `ShellCheck` compliance.
-  - Created [`code_quality.sh`](file:///usr/src/packages/BUILD/statping-ng/code_quality.sh) script running all 8 audit phases in sequence.
-
-# 0.95.0 (07-23-2026)
+  - Created [`code_quality.sh`](file:///code_quality.sh) script running all 8 audit phases in sequence.
 - **Test Suite Compliance & Stability**:
   - Updated test suites across `types/users`, `types/services`, `utils`, and `handlers` for 100% compliance with 30-character password complexity rules.
   - Added nil pointer guard in `types/services/notifications.go` (`logMessage`).

@@ -92,6 +92,22 @@ func (t *hook) Levels() []Logger.Level {
 // base struct name, and each field into it's own mapping, for example:
 // type "*services.Service", on string field "Name" converts to "service_name=value". There is also an
 // additional field called "_pointer" that will return the pointer hex value.
+// sensitiveFields contains field name patterns that should be redacted from logs
+var sensitiveFields = []string{
+	"pass", "password", "secret", "apikey", "api_key", "token", "credential",
+}
+
+// isSensitiveField checks if a field name contains sensitive data patterns
+func isSensitiveField(name string) bool {
+	lower := strings.ToLower(name)
+	for _, sensitive := range sensitiveFields {
+		if strings.Contains(lower, sensitive) {
+			return true
+		}
+	}
+	return false
+}
+
 func ToFields(d ...interface{}) map[string]interface{} {
 	if !Log.IsLevelEnabled(Logger.DebugLevel) {
 		return nil
@@ -105,8 +121,14 @@ func ToFields(d ...interface{}) map[string]interface{} {
 		}
 		for _, f := range structs.Fields(v) {
 			if f.IsExported() && !f.IsZero() && f.Kind() != reflect.Pointer && f.Kind() != reflect.Slice && f.Kind() != reflect.Chan {
-				field := strings.ToLower(trueType + "_" + f.Name())
-				fieldKey[field] = replaceVal(f.Value())
+				fieldName := f.Name()
+				field := strings.ToLower(trueType + "_" + fieldName)
+				// Redact sensitive fields to prevent credential leakage in logs
+				if isSensitiveField(fieldName) {
+					fieldKey[field] = "[REDACTED]"
+				} else {
+					fieldKey[field] = replaceVal(f.Value())
+				}
 			}
 		}
 		fieldKey[strings.ToLower(trueType+"_pointer")] = fmt.Sprintf("%p", v)
