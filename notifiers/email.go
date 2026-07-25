@@ -157,7 +157,7 @@ func (e *emailer) dialSend(email *emailOutgoing) error {
 	m := mail.NewMessage()
 	// if email setting TLS is Disabled (actually InsecureSkipVerify)
 	if e.ApiKey.String == "true" {
-		mailer.TLSConfig = &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS13} // #nosec G402
+		mailer.TLSConfig = &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12} // #nosec G402
 	}
 
 	m.SetAddressHeader("From", email.From, "Monitoring Service")

@@ -78,7 +78,7 @@ func (s Service) configureTLS() (config *tls.Config, err error) {
 	}
 	config = &tls.Config{
 		ServerName:         s.Domain,
-		InsecureSkipVerify: false, MinVersion: tls.VersionTLS13,
+		InsecureSkipVerify: false, MinVersion: tls.VersionTLS12,
 	}
 
 	return
