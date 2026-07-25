@@ -7,6 +7,10 @@ on:
     paths-ignore:
       - "**.md"
 
+# Restrict permissions to minimum required for security
+permissions:
+  contents: read
+
 jobs:
   data:
     # this job collects general variables and inputs for later use.
@@ -477,6 +481,8 @@ jobs:
     if: ${{ success() && fromJSON(needs.data.outputs.is_release) }}
     needs: [ data, build, test-postman-sqlite, test-postman-mysql, test-postman-postgres, docker-build ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
