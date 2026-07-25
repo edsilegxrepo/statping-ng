@@ -88,7 +88,8 @@ export default {
 			if (auth.error) {
 				this.error = true;
 			} else if (auth.token) {
-				this.$cookies.set("statping_auth", auth.token);
+				// Note: JWT token is set as HttpOnly cookie by the server
+				// We only use the token info for UI state
 				await this.$store.dispatch("loadAdmin");
 				this.$store.commit("setAdmin", auth.admin);
 				this.$store.commit("setLoggedIn", true);
@@ -110,17 +111,36 @@ export default {
 			}
 			return "";
 		},
-		GHlogin() {
-			window.location = `https://github.com/login/oauth/authorize?client_id=${this.oauth.gh_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/github`)}&scope=read:user,read:org`;
+		async getOAuthState() {
+			// Fetch a state token from the server for CSRF protection
+			try {
+				const response = await fetch("api/oauth/state");
+				const data = await response.json();
+				return data.state;
+			} catch (e) {
+				console.error("Failed to get OAuth state:", e);
+				return null;
+			}
 		},
-		Slacklogin() {
-			window.location = `https://slack.com/oauth/authorize?client_id=${this.oauth.slack_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/slack`)}&scope=identity.basic`;
+		async GHlogin() {
+			const state = await this.getOAuthState();
+			if (!state) return;
+			window.location = `https://github.com/login/oauth/authorize?client_id=${this.oauth.gh_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/github`)}&scope=read:user,read:org&state=${state}`;
 		},
-		Googlelogin() {
-			window.location = `https://accounts.google.com/signin/oauth?client_id=${this.oauth.google_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/google`)}&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email`;
+		async Slacklogin() {
+			const state = await this.getOAuthState();
+			if (!state) return;
+			window.location = `https://slack.com/oauth/authorize?client_id=${this.oauth.slack_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/slack`)}&scope=identity.basic&state=${state}`;
 		},
-		Customlogin() {
-			window.location = `${this.oauth.custom_endpoint_auth}?client_id=${this.oauth.custom_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/custom`)}&response_type=code${this.custom_scopes()}`;
+		async Googlelogin() {
+			const state = await this.getOAuthState();
+			if (!state) return;
+			window.location = `https://accounts.google.com/signin/oauth?client_id=${this.oauth.google_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/google`)}&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email&state=${state}`;
+		},
+		async Customlogin() {
+			const state = await this.getOAuthState();
+			if (!state) return;
+			window.location = `${this.oauth.custom_endpoint_auth}?client_id=${this.oauth.custom_client_id}&redirect_uri=${this.encode(`${this.core.domain}/oauth/custom`)}&response_type=code${this.custom_scopes()}&state=${state}`;
 		},
 	},
 };

@@ -1,5 +1,5 @@
 <template>
-    <button v-html="loading ? loadLabel : label" @click.prevent="runAction" type="submit" :disabled="loading || disabled" class="btn btn-block" :class="{'btn-outline-light': loading}">
+    <button v-html="loading ? loadLabel : sanitizeHtml(label)" @click.prevent="runAction" type="submit" :disabled="loading || disabled" class="btn btn-block" :class="{'btn-outline-light': loading}">
     </button>
 </template>
 

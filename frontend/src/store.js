@@ -76,10 +76,10 @@ export default new Vuex.Store({
 			state.groups
 				.filter((g) => g.name !== "")
 				.sort((a, b) => a.order_id - b.order_id),
+		// groupsCleanInOrder is an alias for groupsClean (they are equivalent)
 		groupsCleanInOrder: (state) =>
 			state.groups
 				.filter((g) => g.name !== "")
-				.sort((a, b) => a.order_id - b.order_id)
 				.sort((a, b) => a.order_id - b.order_id),
 		serviceCheckins: (state) => (id) => {
 			return state.checkins.filter((c) => c.service_id === id);
@@ -176,39 +176,44 @@ export default new Vuex.Store({
 			context.commit("setServices", services);
 		},
 		async loadCore(context) {
-			const core = await Api.core();
-			const token = await Api.token();
+			const [core, token] = await Promise.all([Api.core(), Api.token()]);
 			context.commit("setCore", core);
 			context.commit("setAdmin", token);
-			context.commit("setCore", core);
 			context.commit("setUser", token !== undefined);
 		},
 		async loadRequired(context) {
-			const groups = await Api.groups();
+			// Fetch all required data in parallel for better performance
+			const [groups, services, messages, oauth] = await Promise.all([
+				Api.groups(),
+				Api.services(),
+				Api.messages(),
+				Api.oauth(),
+			]);
 			context.commit("setGroups", groups);
-			const services = await Api.services();
 			context.commit("setServices", services);
-			const messages = await Api.messages();
 			context.commit("setMessages", messages);
-			const oauth = await Api.oauth();
 			context.commit("setOAuth", oauth);
 			context.commit("setHasPublicData", true);
 		},
 		async loadAdmin(context) {
-			const groups = await Api.groups();
+			// Fetch all admin data in parallel for better performance
+			const [groups, services, messages, checkins, notifiers, users, oauth] =
+				await Promise.all([
+					Api.groups(),
+					Api.services(),
+					Api.messages(),
+					Api.checkins(),
+					Api.notifiers(),
+					Api.users(),
+					Api.oauth(),
+				]);
 			context.commit("setGroups", groups);
-			const services = await Api.services();
 			context.commit("setServices", services);
-			const messages = await Api.messages();
 			context.commit("setMessages", messages);
 			context.commit("setHasPublicData", true);
-			const checkins = await Api.checkins();
 			context.commit("setCheckins", checkins);
-			const notifiers = await Api.notifiers();
 			context.commit("setNotifiers", notifiers);
-			const users = await Api.users();
 			context.commit("setUsers", users);
-			const oauth = await Api.oauth();
 			context.commit("setOAuth", oauth);
 		},
 	},

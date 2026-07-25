@@ -91,12 +91,14 @@ func Router() *mux.Router {
 	api := r.NewRoute().Subrouter()
 	api.Use(apiMiddleware)
 	api.Use(prometheusMiddleware)
+	api.Use(csrfMiddleware)
 
 	// API Routes
 	r.Handle("/api", scoped(apiIndexHandler))
+	r.Handle("/api/csrf", http.HandlerFunc(csrfTokenHandler)).Methods("GET")
 	r.Handle("/setup", http.HandlerFunc(setupRedirectHandler)).Methods("GET")
 	r.Handle("/api/setup", http.HandlerFunc(processSetupHandler)).Methods("POST")
-	api.Handle("/api/login", http.HandlerFunc(apiLoginHandler)).Methods("POST")
+	api.Handle("/api/login", rateLimitLoginMiddleware(apiLoginHandler)).Methods("POST")
 	api.Handle("/api/logout", http.HandlerFunc(logoutHandler))
 	api.Handle("/api/renew", authenticated(apiRenewHandler, false))
 	api.Handle("/api/core", authenticated(apiCoreHandler, false)).Methods("POST")
@@ -110,6 +112,7 @@ func Router() *mux.Router {
 	// API OAUTH Routes
 	api.Handle("/api/oauth", scoped(apiOAuthHandler)).Methods("GET")
 	api.Handle("/api/oauth", authenticated(apiUpdateOAuthHandler, false)).Methods("POST")
+	api.Handle("/api/oauth/state", http.HandlerFunc(oauthStateHandler)).Methods("GET")
 	api.Handle("/oauth/{provider}", http.HandlerFunc(oauthHandler))
 
 	// API SCSS and ASSETS Routes

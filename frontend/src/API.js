@@ -4,11 +4,54 @@ const qs = require("querystring");
 axios.defaults.withCredentials = true;
 
 const tokenKey = "statping_auth";
+const csrfCookieName = "csrf_token";
+
+// Add CSRF token to all non-GET requests
+axios.interceptors.request.use(
+	(config) => {
+		if (config.method !== "get" && config.method !== "head" && config.method !== "options") {
+			const csrfToken = getCookie(csrfCookieName);
+			if (csrfToken) {
+				config.headers["X-CSRF-Token"] = csrfToken;
+			}
+		}
+		return config;
+	},
+	(error) => Promise.reject(error)
+);
+
+// Add response interceptor for better error handling
+axios.interceptors.response.use(
+	(response) => response,
+	(error) => {
+		if (error.response) {
+			console.error("API Error:", error.response.status, error.response.data);
+		}
+		return Promise.reject(error);
+	}
+);
+
+// Helper function to get cookie value
+function getCookie(name) {
+	const value = `; ${document.cookie}`;
+	const parts = value.split(`; ${name}=`);
+	if (parts.length === 2) return parts.pop().split(";").shift();
+	return null;
+}
 
 class Api {
 	constructor() {
 		this.version = "0.91.0";
 		this.commit = "a1a4dcb5bdce43219fc7af6cbfa1348dc7113724";
+	}
+
+	// Fetch CSRF token from server (called on app init)
+	async fetchCsrfToken() {
+		try {
+			await axios.get("api/csrf");
+		} catch (e) {
+			console.warn("Could not fetch CSRF token:", e);
+		}
 	}
 
 	async oauth() {

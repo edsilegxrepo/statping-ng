@@ -279,7 +279,7 @@ func configsSaveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oldCfg, err := configs.LoadConfigs(utils.Directory + "/configs.yml")
+	oldCfg, err := configs.LoadConfigs(utils.Directory + "/config.yml")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
@@ -295,7 +295,7 @@ func configsSaveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func configsViewHandler(w http.ResponseWriter, r *http.Request) {
-	db, err := configs.LoadConfigs(utils.Directory + "/configs.yml")
+	db, err := configs.LoadConfigs(utils.Directory + "/config.yml")
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return

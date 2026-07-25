@@ -1,4 +1,5 @@
 import Vue from "vue";
+import DOMPurify from "dompurify";
 
 const {
 	startOfDay,
@@ -281,6 +282,15 @@ export default Vue.mixin({
 		},
 		addSeconds(date, amount) {
 			return addSeconds(date, amount);
+		},
+		// Sanitize HTML to prevent XSS attacks
+		sanitizeHtml(html) {
+			if (!html) return "";
+			return DOMPurify.sanitize(html, {
+				ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br", "ul", "ol", "li", "span", "div", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "code", "pre"],
+				ALLOWED_ATTR: ["href", "target", "rel", "class", "id", "style"],
+				ALLOW_DATA_ATTR: false,
+			});
 		},
 	},
 });

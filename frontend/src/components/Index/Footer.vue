@@ -12,7 +12,7 @@
             </span>
           </div>
         </div>
-        <div v-else class="footer text-center mb-4 p-2" v-html="core.footer"></div>
+        <div v-else class="footer text-center mb-4 p-2" v-html="sanitizeHtml(core.footer)"></div>
     </footer>
 </template>
 

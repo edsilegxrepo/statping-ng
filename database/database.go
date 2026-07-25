@@ -224,7 +224,10 @@ func Set(db Database) {
 	database = db
 }
 
-func OpenTester() (Database, error) {
+// OpenTester creates a test database connection.
+// For SQLite, pass a directory path to create a file-based database (recommended for test isolation).
+// Pass empty string to use in-memory SQLite (legacy behavior, not recommended).
+func OpenTester(testDir ...string) (Database, error) {
 	testDB := utils.Params.GetString("DB_CONN")
 	var dbString string
 
@@ -245,7 +248,12 @@ func OpenTester() (Database, error) {
 			utils.Params.GetString("DB_DATABASE"),
 			utils.Params.GetString("DB_PASS"))
 	default:
-		dbString = fmt.Sprintf("file:%s?mode=memory&cache=shared", utils.RandomString(12))
+		// Use file-based SQLite if testDir provided, otherwise in-memory
+		if len(testDir) > 0 && testDir[0] != "" {
+			dbString = fmt.Sprintf("file:%s/test.db?cache=shared&_journal_mode=WAL", testDir[0])
+		} else {
+			dbString = fmt.Sprintf("file:%s?mode=memory&cache=shared", utils.RandomString(12))
+		}
 	}
 	if utils.Params.IsSet("DB_DSN") {
 		dbString = utils.Params.GetString("DB_DSN")

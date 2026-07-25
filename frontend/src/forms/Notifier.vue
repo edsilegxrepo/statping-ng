@@ -10,7 +10,7 @@
             </span>
         </div>
         <div class="card-body">
-        <p class="small text-muted" v-html="notifier.description"/>
+        <p class="small text-muted" v-html="sanitizeHtml(notifier.description)"/>
 
             <div v-if="notifier.method==='mobile'">
                 <div class="form-group row mt-3">
@@ -54,7 +54,7 @@
                 <label class="mb-0" :for="`switch_${notifier.name}_${form.field}`"></label>
             </span>
 
-            <small class="form-text text-muted" v-html="form.small_text"></small>
+            <small class="form-text text-muted" v-html="sanitizeHtml(form.small_text)"></small>
         </div>
 
         <div class="row mt-4">
@@ -76,7 +76,7 @@
                 <span class="badge badge-dark float-right text-uppercase mt-1">{{notifier.data_type}}</span>
             </div>
             <div class="card-body" :class="{'d-none': !expanded}">
-                <span class="text-muted d-block mb-3" v-if="notifier.request_info" v-html="notifier.request_info"></span>
+                <span class="text-muted d-block mb-3" v-if="notifier.request_info" v-html="sanitizeHtml(notifier.request_info)"></span>
 
         <div class="row" v-observe-visibility="visible">
             <div class="col-12">

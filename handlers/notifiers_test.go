@@ -37,8 +37,8 @@ func TestAuthenticatedNotifierRoutes(t *testing.T) {
 			Name:           "No Authentication - View Notifier",
 			URL:            "/api/notifier/slack",
 			Method:         "GET",
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 401, // GET doesn't need CSRF, so auth check runs
+			NoAuth:         true,
 		},
 		{
 			Name:           "View Notifier",
@@ -62,8 +62,8 @@ func TestAuthenticatedNotifierRoutes(t *testing.T) {
 					"enabled": true,
 					"limits": 55
 				}`,
-			ExpectedStatus: 401,
-			BeforeTest:     UnsetTestENV,
+			ExpectedStatus: 403, // CSRF rejects before auth check
+			NoAuth:         true,
 		},
 		{
 			Name:   "Update Notifier",

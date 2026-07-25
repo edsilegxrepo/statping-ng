@@ -5,7 +5,7 @@
             <h6>{{incident.title}}
                 <span class="font-2 float-right">{{niceDate(incident.created_at)}}</span>
             </h6>
-            <div class="font-2 mb-3" v-html="incident.description"></div>
+            <div class="font-2 mb-3" v-html="sanitizeHtml(incident.description)"></div>
                 <IncidentUpdate v-for="(update, i) in incident.updates" v-bind:key="i" :update="update" :admin="false"/>
         </div>
     </div>

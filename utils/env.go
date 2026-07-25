@@ -75,11 +75,24 @@ func InitEnvs() {
 	Params.SetConfigName("config")
 	Params.SetConfigType("yml")
 	Params.AddConfigPath(Directory)
-	_ = Params.ReadInConfig()
+	if err := Params.ReadInConfig(); err != nil {
+		// Config file not found is acceptable (will use defaults/env vars)
+		// but log other errors
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			Log.Warnln("Error reading config.yml:", err)
+		}
+	}
 
 	Params.AddConfigPath(Directory)
 	Params.SetConfigFile(".env")
-	_ = Params.ReadInConfig()
+	if err := Params.ReadInConfig(); err != nil {
+		// .env file not found is acceptable - check both viper error and OS error
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			if !os.IsNotExist(err) {
+				Log.Warnln("Error reading .env file:", err)
+			}
+		}
+	}
 
 	// check if logs are disabled
 	if Params.GetBool("DISABLE_LOGS") {

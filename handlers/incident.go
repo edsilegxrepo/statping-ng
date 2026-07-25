@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/incidents"
+	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
 )
 
@@ -81,6 +82,8 @@ func apiCreateIncidentHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(err, w, r)
 		return
 	}
+	// Update the cached service's incidents list
+	service.Incidents = append(service.Incidents, incident)
 	sendJsonAction(incident, "create", w, r)
 }
 
@@ -103,6 +106,15 @@ func apiDeleteIncidentHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
+	}
+	// Remove from cached service's incidents list
+	if service, err := services.Find(incident.ServiceId); err == nil {
+		for i, inc := range service.Incidents {
+			if inc.Id == incident.Id {
+				service.Incidents = append(service.Incidents[:i], service.Incidents[i+1:]...)
+				break
+			}
+		}
 	}
 	if err := incident.Delete(); err != nil {
 		sendErrorJson(err, w, r)

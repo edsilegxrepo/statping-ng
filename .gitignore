@@ -10,6 +10,7 @@ releases
 core/rice-box.go
 config.yml
 *.db
+!testdata/statping.db.xz
 plugins/*.so
 data
 build
@@ -42,7 +43,6 @@ tmp
 services.yml
 statping.wiki
 statping_test
-version.txt
 *.secrets
 
 # Binaries & Executables

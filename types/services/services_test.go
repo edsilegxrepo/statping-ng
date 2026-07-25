@@ -281,6 +281,14 @@ func startupDb(t *testing.T) {
 	db.Create(&incidentUpdate1)
 	db.Create(&notification.Notification)
 	db.Create(&message1)
+
+	// Load related data into the example service
+	// We use example directly to preserve the runtime-only fields (LastCheck, etc.)
+	allServices = make(map[int64]*Service)
+	example.Checkins = []*checkins.Checkin{exmapleCheckin}
+	example.Incidents = []*incidents.Incident{incident1}
+	example.Messages = []*messages.Message{message1}
+	allServices[example.Id] = example
 }
 
 func TestServices(t *testing.T) {
@@ -678,4 +686,96 @@ services:
 		require.Nil(t, err)
 		assert.NoFileExists(t, utils.Directory+"/services.yml")
 	})
+}
+
+func TestSelectAllServicesConcurrent(t *testing.T) {
+	// This test verifies that SelectAllServices is safe for concurrent access
+	// It should not panic with "concurrent map read and map write"
+
+	// Reset allServices for test
+	servicesLock.Lock()
+	allServices = make(map[int64]*Service)
+	servicesLock.Unlock()
+
+	var wg sync.WaitGroup
+	numGoroutines := 10
+
+	// Launch multiple goroutines that call SelectAllServices concurrently
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := SelectAllServices(false)
+			// Error is acceptable if DB not set up, but should not panic
+			if err != nil {
+				t.Logf("SelectAllServices returned error (expected if no DB): %v", err)
+			}
+		}()
+	}
+
+	// Also read from Services() concurrently
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_ = Services()
+		}()
+	}
+
+	wg.Wait()
+	// Test passes if no panic occurred
+}
+
+func TestServicesConcurrentReadWrite(t *testing.T) {
+	// Test concurrent read/write to allServices map
+	servicesLock.Lock()
+	allServices = make(map[int64]*Service)
+	servicesLock.Unlock()
+
+	var wg sync.WaitGroup
+	done := make(chan bool)
+
+	// Reader goroutines
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-done:
+					return
+				default:
+					_ = Services()
+				}
+			}
+		}()
+	}
+
+	// Writer goroutines
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(id int64) {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				select {
+				case <-done:
+					return
+				default:
+					servicesLock.Lock()
+					allServices[id*1000+int64(j)] = &Service{Id: id*1000 + int64(j), Name: "Test"}
+					servicesLock.Unlock()
+				}
+			}
+		}(int64(i))
+	}
+
+	// Let it run for a bit
+	time.Sleep(100 * time.Millisecond)
+	close(done)
+	wg.Wait()
+
+	// Clean up
+	servicesLock.Lock()
+	allServices = make(map[int64]*Service)
+	servicesLock.Unlock()
 }
