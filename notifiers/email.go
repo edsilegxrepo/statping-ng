@@ -154,11 +154,8 @@ func (e *emailer) OnSave() (string, error) {
 
 func (e *emailer) dialSend(email *emailOutgoing) error {
 	mailer = mail.NewDialer(e.Host.String, int(e.Port.Int64), e.Username.String, e.Password.String)
+	mailer.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	m := mail.NewMessage()
-	// if email setting TLS is Disabled (actually InsecureSkipVerify)
-	if e.ApiKey.String == "true" {
-		mailer.TLSConfig = &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12} // #nosec G402
-	}
 
 	m.SetAddressHeader("From", email.From, "Monitoring Service")
 	m.SetHeader("To", email.To)
