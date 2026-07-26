@@ -1,6 +1,9 @@
 package notifiers
 
 import (
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -78,4 +81,49 @@ func TestTelegramNotifier(t *testing.T) {
 		_, err := Telegram.OnTest()
 		assert.Nil(t, err)
 	})
+}
+
+func TestTelegramNotifierMock(t *testing.T) {
+	err := utils.InitLogs()
+	require.Nil(t, err)
+
+	db, err := database.OpenTester()
+	require.Nil(t, err)
+	db.AutoMigrate(&notifications.Notification{})
+	notifications.SetDB(db)
+	core.Example()
+
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"ok":true,"result":{"message_id":123}}`))
+	}))
+	defer mockServer.Close()
+
+	testTelegram := &telegram{&notifications.Notification{
+		Method:      "telegram",
+		Title:       "Telegram",
+		Description: "Test telegram",
+		Author:      "Hunter Long",
+		Delay:       time.Duration(100 * time.Millisecond),
+		Limits:      99,
+		Host:        null.NewNullString(mockServer.URL),
+		ApiSecret:   null.NewNullString("test_token"),
+		Var1:        null.NewNullString("@testchannel"),
+		SuccessData: null.NewNullString("Service {{.Service.Name}} is online"),
+		FailureData: null.NewNullString("Service {{.Service.Name}} is offline"),
+		Enabled:     null.NewNullBool(true),
+	}}
+
+	t.Run("telegram Select", func(t *testing.T) {
+		notif := testTelegram.Select()
+		assert.NotNil(t, notif)
+		assert.Equal(t, "telegram", notif.Method)
+	})
+
+	t.Run("telegram Valid", func(t *testing.T) {
+		err := testTelegram.Valid(notifications.Values{})
+		assert.Nil(t, err)
+	})
+
 }
