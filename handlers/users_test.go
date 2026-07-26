@@ -51,6 +51,43 @@ func TestUnAuthenticatedUserRoutes(t *testing.T) {
 	}
 }
 
+func TestApiCheckUserToken(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	tokenForm := url.Values{}
+	tokenForm.Add("token", "invalid_token")
+
+	emptyForm := url.Values{}
+
+	tests := []HTTPTest{
+		{
+			Name:             "Check User Token - Missing Token",
+			URL:              "/api/users/token",
+			Method:           "POST",
+			Body:             emptyForm.Encode(),
+			HttpHeaders:      []string{"Content-Type=application/x-www-form-urlencoded"},
+			ExpectedStatus:   200,
+			ExpectedContains: []string{"missing token"},
+		},
+		{
+			Name:             "Check User Token - Invalid Token",
+			URL:              "/api/users/token",
+			Method:           "POST",
+			Body:             tokenForm.Encode(),
+			HttpHeaders:      []string{"Content-Type=application/x-www-form-urlencoded"},
+			ExpectedStatus:   500,
+			ExpectedContains: []string{"error"},
+		},
+	}
+
+	for _, v := range tests {
+		t.Run(v.Name, func(t *testing.T) {
+			_, t, err := RunHTTPTest(v, t)
+			assert.Nil(t, err)
+		})
+	}
+}
+
 func TestApiUsersRoutes(t *testing.T) {
 	form := url.Values{}
 	form.Add("username", "adminupdated")

@@ -87,3 +87,25 @@ func TestUnAuthenticatedDashboardRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestThemeAPIRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	tests := []HTTPTest{
+		{
+			Name:           "Save Theme API - Invalid JSON",
+			URL:            "/api/theme",
+			Method:         "POST",
+			Body:           `{invalid json}`,
+			ExpectedStatus: 500,
+			BeforeTest:     SetTestENV,
+		},
+	}
+
+	for _, v := range tests {
+		t.Run(v.Name, func(t *testing.T) {
+			_, t, err := RunHTTPTest(v, t)
+			assert.Nil(t, err)
+		})
+	}
+}

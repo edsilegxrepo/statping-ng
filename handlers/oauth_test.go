@@ -116,3 +116,25 @@ func TestOAuthRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestOAuthLoginRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	tests := []HTTPTest{
+		{
+			Name:           "OAuth GitHub Callback - Invalid State",
+			URL:            "/oauth/github?state=invalid&code=testcode",
+			Method:         "GET",
+			ExpectedStatus: 200,
+			ExpectedContains: []string{"invalid or expired OAuth state"},
+			NoAuth:         true,
+		},
+	}
+
+	for _, v := range tests {
+		t.Run(v.Name, func(t *testing.T) {
+			_, t, err := RunHTTPTest(v, t)
+			assert.Nil(t, err)
+		})
+	}
+}
