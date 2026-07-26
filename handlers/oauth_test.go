@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -137,4 +138,134 @@ func TestOAuthLoginRoutes(t *testing.T) {
 			assert.Nil(t, err)
 		})
 	}
+}
+
+func TestValidateGithub(t *testing.T) {
+	// Save original OAuth config
+	originalOAuth := core.App.OAuth
+	defer func() { core.App.OAuth = originalOAuth }()
+
+	t.Run("no restrictions allows all", func(t *testing.T) {
+		core.App.OAuth.GithubUsers = ""
+		core.App.OAuth.GithubOrgs = ""
+		user := githubUser{Login: "anyuser", Name: "Any User"}
+		assert.True(t, validateGithub(user, nil))
+	})
+
+	t.Run("allowed user passes", func(t *testing.T) {
+		core.App.OAuth.GithubUsers = "alloweduser,anotheruser"
+		core.App.OAuth.GithubOrgs = ""
+		user := githubUser{Login: "alloweduser", Name: "Allowed User"}
+		assert.True(t, validateGithub(user, nil))
+	})
+
+	t.Run("disallowed user fails", func(t *testing.T) {
+		core.App.OAuth.GithubUsers = "alloweduser"
+		core.App.OAuth.GithubOrgs = ""
+		user := githubUser{Login: "notallowed", Name: "Not Allowed"}
+		assert.False(t, validateGithub(user, nil))
+	})
+
+	t.Run("allowed org passes", func(t *testing.T) {
+		core.App.OAuth.GithubUsers = ""
+		core.App.OAuth.GithubOrgs = "myorg,otherorg"
+		user := githubUser{Login: "someuser", Name: "Some User"}
+		orgs := []githubOrgs{{Login: "myorg"}}
+		assert.True(t, validateGithub(user, orgs))
+	})
+
+	t.Run("disallowed org fails", func(t *testing.T) {
+		core.App.OAuth.GithubUsers = ""
+		core.App.OAuth.GithubOrgs = "allowedorg"
+		user := githubUser{Login: "someuser", Name: "Some User"}
+		orgs := []githubOrgs{{Login: "differentorg"}}
+		assert.False(t, validateGithub(user, orgs))
+	})
+
+	t.Run("case insensitive user match", func(t *testing.T) {
+		core.App.OAuth.GithubUsers = "AllowedUser"
+		core.App.OAuth.GithubOrgs = ""
+		user := githubUser{Login: "alloweduser", Name: "Allowed User"}
+		assert.True(t, validateGithub(user, nil))
+	})
+}
+
+func TestValidateGoogle(t *testing.T) {
+	originalOAuth := core.App.OAuth
+	defer func() { core.App.OAuth = originalOAuth }()
+
+	t.Run("no restrictions allows all", func(t *testing.T) {
+		core.App.OAuth.GoogleUsers = ""
+		info := googleUserInfo{Email: "anyone@example.com", Name: "Anyone"}
+		assert.True(t, validateGoogle(info))
+	})
+
+	t.Run("allowed email passes", func(t *testing.T) {
+		core.App.OAuth.GoogleUsers = "allowed@example.com,other@example.com"
+		info := googleUserInfo{Email: "allowed@example.com", Name: "Allowed"}
+		assert.True(t, validateGoogle(info))
+	})
+
+	t.Run("allowed domain passes via Hd", func(t *testing.T) {
+		core.App.OAuth.GoogleUsers = "example.com"
+		info := googleUserInfo{Email: "user@example.com", Hd: "example.com"}
+		assert.True(t, validateGoogle(info))
+	})
+
+	t.Run("disallowed email fails", func(t *testing.T) {
+		core.App.OAuth.GoogleUsers = "allowed@example.com"
+		info := googleUserInfo{Email: "notallowed@example.com", Name: "Not Allowed"}
+		assert.False(t, validateGoogle(info))
+	})
+
+	t.Run("case insensitive email match", func(t *testing.T) {
+		core.App.OAuth.GoogleUsers = "Allowed@Example.com"
+		info := googleUserInfo{Email: "allowed@example.com", Name: "Allowed"}
+		assert.True(t, validateGoogle(info))
+	})
+}
+
+func TestValidateSlack(t *testing.T) {
+	originalOAuth := core.App.OAuth
+	defer func() { core.App.OAuth = originalOAuth }()
+
+	t.Run("no restrictions allows all", func(t *testing.T) {
+		core.App.OAuth.SlackUsers = ""
+		id := slackIdentity{Ok: true, User: struct {
+			Name  string `json:"name"`
+			ID    string `json:"id"`
+			Email string `json:"email"`
+		}{Name: "anyone", Email: "anyone@example.com"}}
+		assert.True(t, validateSlack(id))
+	})
+
+	t.Run("allowed email passes", func(t *testing.T) {
+		core.App.OAuth.SlackUsers = "allowed@example.com"
+		id := slackIdentity{Ok: true, User: struct {
+			Name  string `json:"name"`
+			ID    string `json:"id"`
+			Email string `json:"email"`
+		}{Name: "allowed", Email: "allowed@example.com"}}
+		assert.True(t, validateSlack(id))
+	})
+
+	t.Run("allowed name passes", func(t *testing.T) {
+		core.App.OAuth.SlackUsers = "alloweduser"
+		id := slackIdentity{Ok: true, User: struct {
+			Name  string `json:"name"`
+			ID    string `json:"id"`
+			Email string `json:"email"`
+		}{Name: "alloweduser", Email: "other@example.com"}}
+		assert.True(t, validateSlack(id))
+	})
+
+	t.Run("disallowed user fails", func(t *testing.T) {
+		core.App.OAuth.SlackUsers = "alloweduser"
+		id := slackIdentity{Ok: true, User: struct {
+			Name  string `json:"name"`
+			ID    string `json:"id"`
+			Email string `json:"email"`
+		}{Name: "notallowed", Email: "notallowed@example.com"}}
+		assert.False(t, validateSlack(id))
+	})
 }

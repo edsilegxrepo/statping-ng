@@ -109,3 +109,42 @@ func TestThemeAPIRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestSettingsImportExport(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	tests := []HTTPTest{
+		{
+			Name:           "Export Settings",
+			URL:            "/api/settings/export",
+			Method:         "GET",
+			ExpectedStatus: 200,
+			ExpectedContains: []string{"services", "groups", "users"},
+			BeforeTest:     SetTestENV,
+		},
+		{
+			Name:           "Import Settings - Invalid JSON",
+			URL:            "/api/settings/import",
+			Method:         "POST",
+			Body:           `{invalid json}`,
+			ExpectedStatus: 500,
+			ExpectedContains: []string{"error"},
+			BeforeTest:     SetTestENV,
+		},
+		{
+			Name:           "Import Settings - Empty Core",
+			URL:            "/api/settings/import",
+			Method:         "POST",
+			Body:           `{"core": null, "services": [], "groups": [], "users": []}`,
+			ExpectedStatus: 200,
+			BeforeTest:     SetTestENV,
+		},
+	}
+
+	for _, v := range tests {
+		t.Run(v.Name, func(t *testing.T) {
+			_, t, err := RunHTTPTest(v, t)
+			assert.Nil(t, err)
+		})
+	}
+}
