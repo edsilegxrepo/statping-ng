@@ -86,10 +86,139 @@
 | `NODE_OPTIONS` | `--openssl-legacy-provider` | Required for webpack compatibility |
 
 ### Constraints
-- Tests must run with `-p=1` flag (sequential) to avoid database conflicts
+- **Tests must run with `-p=1` flag (sequential)** - See "Why Sequential Execution" below
+- Integration tests require `-tags=integration` build tag
 - Integration tests require `testdata/statping.db.xz` fixture
 - Frontend assets must be built before handler tests (`source/rice-box.go`)
 - Windows requires MinGW, not Cygwin GCC
+
+---
+
+## Why Sequential Execution (`-p=1`) is Required
+
+### The Problem: Global State Contamination
+
+This codebase uses several global singletons that cause test failures when packages run in parallel:
+
+1. **`core.App`** - Single global application state shared across all packages
+2. **`services.allServices`** - Global map of all services with mutex protection
+3. **Database connections** - Package-level `db` variables in `types/*` packages
+4. **Notifier registry** - Global `allNotifiers` map
+
+When Go runs tests with default parallelism (`-p=N` where N = CPU cores), multiple packages execute simultaneously. Package A's `TestMain` might initialize the database while Package B's tests are mid-execution expecting different data.
+
+### Symptoms of Parallel Execution Failures
+
+```
+--- FAIL: TestServiceCheck
+    Expected 6 services, got 0
+--- FAIL: TestUserLogin  
+    incorrect authentication (user deleted by parallel test)
+--- FAIL: TestNotifierSend
+    notifier not found in registry
+```
+
+### The Solution
+
+**Always run tests with `-p=1`:**
+
+```bash
+# Correct - sequential execution
+go test ./... -p 1 -count=1
+
+# Wrong - parallel execution causes flaky failures
+go test ./...
+```
+
+### Package Isolation Strategy
+
+Each package uses `TestMain` to set up isolated state:
+
+```go
+func TestMain(m *testing.M) {
+    // Create isolated temp directory
+    tmpDir, _ := os.MkdirTemp("", "statping-test")
+    
+    // Create isolated database
+    db, _ := database.OpenTester(tmpDir)
+    SetDB(db)
+    
+    // Run tests
+    code := m.Run()
+    
+    // Cleanup
+    db.Close()
+    os.RemoveAll(tmpDir)
+    os.Exit(code)
+}
+```
+
+However, even with this isolation, the global `core.App` and cross-package dependencies mean **sequential execution is the only reliable approach**.
+
+---
+
+## Integration Tests
+
+### Build Tag Requirement
+
+Integration tests are excluded from normal test runs and require an explicit build tag:
+
+```bash
+# Unit tests only (default)
+go test ./... -p 1
+
+# Integration tests only
+go test -tags=integration ./integration -p 1
+
+# All tests including integration
+go test -tags=integration ./... -p 1
+```
+
+### Why Integration Tests Are Separate
+
+1. **External Dependencies** - Integration tests may require real databases, network access, or API credentials
+2. **Execution Time** - They take significantly longer (seconds vs milliseconds)
+3. **CI/CD Flexibility** - Allows running fast unit tests on every commit, integration tests on merge
+
+### Running Live Integration Tests
+
+Integration tests use real HTTP servers and databases:
+
+```bash
+# 1. Ensure test fixture exists
+ls testdata/statping.db.xz
+
+# 2. Run integration tests
+go test -tags=integration -v -p 1 ./integration
+
+# 3. Run with specific test
+go test -tags=integration -v -p 1 -run TestRealDatabaseIntegration ./integration
+```
+
+### Integration Test Environment Variables
+
+For tests that connect to external services:
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `SLACK_URL` | Slack webhook for notifier tests | `https://hooks.slack.com/...` |
+| `DISCORD_URL` | Discord webhook URL | `https://discord.com/api/webhooks/...` |
+| `TWILIO_SID` | Twilio account SID | `AC...` |
+| `TWILIO_SECRET` | Twilio auth token | `...` |
+| `PUSHOVER_TOKEN` | Pushover API token | `...` |
+| `TELEGRAM_TOKEN` | Telegram bot token | `...` |
+| `EMAIL_HOST` | SMTP server hostname | `smtp.gmail.com` |
+| `EMAIL_USER` | SMTP username | `user@example.com` |
+| `EMAIL_PASS` | SMTP password | `...` |
+
+Tests automatically skip when credentials are missing:
+
+```go
+if SLACK_URL == "" {
+    t.Log("Slack notifier testing skipped, missing SLACK_URL")
+    t.SkipNow()
+}
+```
 
 ---
 
@@ -122,13 +251,24 @@
 | API Routes | `TestMainApiRoutes` | Core API endpoints | 200 OK with valid responses |
 | Services | `TestServicesRoutes` | Service CRUD operations | Services created/updated/deleted |
 | Users | `TestUsersRoutes` | User management | Users created with hashed passwords |
+| Users | `TestApiCheckUserToken` | Token validation endpoint | Missing/invalid tokens rejected |
 | Groups | `TestGroupsRoutes` | Group management | Groups with services linked |
 | Authentication | `TestUnAuthenticatedRoutes` | Auth required endpoints | 401 without credentials |
 | CSRF | `TestCSRFProtection` | CSRF token validation | 403 without valid token |
 | Rate Limiting | `TestRateLimiting` | Login rate limits | 429 after 5 attempts |
 | OAuth | `TestOAuthStateValidation` | OAuth CSRF protection | Invalid state rejected |
+| OAuth | `TestValidateGithub` | GitHub user/org validation | Case-insensitive matching works |
+| OAuth | `TestValidateGoogle` | Google email/domain validation | Email and Hd field matching |
+| OAuth | `TestValidateSlack` | Slack user/email validation | Name and email matching |
+| OAuth | `TestOAuthLoginRoutes` | OAuth callback handling | Invalid state returns error |
 | Dashboard | `TestDashboardAPIRoutes` | Theme/config endpoints | GET returns valid JSON |
 | Dashboard | `TestUnAuthenticatedDashboardRoutes` | Unauth dashboard access | 401/403 without auth |
+| Dashboard | `TestThemeAPIRoutes` | Theme save API | Invalid JSON returns 500 |
+| Dashboard | `TestSettingsImportExport` | Settings import/export | Export returns JSON, import handles errors |
+| JWT | `TestJwtTokenOperations` | JWT set/parse/get/remove | Tokens created and validated |
+| Index | `TestIndexRoutes` | Base handler and health check | 404 page and health endpoint work |
+| Middleware | `TestGzipMiddleware` | Gzip compression | Compresses when Accept-Encoding set |
+| Middleware | `TestGzipResponseWriter` | Gzip writer wrapper | Writes to gzip stream |
 
 ### Type Tests (`types/*/`)
 
@@ -164,6 +304,18 @@
 | Notifications | `TestNotification_LastSentDur` | Duration calculation | Returns time since last sent |
 | Notifications | `TestNotification_CanSend` | Send eligibility | Checks enabled/limits/timeout |
 | Notifications | `TestNotification_GetValue` | Field getter | Returns correct field values |
+| Services | `TestServiceUptime` | Uptime duration | Calculates from LastOffline |
+| Services | `TestServiceDowntime` | Downtime duration | Calculates from LastOnline |
+| Services | `TestServiceOrderSort` | Service sorting | Sorts by Order field |
+| Services | `TestServiceDuration` | Interval to duration | Converts Interval to time.Duration |
+| Services | `TestServiceHash` | Service hashing | Consistent hash for same service |
+| Services | `TestServiceRequiresTLS` | TLS requirement check | Detects SMTP/IMAP TLS ports |
+| Services | `TestByTimeSort` | Time series sorting | Sorts by timestamp |
+| Services | `TestCheckSmtp` | SMTP service check | Mock SMTP server protocol |
+| Services | `TestCheckImap` | IMAP service check | Mock IMAP server protocol |
+| Services | `TestFindWithRelations` | Preloaded relations | Loads incidents/messages/checkins |
+| Services | `TestAllWithRelations` | Batch relation loading | Preloads all services |
+| Services | `TestClearCache` | Cache clearing | Empties allServices map |
 | Users | `TestUsers` | User CRUD | Password hashing, API keys |
 | Groups | `TestGroups` | Group-service relationships | Services grouped correctly |
 | Failures | `TestFailures` | Failure recording | Failures logged with details |
@@ -181,6 +333,18 @@
 | Webhook | `TestWebhookNotifier/webhooker_OnSuccess` | Success notification | Sends success payload |
 | Webhook | `TestWebhookNotifier/webhooker_OnTest` | Test notification | Returns response |
 | Webhook | `TestWebhookNotifier/webhooker_with_custom_headers` | Custom headers | Headers sent correctly |
+| Slack | `TestSlackNotifierMock` | Slack with mock server | Posts JSON to webhook |
+| Discord | `TestDiscordNotifierMock` | Discord with mock server | Posts to webhook, expects 204 |
+| Mattermost | `TestMattermostNotifierMock` | Mattermost with mock | OnFailure/OnSuccess/OnTest work |
+| Gotify | `TestGotifyNotifierMock` | Gotify with mock server | X-Gotify-Key header validated |
+| Pushover | `TestPushoverNotifierMock` | Pushover with mock | Select/Valid/OnSave work |
+| Twilio | `TestTwilioNotifierMock` | Twilio with mock server | Select/Valid/OnSave work |
+| Telegram | `TestTelegramNotifierMock` | Telegram with mock | Select/Valid work |
+| Line Notify | `TestLineNotifyMock` | Line Notify with mock | Select/Valid/OnSave work |
+| Amazon SNS | `TestAmazonSNSNotifierMock` | AWS SNS mock | Select/Valid/OnSave work |
+| Mobile | `TestMobileNotifierMock` | Mobile push mock | Select/Valid/OnSave work |
+| Email | `TestEmailNotifierMock` | Email basic tests | Select/Valid/OnSave/CanSend |
+| Email | `TestEmailWithMockSMTPServer` | Email with mock SMTP | Full SMTP protocol exchange |
 | Command | `TestCommandNotifier` | Command notifier | Executes shell commands |
 | Command | `TestRunCommand` | Command execution | Runs echo, handles errors |
 | Template | `TestReplaceTemplate` | Template substitution | Service/failure vars replaced |
@@ -235,27 +399,32 @@
 
 | Package | Coverage | Target | Notes |
 |---------|----------|--------|-------|
-| `handlers` | 59.4% | 80%+ | HTTP handlers |
-| `source` | 76.9% | 80%+ | Asset management |
 | `types/groups` | 88.9% | 80%+ | Group types |
 | `types/messages` | 88.9% | 80%+ | Message types |
+| `source` | 76.9% | 80%+ | Asset management |
 | `types/incidents` | 72.5% | 80%+ | Incident types |
+| `types/services` | 66.6% | 80%+ | Service types and checks |
 | `types/metrics` | 64.3% | 80%+ | Prometheus metrics |
-| `types/services` | 57.8% | 80%+ | Service types and checks |
+| `handlers` | 63.4% | 80%+ | HTTP handlers |
 | `types/users` | 56.0% | 80%+ | User types |
 | `utils` | 55.8% | 80%+ | Utilities |
 | `types/checkins` | 46.7% | 80%+ | Checkin types |
+| `notifiers` | 44.7% | 80%+ | Notifier implementations |
 | `types/failures` | 42.7% | 80%+ | Failure types |
 | `types/notifications` | 28.8% | 80%+ | Notification types |
 | `database` | 27.4% | 80%+ | Database abstraction |
-| `notifiers` | 18.3% | 80%+ | Notifier implementations |
 | `types/configs` | 15.5% | 80%+ | Config types |
-| **Total** | **45.2%** | **80%+** | Baseline was ~36% |
+| **Total** | **~55%** | **80%+** | Baseline was ~36% |
 
-**Recent Test Additions:**
-- `database/database_test.go` - 18 comprehensive database layer tests
-- `types/services/validation_test.go` - Service validation with edge cases
-- `types/services/check_test.go` - HTTP/TCP/Command check tests with mocks
+**Recent Test Additions (July 2026):**
+- `notifiers/*_test.go` - Mock HTTP/SMTP server tests for all notifiers
+- `handlers/oauth_test.go` - OAuth validation tests (GitHub, Google, Slack)
+- `handlers/jwt_test.go` - JWT token operations tests
+- `handlers/middleware_test.go` - Gzip middleware tests
+- `handlers/index_test.go` - Index and health check routes
+- `types/services/routine_test.go` - Mock SMTP/IMAP server tests
+- `types/services/database_test.go` - FindWithRelations and cache tests
+- `types/services/methods_test.go` - Service method unit tests
 
 ### How to Generate Coverage
 
@@ -426,5 +595,52 @@ xz -9 statping.db -c > testdata/statping.db.xz
 
 ---
 
-*Last Updated: 2026-07-24*
-*Coverage: 45.2% (target: 80%+)*
+## Mock Server Patterns
+
+### HTTP Mock Server (Notifiers)
+
+Used for testing notifiers without external dependencies:
+
+```go
+mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    body, _ := io.ReadAll(r.Body)
+    receivedBody = string(body)
+    w.WriteHeader(http.StatusOK)
+    _, _ = w.Write([]byte(`{"status":"ok"}`))
+}))
+defer mockServer.Close()
+
+// Point notifier at mock server
+testNotifier.Host = null.NewNullString(mockServer.URL)
+```
+
+### SMTP Mock Server (Email/Service Checks)
+
+Used for testing email notifier and SMTP service checks:
+
+```go
+listener, _ := net.Listen("tcp", "127.0.0.1:0")
+go func() {
+    conn, _ := listener.Accept()
+    conn.Write([]byte("220 mock.smtp.server ESMTP\r\n"))
+    // Handle EHLO, MAIL FROM, RCPT TO, DATA, QUIT
+}()
+```
+
+### IMAP Mock Server (Service Checks)
+
+Used for testing IMAP service checks:
+
+```go
+listener, _ := net.Listen("tcp", "127.0.0.1:0")
+go func() {
+    conn, _ := listener.Accept()
+    conn.Write([]byte("* OK IMAP4rev1 Service Ready\r\n"))
+    // Handle CAPABILITY, LOGIN, LOGOUT
+}()
+```
+
+---
+
+*Last Updated: 2026-07-25*
+*Coverage: ~55% (target: 80%+)*
