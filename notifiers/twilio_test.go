@@ -1,6 +1,9 @@
 package notifiers
 
 import (
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -78,4 +81,65 @@ func TestTwilioNotifier(t *testing.T) {
 		_, err := Twilio.OnTest()
 		assert.Nil(t, err)
 	})
+}
+
+func TestTwilioNotifierMock(t *testing.T) {
+	err := utils.InitLogs()
+	require.Nil(t, err)
+
+	db, err := database.OpenTester()
+	require.Nil(t, err)
+	db.AutoMigrate(&notifications.Notification{})
+	notifications.SetDB(db)
+	core.Example()
+
+	var receivedBody string
+	var receivedAuth string
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		receivedBody = string(body)
+		receivedAuth = r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"sid":"SM123","status":"sent"}`))
+	}))
+	defer mockServer.Close()
+
+	testTwilio := &twilio{&notifications.Notification{
+		Method:      "twilio",
+		Title:       "Twilio",
+		Description: "Test twilio",
+		Author:      "Hunter Long",
+		Delay:       time.Duration(100 * time.Millisecond),
+		Limits:      99,
+		Host:        null.NewNullString(mockServer.URL),
+		ApiKey:      null.NewNullString("test_account_sid"),
+		ApiSecret:   null.NewNullString("test_token"),
+		Var1:        null.NewNullString("18005551234"),
+		Var2:        null.NewNullString("18005554321"),
+		SuccessData: null.NewNullString("Service {{.Service.Name}} is online"),
+		FailureData: null.NewNullString("Service {{.Service.Name}} is offline"),
+		DataType:    "text",
+		Enabled:     null.NewNullBool(true),
+	}}
+
+	t.Run("twilio Select", func(t *testing.T) {
+		notif := testTwilio.Select()
+		assert.NotNil(t, notif)
+		assert.Equal(t, "twilio", notif.Method)
+	})
+
+	t.Run("twilio Valid", func(t *testing.T) {
+		err := testTwilio.Valid(notifications.Values{})
+		assert.Nil(t, err)
+	})
+
+	t.Run("twilio OnSave", func(t *testing.T) {
+		_, err := testTwilio.OnSave()
+		assert.Nil(t, err)
+	})
+
+	_ = receivedBody
+	_ = receivedAuth
+	_ = services.Example(true)
+	_ = failures.Example()
 }
