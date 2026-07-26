@@ -17,6 +17,47 @@ import (
 
 var mobileToken string
 
+func TestMobileNotifierMock(t *testing.T) {
+	err := utils.InitLogs()
+	require.Nil(t, err)
+
+	db, err := database.OpenTester()
+	require.Nil(t, err)
+	db.AutoMigrate(&notifications.Notification{})
+	notifications.SetDB(db)
+	core.Example()
+
+	testMobile := &mobilePush{&notifications.Notification{
+		Method:      "mobile",
+		Title:       "Mobile",
+		Description: "Test mobile notifier",
+		Author:      "Hunter Long",
+		Delay:       time.Duration(100 * time.Millisecond),
+		Limits:      99,
+		Var1:        null.NewNullString("test_device_id_123"),
+		Enabled:     null.NewNullBool(true),
+	}}
+
+	t.Run("mobile Select", func(t *testing.T) {
+		notif := testMobile.Select()
+		assert.NotNil(t, notif)
+		assert.Equal(t, "mobile", notif.Method)
+	})
+
+	t.Run("mobile Valid", func(t *testing.T) {
+		err := testMobile.Valid(notifications.Values{})
+		assert.Nil(t, err)
+	})
+
+	t.Run("mobile OnSave", func(t *testing.T) {
+		_, err := testMobile.OnSave()
+		assert.Nil(t, err)
+	})
+
+	_ = services.Example(true)
+	_ = failures.Example()
+}
+
 func TestMobileNotifier(t *testing.T) {
 	err := utils.InitLogs()
 	require.Nil(t, err)

@@ -15,6 +15,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestAmazonSNSNotifierMock(t *testing.T) {
+	err := utils.InitLogs()
+	require.Nil(t, err)
+
+	db, err := database.OpenTester()
+	require.Nil(t, err)
+	db.AutoMigrate(&notifications.Notification{})
+	notifications.SetDB(db)
+	core.Example()
+
+	testSNS := &amazonSNS{&notifications.Notification{
+		Method:      "amazon_sns",
+		Title:       "Amazon SNS",
+		Description: "Test SNS notifier",
+		Author:      "Hunter Long",
+		Delay:       time.Duration(100 * time.Millisecond),
+		Limits:      99,
+		ApiKey:      null.NewNullString("test_access_key"),
+		ApiSecret:   null.NewNullString("test_secret_key"),
+		Var1:        null.NewNullString("us-east-1"),
+		Host:        null.NewNullString("arn:aws:sns:us-east-1:123456789:test-topic"),
+		Enabled:     null.NewNullBool(true),
+	}}
+
+	t.Run("SNS Select", func(t *testing.T) {
+		notif := testSNS.Select()
+		assert.NotNil(t, notif)
+		assert.Equal(t, "amazon_sns", notif.Method)
+	})
+
+	t.Run("SNS Valid", func(t *testing.T) {
+		err := testSNS.Valid(notifications.Values{})
+		assert.Nil(t, err)
+	})
+
+	t.Run("SNS OnSave", func(t *testing.T) {
+		_, err := testSNS.OnSave()
+		assert.Nil(t, err)
+	})
+
+	_ = services.Example(true)
+	_ = failures.Example()
+}
+
 func TestAmazonSNSNotifier(t *testing.T) {
 	err := utils.InitLogs()
 	require.Nil(t, err)
