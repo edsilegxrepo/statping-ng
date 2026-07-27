@@ -407,6 +407,116 @@ if SLACK_URL == "" {
 | OAuth | `TestCleanupExpiredOAuthStates` | State cleanup | Expired states removed |
 | OAuth | `TestOAuthRoutes` | OAuth API endpoints | Config saved/retrieved |
 
+### CMD Tests (`cmd/`)
+
+| Logical Group | Test Name | Purpose | Success Criteria |
+|---------------|-----------|---------|------------------|
+| Directory | `TestStatpingDirectory` | STATPING_DIR setup | Directory path set correctly |
+| CLI Commands | `TestEnvCLI` | Env command output | Environment variables listed |
+| CLI Commands | `TestVersionCLI` | Version command | Version string output |
+| CLI Commands | `TestAssetsCLI` | Assets export | Assets directory created |
+| CLI Commands | `TestHelpCLI` | Help command | Usage info displayed |
+| Flags | `TestFlagParsing` | --port, --ip, --verbose, --config | Flags parsed correctly |
+| Flags | `TestFlagDefaults` | Default flag values | port=8080, ip=0.0.0.0, verbose=2 |
+| Flags | `TestInvalidFlagHandling` | Unknown/invalid flags | Error returned |
+| Subcommands | `TestSubcommandRouting` | version, help, env routing | Correct subcommand executed |
+| Help | `TestHelpTextOutput` | Help text content | Usage, commands, flags sections |
+| Environment | `TestEnvironmentVariableHandling` | STATPING_DIR, API_SECRET | Env vars accessible |
+| Config | `TestConfigFileHandling` | Config file paths | Absolute, relative, spaces handled |
+| Validation | `TestImportCommandValidation` | Import requires file arg | Error without file |
+| Metadata | `TestRootCmdFlags` | Root command flags | All flags registered |
+| Metadata | `TestSubCommands` | All subcommands | 10 subcommands registered |
+
+### Config Tests (`types/configs/`)
+
+| Logical Group | Test Name | Purpose | Success Criteria |
+|---------------|-----------|---------|------------------|
+| YAML Loading | `TestLoadConfigs_ValidYAML` | Basic SQLite config | Config fields populated |
+| YAML Loading | `TestLoadConfigs_PostgresYAML` | Postgres-specific fields | Host, port, SSL parsed |
+| YAML Loading | `TestLoadConfigs_MySQLYAML` | MySQL config | MySQL fields parsed |
+| YAML Loading | `TestLoadConfigs_WithLetsEncrypt` | Let's Encrypt settings | Domain, email parsed |
+| Env Override | `TestLoadConfigs_EnvOverridesYAML` | DB_CONN env override | Env takes precedence |
+| Env Override | `TestLoadConfigs_SqliteEnvVariants` | sqlite/sqlite3 normalization | Both variants work |
+| Defaults | `TestDefaultValues` | Params defaults | Sensible defaults set |
+| Defaults | `TestDbConfig_DefaultConnectionPoolSettings` | Connection pool defaults | MaxOpen, MaxIdle set |
+| Validation | `TestLoadConfigs_EmptyConnection_SetupMode` | Empty connection | Setup mode triggered |
+| Validation | `TestDbConfig_ValidConnectionTypes` | Valid connection types | sqlite, mysql, postgres |
+| Connection | `TestConnectionString_Memory` | Memory DSN | file::memory:?cache=shared |
+| Connection | `TestConnectionString_SQLite` | SQLite file path | Correct path generated |
+| Connection | `TestConnectionString_MySQL` | MySQL DSN | user:pass@tcp(host:port)/db |
+| Connection | `TestConnectionString_Postgres` | Postgres DSN | host=x port=y format |
+| Connection | `TestConnectionString_PostgresSSLModes` | SSL modes | disable, require, verify-ca |
+| Edge Cases | `TestLoadConfigs_MissingFile` | Missing config file | Error returned |
+| Edge Cases | `TestLoadConfigs_MalformedYAML` | Invalid YAML | Parse error |
+| Edge Cases | `TestLoadConfigs_EmptyFile` | Empty config file | Defaults used |
+| Persistence | `TestSaveConfig` | Config file creation | YAML written correctly |
+| Persistence | `TestUpdateConfig` | Config update | Fields updated |
+
+### Notification Tests (`types/notifications/`)
+
+| Logical Group | Test Name | Purpose | Success Criteria |
+|---------------|-----------|---------|------------------|
+| Rate Limiting | `TestNotification_CanSend` | Send eligibility | Checks enabled/limits/timeout |
+| Rate Limiting | `TestNotification_CanSend_EnabledDisabledState` | Toggle enabled state | State affects CanSend |
+| Rate Limiting | `TestNotification_CanSend_LimitsHandling` | Zero/negative limits | Boundary conditions |
+| Rate Limiting | `TestNotification_CanSend_RateLimitReset` | 60-minute reset window | Count decrements after timeout |
+| Last Sent | `TestNotification_LastSentDur` | Duration calculation | Time since last sent |
+| Last Sent | `TestNotification_LastSentDur_EdgeCases` | Zero/future time | Edge cases handled |
+| Values | `TestNotification_Values` | Field extraction | All fields returned |
+| Values | `TestNotification_Values_EmptyFields` | Empty fields | Null/empty handled |
+| Update | `TestNotification_UpdateFields` | Field updates from source | Fields copied correctly |
+| Sorting | `TestNotificationOrder_Sorting` | Sort by ID | Sorted correctly |
+| Sorting | `TestNotificationOrder_Empty` | Empty collection | No panic |
+| Logging | `TestNotificationLog` | Success/failure logs | Log entries created |
+| Forms | `TestNotificationForm` | Form field structure | Fields accessible |
+| Database | `TestNotification_Create` | Create notification | ID assigned |
+| Database | `TestNotification_Update` | Update notification | Fields persisted |
+| Database | `TestNotification_Find` | Find by ID | Notification retrieved |
+| Database | `TestNotification_All` | List all | All notifications returned |
+
+### Notifier Edge Case Tests (`notifiers/edge_cases_test.go`)
+
+| Logical Group | Test Name | Purpose | Success Criteria |
+|---------------|-----------|---------|------------------|
+| Timeouts | `TestWebhookNetworkTimeout` | 10s timeout with slow server | Times out without hanging |
+| Timeouts | `TestSlackNetworkTimeout` | Slack timeout handling | Timeout error returned |
+| Malformed | `TestWebhookMalformedResponses` | Invalid JSON, 500, 404 | Errors handled gracefully |
+| Malformed | `TestSlackMalformedResponses` | Slack non-"ok" response | Validation works |
+| Retry | `TestWebhookRetryBehavior` | Multiple consecutive failures | Request count accurate |
+| Retry | `TestWebhookTransientFailureRecovery` | Server recovers | Recovery detected |
+| Rate Limit | `TestWebhookRateLimitResponse` | 429 with Retry-After | Rate limit handled |
+| Rate Limit | `TestDiscordRateLimitResponse` | Discord rate limit format | Discord-specific handling |
+| Null Fields | `TestWebhookEmptyNullFields` | Empty Host, null data | No panic on null |
+| Null Fields | `TestSlackEmptyNullFields` | Empty Slack fields | Defaults applied |
+| Templates | `TestTemplateRenderingErrors` | Invalid template syntax | Error not panic |
+| Templates | `TestWebhookTemplateRenderingEdgeCases` | Non-existent fields | Safe field access |
+| Connection | `TestWebhookConnectionRefused` | Server not running | Connection refused error |
+| URL | `TestWebhookInvalidURL` | Malformed URL | URL parse error |
+| Payload | `TestWebhookLargePayload` | 100KB payload | Large payloads sent |
+| Methods | `TestWebhookHTTPMethods` | GET, POST, PUT, PATCH, DELETE | All methods work |
+| Headers | `TestWebhookHostHeaderOverride` | Custom Host header | Header overridden |
+
+### Service Check Edge Case Tests (`types/services/edge_cases_test.go`)
+
+| Logical Group | Test Name | Purpose | Success Criteria |
+|---------------|-----------|---------|------------------|
+| TLS | `TestTLSCertificateValidation` | Self-signed, expired certs | VerifySSL respected |
+| DNS | `TestDNSResolution` | Non-existent domain, timeout | DNS errors handled |
+| Redirects | `TestRedirectLoops` | Redirect loop detection | Max redirects enforced |
+| Redirects | `TestRedirectLoops/Ping-pong` | Two-server loop | Loop detected |
+| Timeouts | `TestConnectionTimeout` | Non-routable IP timeout | Timeout fires |
+| Timeouts | `TestConnectionTimeout/SlowHeaders` | Server slow to respond | Header timeout |
+| Timeouts | `TestConnectionTimeout/SlowBody` | Slow body streaming | Body timeout |
+| Response | `TestLargeResponseBody` | 10MB, 15MB responses | Large responses handled |
+| Response | `TestLargeResponseBody/Truncated` | Response > 10MB | Truncated to limit |
+| Invalid HTTP | `TestInvalidHTTPResponses` | Garbage response, partial | Invalid HTTP handled |
+| Invalid HTTP | `TestInvalidHTTPResponses/CloseImmediately` | Server closes connection | EOF handled |
+| IPv6 | `TestIPv6AddressHandling` | IPv6 localhost, formatting | IPv6 addresses work |
+| IPv6 | `TestIPv6AddressHandling/ZoneID` | fe80::1%eth0 format | Zone ID parsed |
+| URL | `TestURLEdgeCases` | Special chars, auth in URL | URL edge cases |
+| Connection | `TestConnectionStates` | Accept but no response | Half-close, RST |
+| Headers | `TestHeaderEdgeCases` | Multiple headers, empty values | Custom headers sent |
+
 ---
 
 ## Code Coverage Report
@@ -415,25 +525,31 @@ if SLACK_URL == "" {
 
 | Package | Coverage | Target | Notes |
 |---------|----------|--------|-------|
+| `types/notifications` | 95.0% | 80%+ | Notification types |
+| `types/null` | 93.4% | 80%+ | Null types |
 | `types/groups` | 88.9% | 80%+ | Group types |
 | `types/messages` | 88.9% | 80%+ | Message types |
+| `types/core` | 84.7% | 80%+ | Core types |
 | `source` | 76.9% | 80%+ | Asset management |
 | `types/incidents` | 72.5% | 80%+ | Incident types |
-| `types/services` | 66.6% | 80%+ | Service types and checks |
+| `types/services` | 67.8% | 80%+ | Service types and checks |
 | `types/metrics` | 64.3% | 80%+ | Prometheus metrics |
 | `handlers` | 63.4% | 80%+ | HTTP handlers |
 | `types/users` | 56.0% | 80%+ | User types |
-| `utils` | 55.8% | 80%+ | Utilities |
+| `utils` | 54.8% | 80%+ | Utilities |
+| `types/hits` | 53.0% | 80%+ | Hit types |
+| `database` | 51.4% | 80%+ | Database abstraction |
+| `notifiers` | 46.7% | 80%+ | Notifier implementations |
 | `types/checkins` | 46.7% | 80%+ | Checkin types |
-| `notifiers` | 44.7% | 80%+ | Notifier implementations |
+| `types` | 44.4% | 80%+ | Base types |
 | `types/failures` | 42.7% | 80%+ | Failure types |
-| `types/notifications` | 28.8% | 80%+ | Notification types |
-| `database` | 27.4% | 80%+ | Database abstraction |
-| `types/configs` | 15.5% | 80%+ | Config types |
-| **Total** | **~55%** | **80%+** | Baseline was ~36% |
+| `types/configs` | 41.9% | 80%+ | Config types |
+| `cmd` | 19.1% | 80%+ | CLI commands |
+| **Total** | **56.6%** | **80%+** | Baseline was ~36% |
 
-**Recent Test Additions (July 2026):**
+**Test Additions (July 2026):**
 - `notifiers/*_test.go` - Mock HTTP/SMTP server tests for all notifiers
+- `notifiers/edge_cases_test.go` - Timeout, retry, rate limit, template edge cases
 - `handlers/oauth_test.go` - OAuth validation tests (GitHub, Google, Slack)
 - `handlers/jwt_test.go` - JWT token operations tests
 - `handlers/middleware_test.go` - Gzip middleware tests
@@ -441,6 +557,11 @@ if SLACK_URL == "" {
 - `types/services/routine_test.go` - Mock SMTP/IMAP server tests
 - `types/services/database_test.go` - FindWithRelations and cache tests
 - `types/services/methods_test.go` - Service method unit tests
+- `types/services/edge_cases_test.go` - TLS, DNS, redirect, timeout edge cases
+- `types/notifications/notifications_test.go` - Rate limiting, state, DB operations
+- `types/configs/config_test.go` - YAML loading, env overrides, connection strings
+- `database/database_test.go` - Transactions, connections, migrations, query builders
+- `cmd/cli_test.go` - Flag parsing, subcommands, env vars, help text
 
 ### How to Generate Coverage
 
@@ -658,5 +779,5 @@ go func() {
 
 ---
 
-*Last Updated: 2026-07-25*
-*Coverage: ~55% (target: 80%+)*
+*Last Updated: 2026-07-27*
+*Coverage: 56.6% (target: 80%+)*
