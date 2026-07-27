@@ -45,10 +45,11 @@ func CheckServices() {
 // CheckQueue is the main go routine for checking a service
 func ServiceCheckQueue(s *Service, record bool) {
 	s.Start()
-	s.Checkpoint = utils.Now()
-	s.SleepDuration = (time.Duration(s.Id) * 100) * time.Millisecond
+	s.SetCheckpoint(utils.Now())
+	sleepDur := (time.Duration(s.Id) * 100) * time.Millisecond
+	s.SetSleepDuration(sleepDur)
 
-	timer := time.NewTimer(s.SleepDuration)
+	timer := time.NewTimer(sleepDur)
 	defer timer.Stop()
 
 CheckLoop:
@@ -59,16 +60,19 @@ CheckLoop:
 			break CheckLoop
 		case <-timer.C:
 			s.CheckService(record)
-			s.Checkpoint = s.Checkpoint.Add(s.Duration())
+			checkpoint := s.GetCheckpoint().Add(s.Duration())
+			s.SetCheckpoint(checkpoint)
+			var newSleepDur time.Duration
 			if !s.Online {
-				s.SleepDuration = s.Duration()
+				newSleepDur = s.Duration()
 			} else {
-				s.SleepDuration = time.Until(s.Checkpoint)
+				newSleepDur = time.Until(checkpoint)
 			}
-			if s.SleepDuration < 0 {
-				s.SleepDuration = 0
+			if newSleepDur < 0 {
+				newSleepDur = 0
 			}
-			timer.Reset(s.SleepDuration)
+			s.SetSleepDuration(newSleepDur)
+			timer.Reset(newSleepDur)
 		}
 	}
 }

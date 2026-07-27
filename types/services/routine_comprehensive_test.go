@@ -746,17 +746,22 @@ func TestServiceCheckQueue_Behavior(t *testing.T) {
 			PostData:       null.NewNullString(string(configJSON)),
 		}
 
-		// Start the queue in a goroutine
-		go ServiceCheckQueue(s, false)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ServiceCheckQueue(s, false)
+		}()
 
 		// Give it time to initialize
 		time.Sleep(200 * time.Millisecond)
 
 		// Stop the service
 		s.Close()
+		wg.Wait() // Wait for goroutine to fully stop before checking state
 
 		// Verify checkpoint was set
-		assert.False(t, s.Checkpoint.IsZero())
+		assert.False(t, s.GetCheckpoint().IsZero())
 	})
 
 	t.Run("calculates sleep duration based on service ID", func(t *testing.T) {
@@ -775,7 +780,7 @@ func TestServiceCheckQueue_Behavior(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 		s.Close()
 
-		assert.Equal(t, expectedDuration, s.SleepDuration)
+		assert.Equal(t, expectedDuration, s.GetSleepDuration())
 	})
 
 	t.Run("handles stop signal correctly", func(t *testing.T) {
@@ -836,12 +841,18 @@ func TestServiceCheckQueue_Behavior(t *testing.T) {
 			PostData:       null.NewNullString(string(configJSON)),
 		}
 
-		go ServiceCheckQueue(s, false)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ServiceCheckQueue(s, false)
+		}()
 
 		// Wait for initial check to complete
 		time.Sleep(500 * time.Millisecond)
 
 		s.Close()
+		wg.Wait() // Wait for goroutine to fully stop before checking state
 
 		// When offline, SleepDuration should be set to Duration()
 		assert.False(t, s.Online)

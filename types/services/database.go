@@ -189,7 +189,7 @@ func (s *Service) Update() error {
 	servicesLock.Lock()
 	allServices[s.Id] = s
 	servicesLock.Unlock()
-	s.SleepDuration = s.Duration()
+	s.SetSleepDuration(s.Duration())
 	go ServiceCheckQueue(s, true)
 	return q.Error()
 }

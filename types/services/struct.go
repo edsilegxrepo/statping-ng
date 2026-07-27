@@ -1,6 +1,7 @@
 package services
 
 import (
+	"sync"
 	"time"
 
 	"github.com/statping-ng/statping-ng/types/checkins"
@@ -45,8 +46,9 @@ type Service struct {
 	AvgResponse         int64                 `gorm:"-" json:"avg_response" yaml:"-"`
 	FailuresLast24Hours int                   `gorm:"-" json:"failures_24_hours" yaml:"-"`
 	Running             chan bool             `gorm:"-" json:"-" yaml:"-"`
-	Checkpoint          time.Time             `gorm:"-" json:"-" yaml:"-"`
-	SleepDuration       time.Duration         `gorm:"-" json:"-" yaml:"-"`
+	runningMu           sync.Mutex            `gorm:"-" json:"-" yaml:"-"`
+	checkpoint          time.Time             `gorm:"-" json:"-" yaml:"-"`
+	sleepDuration       time.Duration         `gorm:"-" json:"-" yaml:"-"`
 	LastResponse        string                `gorm:"-" json:"-" yaml:"-"`
 	NotifyAfter         int64                 `gorm:"column:notify_after" json:"notify_after" yaml:"notify_after" scope:"user,admin"`
 	AllowNotifications  null.NullBool         `gorm:"default:true;column:allow_notifications" json:"allow_notifications" yaml:"allow_notifications" scope:"user,admin"`

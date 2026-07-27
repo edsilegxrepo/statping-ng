@@ -88,7 +88,7 @@ func (s Service) requiresTLS() bool {
 	return s.VerifySSL.Bool || ((s.Type == "smtp" || s.Type == "imap") && (s.Port == 465 || s.Port == 587 || s.Port == 993))
 }
 
-func (s Service) Duration() time.Duration {
+func (s *Service) Duration() time.Duration {
 	return time.Duration(s.Interval) * time.Second
 }
 
@@ -210,7 +210,9 @@ func addDurations(s []series, on bool) int64 {
 
 // Start will create a channel for the service checking go routine
 func (s *Service) Start() {
-	if s.IsRunning() {
+	s.runningMu.Lock()
+	defer s.runningMu.Unlock()
+	if s.isRunningLocked() {
 		return
 	}
 	s.Running = make(chan bool)
@@ -218,13 +220,22 @@ func (s *Service) Start() {
 
 // Close will stop the go routine that is checking if service is online or not
 func (s *Service) Close() {
-	if s.IsRunning() {
+	s.runningMu.Lock()
+	defer s.runningMu.Unlock()
+	if s.isRunningLocked() {
 		close(s.Running)
 	}
 }
 
 // IsRunning returns true if the service go routine is running
 func (s *Service) IsRunning() bool {
+	s.runningMu.Lock()
+	defer s.runningMu.Unlock()
+	return s.isRunningLocked()
+}
+
+// isRunningLocked checks if running without acquiring the lock (caller must hold runningMu)
+func (s *Service) isRunningLocked() bool {
 	if s.Running == nil {
 		return false
 	}
@@ -234,6 +245,34 @@ func (s *Service) IsRunning() bool {
 	default:
 		return true
 	}
+}
+
+// GetCheckpoint returns the checkpoint time (thread-safe)
+func (s *Service) GetCheckpoint() time.Time {
+	s.runningMu.Lock()
+	defer s.runningMu.Unlock()
+	return s.checkpoint
+}
+
+// SetCheckpoint sets the checkpoint time (thread-safe)
+func (s *Service) SetCheckpoint(t time.Time) {
+	s.runningMu.Lock()
+	defer s.runningMu.Unlock()
+	s.checkpoint = t
+}
+
+// GetSleepDuration returns the sleep duration (thread-safe)
+func (s *Service) GetSleepDuration() time.Duration {
+	s.runningMu.Lock()
+	defer s.runningMu.Unlock()
+	return s.sleepDuration
+}
+
+// SetSleepDuration sets the sleep duration (thread-safe)
+func (s *Service) SetSleepDuration(d time.Duration) {
+	s.runningMu.Lock()
+	defer s.runningMu.Unlock()
+	s.sleepDuration = d
 }
 
 // SelectAllServices returns a slice of *core.Service to be store on []*core.Services
