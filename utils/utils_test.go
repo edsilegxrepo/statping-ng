@@ -794,3 +794,52 @@ func TestPing(t *testing.T) {
 	assert.Nil(t, error)
 	assert.NotEqual(t, 0, duration)
 }
+
+func TestIsHash(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"bcrypt 2a hash", "$2a$14$somehashvaluehere", true},
+		{"bcrypt 2b hash", "$2b$10$anotherhashvalue", true},
+		{"bcrypt 2y hash", "$2y$12$yetanotherhash", true},
+		{"plain password", "mypassword123", false},
+		{"empty string", "", false},
+		{"partial prefix", "$2a", false},
+		{"wrong prefix", "$1$md5hash", false},
+		{"sha256 hash", "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsHash(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestComplexityCheck(t *testing.T) {
+	tests := []struct {
+		name     string
+		password string
+		expected bool
+	}{
+		{"valid 30 char password", "Abcdefghij1234567890abcdefghij", true},
+		{"valid long password", "ThisIsAVeryLongPassword123456789", true},
+		{"too short", "Short1", false},
+		{"29 chars with complexity", "Abcdefghij123456789abcdefghi", false},
+		{"30 chars no uppercase", "abcdefghij1234567890abcdefghij", false},
+		{"30 chars no lowercase", "ABCDEFGHIJ1234567890ABCDEFGHIJ", false},
+		{"30 chars no digits", "AbcdefghijKLMNOPQRSTUabcdefghij", false},
+		{"empty string", "", false},
+		{"exactly 30 chars valid", "Aa1234567890123456789012345678", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ComplexityCheck(tt.password)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
