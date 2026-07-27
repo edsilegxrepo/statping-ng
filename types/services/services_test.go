@@ -270,6 +270,17 @@ func startupDb(t *testing.T) {
 	hits.SetDB(db)
 	SetDB(db)
 
+	// Update timestamps to be relative to NOW, not package init time
+	// This prevents timing drift when edge case tests run before this setup
+	now := utils.Now()
+	fail1.CreatedAt = now.Add(-160 * time.Second)
+	fail2.CreatedAt = now.Add(-5 * time.Second)
+	hit1.CreatedAt = now.Add(-120 * time.Second)
+	hit2.CreatedAt = now.Add(-60 * time.Second)
+	hit3.CreatedAt = now.Add(-30 * time.Second)
+	example.LastOnline = now.Add(-60 * time.Second)
+	example.LastOffline = now.Add(-180 * time.Second)
+
 	db.Create(&example)
 	db.Create(&hit1)
 	db.Create(&hit2)

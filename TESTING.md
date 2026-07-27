@@ -1,5 +1,21 @@
 # Statping-ng Test Suite Documentation
 
+> [!IMPORTANT]
+> **Sequential Execution Required** — All tests MUST be run with `-p 1` to prevent global state contamination:
+> ```bash
+> go test ./... -p 1 -count=1
+> ```
+> See [Why Sequential Execution](#why-sequential-execution--p1-is-required) for details.
+
+> [!NOTE]
+> **Integration Tests** require an explicit build tag and are NOT included in default runs:
+> ```bash
+> go test -tags=integration ./integration -p 1 -v
+> ```
+> See [Integration Tests](#integration-tests) for environment variables and setup.
+
+---
+
 ## Architecture, Design and Principles
 
 ### Test Philosophy

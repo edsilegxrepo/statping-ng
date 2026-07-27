@@ -111,6 +111,9 @@ func TestClearCache(t *testing.T) {
 
 	// Cleanup
 	_ = testService.Delete()
+
+	// Repopulate cache for subsequent tests
+	_ = all()
 }
 
 func TestAll(t *testing.T) {
