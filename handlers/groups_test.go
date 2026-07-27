@@ -10,6 +10,7 @@ import (
 )
 
 func TestUnAuthenticatedGroupRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
 	tests := []HTTPTest{
 		{
 			Name:           "No Authentication - New Group",
@@ -174,6 +175,150 @@ func TestGroupAPIRoutes(t *testing.T) {
 			ExpectedContains: []string{Success, MethodDelete},
 			AfterTest:        UnsetTestENV,
 			SecureRoute:      true,
+		},
+		// Group Update edge cases
+		{
+			Name:             "Update Group - Invalid JSON",
+			URL:              "/api/groups/2",
+			Method:           "POST",
+			Body:             BadJSON,
+			ExpectedStatus:   422,
+			ExpectedContains: []string{BadJSONResponse},
+			BeforeTest:       SetTestENV,
+			SecureRoute:      true,
+		},
+		{
+			Name:           "Update Group - Non-existent Group",
+			URL:            "/api/groups/99999",
+			Method:         "POST",
+			HttpHeaders:    []string{"Content-Type=application/json"},
+			Body:           `{"name": "Test", "public": true}`,
+			ExpectedStatus: 404,
+			BeforeTest:     SetTestENV,
+			SecureRoute:    true,
+		},
+		{
+			Name:             "Update Group - Empty Name Validation",
+			URL:              "/api/groups/2",
+			Method:           "POST",
+			HttpHeaders:      []string{"Content-Type=application/json"},
+			Body:             `{"name": "", "public": true}`,
+			ExpectedStatus:   200, // GORM validation error returned via sendErrorJson with default code
+			ExpectedContains: []string{"group name is empty"},
+			BeforeTest:       SetTestENV,
+			SecureRoute:      true,
+		},
+		{
+			Name:           "Update Group - Invalid ID Format",
+			URL:            "/api/groups/notanumber",
+			Method:         "POST",
+			HttpHeaders:    []string{"Content-Type=application/json"},
+			Body:           `{"name": "Test", "public": true}`,
+			ExpectedStatus: 422,
+			BeforeTest:     SetTestENV,
+			SecureRoute:    true,
+		},
+		// Group Delete edge cases
+		{
+			Name:           "Delete Group - Non-existent Group",
+			URL:            "/api/groups/99999",
+			Method:         "DELETE",
+			ExpectedStatus: 404,
+			BeforeTest:     SetTestENV,
+			SecureRoute:    true,
+		},
+		{
+			Name:           "Delete Group - Invalid ID Format",
+			URL:            "/api/groups/notanumber",
+			Method:         "DELETE",
+			ExpectedStatus: 422,
+			BeforeTest:     SetTestENV,
+			SecureRoute:    true,
+		},
+		{
+			Name:           "Delete Group - ID Zero",
+			URL:            "/api/groups/0",
+			Method:         "DELETE",
+			ExpectedStatus: 422,
+			BeforeTest:     SetTestENV,
+			SecureRoute:    true,
+		},
+		// Group Reorder edge cases
+		{
+			Name:             "Reorder Groups - Invalid JSON",
+			URL:              "/api/reorder/groups",
+			Method:           "POST",
+			Body:             BadJSON,
+			ExpectedStatus:   422,
+			ExpectedContains: []string{BadJSONResponse},
+			HttpHeaders:      []string{"Content-Type=application/json"},
+			BeforeTest:       SetTestENV,
+			SecureRoute:      true,
+		},
+		{
+			Name:           "Reorder Groups - Empty Array",
+			URL:            "/api/reorder/groups",
+			Method:         "POST",
+			Body:           `[]`,
+			ExpectedStatus: 200,
+			HttpHeaders:    []string{"Content-Type=application/json"},
+			BeforeTest:     SetTestENV,
+			SecureRoute:    true,
+		},
+		{
+			Name:           "Reorder Groups - Non-existent Group in Array",
+			URL:            "/api/reorder/groups",
+			Method:         "POST",
+			Body:           `[{"group":99999,"order":1}]`,
+			ExpectedStatus: 404,
+			HttpHeaders:    []string{"Content-Type=application/json"},
+			BeforeTest:     SetTestENV,
+			SecureRoute:    true,
+		},
+		// Group Create validation errors
+		{
+			Name:             "Create Group - Empty Name",
+			URL:              "/api/groups",
+			Method:           "POST",
+			HttpHeaders:      []string{"Content-Type=application/json"},
+			Body:             `{"name": "", "public": true}`,
+			ExpectedStatus:   200, // GORM validation error returned via sendErrorJson with default code
+			ExpectedContains: []string{"group name is empty"},
+			BeforeTest:       SetTestENV,
+			SecureRoute:      true,
+		},
+		{
+			Name:             "Create Group - Missing Name Field",
+			URL:              "/api/groups",
+			Method:           "POST",
+			HttpHeaders:      []string{"Content-Type=application/json"},
+			Body:             `{"public": true}`,
+			ExpectedStatus:   200, // GORM validation error returned via sendErrorJson with default code
+			ExpectedContains: []string{"group name is empty"},
+			BeforeTest:       SetTestENV,
+			SecureRoute:      true,
+		},
+		// findGroup edge cases via GET endpoint
+		{
+			Name:           "Find Group - Invalid ID Format via GET",
+			URL:            "/api/groups/abc",
+			Method:         "GET",
+			ExpectedStatus: 422,
+			BeforeTest:     SetTestENV,
+		},
+		{
+			Name:           "Find Group - ID Zero via GET",
+			URL:            "/api/groups/0",
+			Method:         "GET",
+			ExpectedStatus: 422,
+			BeforeTest:     SetTestENV,
+		},
+		{
+			Name:           "Find Group - Negative ID via GET",
+			URL:            "/api/groups/-1",
+			Method:         "GET",
+			ExpectedStatus: 404, // Negative is a valid integer, passes to DB lookup which returns not found
+			BeforeTest:     SetTestENV,
 		},
 	}
 
