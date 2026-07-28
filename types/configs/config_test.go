@@ -1,10 +1,19 @@
 package configs
 
 import (
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/statping-ng/statping-ng/database"
+	"github.com/statping-ng/statping-ng/types/failures"
+	"github.com/statping-ng/statping-ng/types/groups"
+	"github.com/statping-ng/statping-ng/types/hits"
+	"github.com/statping-ng/statping-ng/types/services"
+	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1032,4 +1041,291 @@ func TestDbConfig_CloseNil(t *testing.T) {
 
 	cfg = &DbConfig{}
 	cfg.Close()
+}
+
+// =============================================================================
+// LoadConfigForm Tests
+// =============================================================================
+
+func TestLoadConfigForm_ValidForm(t *testing.T) {
+	// Save and restore DB_CONN to avoid polluting other tests
+	originalDBConn := utils.Params.GetString("DB_CONN")
+	defer utils.Params.Set("DB_CONN", originalDBConn)
+
+	// Create a mock HTTP request with form data
+	form := url.Values{}
+	form.Set("db_connection", "sqlite")
+	form.Set("db_host", "localhost")
+	form.Set("db_user", "testuser")
+	form.Set("db_password", "testpass")
+	form.Set("db_database", "test.db")
+	form.Set("db_port", "0")
+	form.Set("project", "TestProject")
+	form.Set("username", "admin")
+	form.Set("password", "adminpass")
+	form.Set("description", "Test Description")
+	form.Set("domain", "example.com")
+	form.Set("email", "admin@example.com")
+	form.Set("language", "en")
+	form.Set("send_reports", "true")
+	form.Set("sample_data", "false")
+
+	req, err := http.NewRequest("POST", "/setup", strings.NewReader(form.Encode()))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	cfg, err := LoadConfigForm(req)
+	require.NoError(t, err)
+	assert.Equal(t, "sqlite", cfg.DbConn)
+	assert.Equal(t, "localhost", cfg.DbHost)
+	assert.Equal(t, "testuser", cfg.DbUser)
+	assert.Equal(t, "testpass", cfg.DbPass)
+	assert.Equal(t, "test.db", cfg.DbData)
+	assert.Equal(t, "TestProject", cfg.Project)
+	assert.Equal(t, "admin", cfg.Username)
+	assert.Equal(t, "adminpass", cfg.Password)
+	assert.Equal(t, "admin@example.com", cfg.Email)
+	assert.Equal(t, "en", cfg.Language)
+	assert.True(t, cfg.AllowReports)
+	assert.False(t, cfg.SampleData)
+}
+
+func TestLoadConfigForm_MissingRequiredFields(t *testing.T) {
+	// Save and restore DB_CONN to avoid polluting other tests
+	originalDBConn := utils.Params.GetString("DB_CONN")
+	defer utils.Params.Set("DB_CONN", originalDBConn)
+
+	testCases := []struct {
+		name        string
+		formData    map[string]string
+		expectedErr string
+	}{
+		{
+			name: "missing project",
+			formData: map[string]string{
+				"db_connection": "sqlite",
+				"username":      "admin",
+				"password":      "pass",
+				"email":         "admin@test.com",
+			},
+			expectedErr: "Missing required elements",
+		},
+		{
+			name: "missing username",
+			formData: map[string]string{
+				"db_connection": "sqlite",
+				"project":       "Test",
+				"password":      "pass",
+				"email":         "admin@test.com",
+			},
+			expectedErr: "Missing required elements",
+		},
+		{
+			name: "missing password",
+			formData: map[string]string{
+				"db_connection": "sqlite",
+				"project":       "Test",
+				"username":      "admin",
+				"email":         "admin@test.com",
+			},
+			expectedErr: "Missing required elements",
+		},
+		{
+			name: "missing email",
+			formData: map[string]string{
+				"db_connection": "sqlite",
+				"project":       "Test",
+				"username":      "admin",
+				"password":      "pass",
+			},
+			expectedErr: "Missing required elements",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			form := url.Values{}
+			for k, v := range tc.formData {
+				form.Set(k, v)
+			}
+
+			req, err := http.NewRequest("POST", "/setup", strings.NewReader(form.Encode()))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+			_, err = LoadConfigForm(req)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.expectedErr)
+		})
+	}
+}
+
+func TestLoadConfigForm_PostgresConfig(t *testing.T) {
+	// Save and restore DB_CONN to avoid polluting other tests
+	originalDBConn := utils.Params.GetString("DB_CONN")
+	defer utils.Params.Set("DB_CONN", originalDBConn)
+
+	form := url.Values{}
+	form.Set("db_connection", "postgres")
+	form.Set("db_host", "db.example.com")
+	form.Set("db_user", "pguser")
+	form.Set("db_password", "pgpass")
+	form.Set("db_database", "statping_db")
+	form.Set("db_port", "5432")
+	form.Set("project", "Production")
+	form.Set("username", "admin")
+	form.Set("password", "adminpass")
+	form.Set("email", "admin@example.com")
+
+	req, err := http.NewRequest("POST", "/setup", strings.NewReader(form.Encode()))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	cfg, err := LoadConfigForm(req)
+	require.NoError(t, err)
+	assert.Equal(t, "postgres", cfg.DbConn)
+	assert.Equal(t, "db.example.com", cfg.DbHost)
+	assert.Equal(t, 5432, cfg.DbPort)
+	assert.Equal(t, "pguser", cfg.DbUser)
+	assert.Equal(t, "pgpass", cfg.DbPass)
+	assert.Equal(t, "statping_db", cfg.DbData)
+}
+
+// =============================================================================
+// InitModels Tests
+// =============================================================================
+
+func TestInitModels(t *testing.T) {
+	tmpDir := t.TempDir()
+	db, err := database.OpenTester(tmpDir)
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Should not panic
+	InitModels(db)
+}
+
+// =============================================================================
+// CreateAdminUser Tests
+// =============================================================================
+
+func TestCreateAdminUser_WithEnvVars(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestDir(t, tmpDir)
+
+	// Set up fresh database
+	db, err := database.OpenTester(tmpDir)
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Initialize all models with this DB
+	InitModels(db)
+	db.AutoMigrate(&users.User{})
+
+	// Set environment variables - password must meet complexity requirements
+	// At least 30 chars with uppercase, lowercase, and digits
+	complexPass := "TestPassword123456789012345678901"
+	utils.Params.Set("ADMIN_USER", "testadmin")
+	utils.Params.Set("ADMIN_PASSWORD", complexPass)
+	utils.Params.Set("ADMIN_EMAIL", "testadmin@example.com")
+	defer func() {
+		utils.Params.Set("ADMIN_USER", "")
+		utils.Params.Set("ADMIN_PASSWORD", "")
+		utils.Params.Set("ADMIN_EMAIL", "")
+	}()
+
+	pass, err := CreateAdminUser()
+	require.NoError(t, err)
+	assert.Equal(t, complexPass, pass)
+
+	// Verify user was created
+	user, err := users.FindByUsername("testadmin")
+	require.NoError(t, err)
+	assert.Equal(t, "testadmin", user.Username)
+	assert.Equal(t, "testadmin@example.com", user.Email)
+	assert.True(t, user.Admin.Bool)
+}
+
+func TestCreateAdminUser_DefaultValues(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestDir(t, tmpDir)
+
+	// Set up fresh database
+	db, err := database.OpenTester(tmpDir)
+	require.NoError(t, err)
+	defer db.Close()
+
+	// Initialize all models with this DB
+	InitModels(db)
+	db.AutoMigrate(&users.User{})
+
+	// Clear environment variables to use defaults
+	utils.Params.Set("ADMIN_USER", "")
+	utils.Params.Set("ADMIN_PASSWORD", "")
+	utils.Params.Set("ADMIN_EMAIL", "info@admin.com")
+
+	pass, err := CreateAdminUser()
+	require.NoError(t, err)
+	assert.Len(t, pass, 32) // Random 32-char password
+
+	// Verify user was created with default username
+	user, err := users.FindByUsername("admin")
+	require.NoError(t, err)
+	assert.Equal(t, "admin", user.Username)
+}
+
+// =============================================================================
+// DropDatabase Tests
+// =============================================================================
+
+func TestDbConfig_DropDatabase(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestDir(t, tmpDir)
+
+	cfg := &DbConfig{
+		DbConn:   "sqlite",
+		DbData:   "statping.db",
+		Location: tmpDir,
+	}
+
+	err := Connect(cfg, false)
+	require.NoError(t, err)
+	defer cfg.Close()
+
+	// Create tables first
+	err = cfg.CreateDatabase()
+	require.NoError(t, err)
+
+	// Now drop them - should not error
+	err = cfg.DropDatabase()
+	require.NoError(t, err)
+}
+
+// =============================================================================
+// CreateDatabase Tests
+// =============================================================================
+
+func TestDbConfig_CreateDatabase(t *testing.T) {
+	tmpDir := t.TempDir()
+	setTestDir(t, tmpDir)
+
+	cfg := &DbConfig{
+		DbConn:   "sqlite",
+		DbData:   "statping.db",
+		Location: tmpDir,
+	}
+
+	err := Connect(cfg, false)
+	require.NoError(t, err)
+	defer cfg.Close()
+
+	err = cfg.CreateDatabase()
+	require.NoError(t, err)
+
+	// Verify tables exist
+	assert.True(t, cfg.Db.HasTable(&services.Service{}))
+	assert.True(t, cfg.Db.HasTable(&users.User{}))
+	assert.True(t, cfg.Db.HasTable(&groups.Group{}))
+	assert.True(t, cfg.Db.HasTable(&hits.Hit{}))
+	assert.True(t, cfg.Db.HasTable(&failures.Failure{}))
 }
