@@ -240,35 +240,49 @@ func ensureSetup(t *testing.T) {
 
 ---
 
-## Recommended Fixes
+## Current Implementation (Per-Chain Isolation)
 
-### Short-term (Low Risk)
-1. Add explicit test ordering in CI: `go test ./handlers/... && go test ./types/... && go test ./...`
-2. Document that `-p 1` is required for full suite
+Each test chain now has a `TestMain` that:
+1. Calls `services.StopAll()` to stop any leaked goroutines
+2. Calls `services.ClearCache()` to clear in-memory state  
+3. Creates a fresh isolated database
+4. Runs tests in order (chains preserved)
+5. Cleans up on exit
 
-### Medium-term (Medium Risk)
-1. Replace `sync.Once` with reset-capable setup that verifies state
-2. Add `t.Cleanup()` to all tests that modify globals
+**Packages with TestMain isolation:**
+- `handlers/` - stops services, creates temp dir
+- `types/services/` - stops services, creates isolated DB for 7 packages
+- `types/users/` - creates isolated DB
+- `types/groups/` - stops services, creates isolated DB
+- `types/incidents/` - creates isolated DB (can't import services due to cycle)
 
-### Long-term (Higher Risk but Correct)
-1. Migrate all packages to per-test isolation (like `types/checkins/`)
-2. Remove hardcoded IDs - use dynamic ID lookup
-3. Each package gets independent TestMain with full reset
+**Key helper function:**
+```go
+// types/services/database.go
+func StopAll() {
+    // Stops all running service goroutines
+    // Must be called before ClearCache()
+}
+```
 
 ---
 
 ## Testing Commands
 
 ```bash
-# Safe: Run each package in isolation
+# Recommended: Run with sequential execution, single iteration
+go test ./... -p 1 -count=1
+
+# Run each package in isolation
 go test ./database/... -v
 go test ./handlers/... -v
 go test ./types/services/... -v
 
-# Safe: Run with sequential execution
-go test ./... -p 1 -count=1
+# AVOID: -count=N with N>1 (TestMain only runs once per process)
+# Use separate invocations instead:
+go test ./... -p 1 -count=1 && go test ./... -p 1 -count=1
 
-# Dangerous: Parallel execution (state pollution)
+# AVOID: Parallel execution without -p 1 (state pollution)
 go test ./...
 
 # Debug: See which test corrupted state
