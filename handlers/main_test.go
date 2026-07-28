@@ -4,10 +4,15 @@ import (
 	"os"
 	"testing"
 
+	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
 )
 
 func TestMain(m *testing.M) {
+	// Stop any running service goroutines and clear cache from previous packages
+	services.StopAll()
+	services.ClearCache()
+
 	// Create a temp directory for all handler tests
 	tmpDir, err := os.MkdirTemp("", "statping-handlers-test")
 	if err != nil {
@@ -20,6 +25,9 @@ func TestMain(m *testing.M) {
 
 	// Run all tests
 	code := m.Run()
+
+	// Stop services before cleanup
+	services.StopAll()
 
 	// Cleanup temp directory
 	_ = os.RemoveAll(tmpDir)

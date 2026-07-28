@@ -100,6 +100,21 @@ func ClearCache() {
 	allServices = make(map[int64]*Service)
 }
 
+// StopAll stops all running service goroutines.
+// Must be called before ClearCache to avoid orphan goroutines.
+func StopAll() {
+	servicesLock.RLock()
+	servicesCopy := make([]*Service, 0, len(allServices))
+	for _, s := range allServices {
+		servicesCopy = append(servicesCopy, s)
+	}
+	servicesLock.RUnlock()
+
+	for _, s := range servicesCopy {
+		s.Close()
+	}
+}
+
 func Services() map[int64]*Service {
 	servicesLock.RLock()
 	defer servicesLock.RUnlock()

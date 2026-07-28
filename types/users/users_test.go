@@ -21,13 +21,9 @@ var example = &User{
 }
 
 func TestInit(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	db, err := database.OpenTester()
-	require.Nil(t, err)
-	db.CreateTable(&User{})
-	SetDB(db)
-	err = example.Create()
+	// DB setup moved to TestMain in main_test.go
+	// This test now just creates the example user
+	err := example.Create()
 	require.Nil(t, err)
 }
 

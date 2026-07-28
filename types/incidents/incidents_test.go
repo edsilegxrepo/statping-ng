@@ -3,8 +3,6 @@ package incidents
 import (
 	"testing"
 
-	"github.com/statping-ng/statping-ng/database"
-	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,15 +26,11 @@ var update2 = &IncidentUpdate{
 }
 
 func TestInit(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	db, err := database.OpenTester()
-	require.Nil(t, err)
-	db.AutoMigrate(&Incident{}, &IncidentUpdate{})
-	SetDB(db)
-	db.Create(&example)
-	db.Create(&update1)
-	db.Create(&update2)
+	// DB setup moved to TestMain in main_test.go
+	// This test now just creates the example data
+	testDb.Create(&example)
+	testDb.Create(&update1)
+	testDb.Create(&update2)
 }
 
 func TestFind(t *testing.T) {

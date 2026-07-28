@@ -17,6 +17,10 @@ import (
 func TestMain(m *testing.M) {
 	_ = utils.InitLogs()
 
+	// Stop any running service goroutines and clear cache from previous packages
+	StopAll()
+	ClearCache()
+
 	// Create temp directory for file-based SQLite database
 	tmpDir, err := os.MkdirTemp("", "statping-services-test")
 	if err != nil {

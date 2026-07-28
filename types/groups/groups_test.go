@@ -4,10 +4,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/services"
-	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,16 +32,11 @@ var s2 = &services.Service{
 }
 
 func TestInit(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	db, err := database.OpenTester()
-	require.Nil(t, err)
-	db.CreateTable(&Group{}, &services.Service{})
-	db.Create(&example)
-	db.Create(&s1)
-	db.Create(&s2)
-	SetDB(db)
-	services.SetDB(db)
+	// DB setup moved to TestMain in main_test.go
+	// This test now just creates the example data
+	testDb.Create(&example)
+	testDb.Create(&s1)
+	testDb.Create(&s2)
 }
 
 func TestFind(t *testing.T) {
