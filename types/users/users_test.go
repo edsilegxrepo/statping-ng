@@ -28,7 +28,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	assert.Equal(t, "example_user", item.Username)
 	assert.NotEmpty(t, item.ApiKey)
@@ -77,7 +77,7 @@ func TestAuthUser(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	item.Username = "updated_user"
 	err = item.Update()
@@ -89,7 +89,7 @@ func TestDelete(t *testing.T) {
 	all := All()
 	assert.Len(t, all, 2)
 
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 
 	err = item.Delete()

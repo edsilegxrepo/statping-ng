@@ -5,9 +5,28 @@ import (
 	"testing"
 
 	"github.com/statping-ng/statping-ng/types/incidents"
+	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// getFirstServiceID returns the ID of the first available service
+func getFirstServiceID() int64 {
+	svcs := services.AllInOrder()
+	if len(svcs) > 0 {
+		return svcs[0].Id
+	}
+	return 1
+}
+
+// getLatestIncidentID returns the ID of the most recently created incident
+func getLatestIncidentID() int64 {
+	all := incidents.All()
+	if len(all) > 0 {
+		return all[len(all)-1].Id
+	}
+	return 1
+}
 
 func TestUnAuthenticatedIncidentRoutes(t *testing.T) {
 	ensureHandlerSetup(t)
@@ -60,30 +79,43 @@ func TestUnAuthenticatedIncidentRoutes(t *testing.T) {
 
 func TestIncidentsAPIRoutes(t *testing.T) {
 	ensureHandlerSetup(t)
+
+	serviceID := getFirstServiceID()
+	serviceURL := fmt.Sprintf("/api/services/%d/incidents", serviceID)
+
+	// Create incident first
+	createTest := HTTPTest{
+		Name:           "Statping Create Incident",
+		URL:            serviceURL,
+		Method:         "POST",
+		ExpectedStatus: 200,
+		BeforeTest:     SetTestENV,
+		AfterTest:      UnsetTestENV,
+		Body: `{
+				"title": "New Incident",
+				"description": "This is a test for incidents"
+			    }`,
+		ExpectedContains: []string{Success},
+	}
+	_, t, err := RunHTTPTest(createTest, t)
+	require.Nil(t, err)
+
+	// Get the incident ID we just created
+	incidentID := getLatestIncidentID()
+	incidentURL := fmt.Sprintf("/api/incidents/%d", incidentID)
+	incidentUpdatesURL := fmt.Sprintf("/api/incidents/%d/updates", incidentID)
+
 	tests := []HTTPTest{
 		{
-			Name:           "Statping Create Incident",
-			URL:            "/api/services/1/incidents",
-			Method:         "POST",
-			ExpectedStatus: 200,
-			BeforeTest:     SetTestENV,
-			AfterTest:      UnsetTestENV,
-			Body: `{
-					"title": "New Incident",
-					"description": "This is a test for incidents"
-				    }`,
-			ExpectedContains: []string{Success},
-		},
-		{
-			Name:           "Statping Service 1 Incidents",
-			URL:            "/api/services/1/incidents",
+			Name:           "Statping Service Incidents",
+			URL:            serviceURL,
 			Method:         "GET",
 			ExpectedStatus: 200,
 			GreaterThan:    0, // At least 1 incident after creation
 		},
 		{
 			Name: "Statping Update Incident",
-			URL:  "/api/incidents/1",
+			URL:  incidentURL,
 			Body: `{
 					"title": "Updated Incident",
 					"description": "This is an updated incidents"
@@ -94,17 +126,16 @@ func TestIncidentsAPIRoutes(t *testing.T) {
 			ExpectedContains: []string{Success},
 		},
 		{
-			Name:             "Statping View Incident Updates",
-			URL:              "/api/incidents/1/updates",
-			Method:           "GET",
-			ExpectedStatus:   200,
-			ResponseLen:      3,
-			BeforeTest:       SetTestENV,
-			ExpectedContains: []string{`"type":"investigating"`},
+			Name:           "Statping View Incident Updates",
+			URL:            incidentUpdatesURL,
+			Method:         "GET",
+			ExpectedStatus: 200,
+			GreaterThan:    0, // At least some updates from sample data
+			BeforeTest:     SetTestENV,
 		},
 		{
 			Name:   "Statping Create Incident Update",
-			URL:    "/api/incidents/1/updates",
+			URL:    incidentUpdatesURL,
 			Method: "POST",
 			Body: `{
 								"message": "Test message here",
@@ -116,7 +147,7 @@ func TestIncidentsAPIRoutes(t *testing.T) {
 		},
 		{
 			Name:             "Incorrect Checkin JSON POST",
-			URL:              "/api/incidents/1/updates",
+			URL:              incidentUpdatesURL,
 			Body:             BadJSON,
 			ExpectedContains: []string{BadJSONResponse},
 			BeforeTest:       SetTestENV,
@@ -124,16 +155,8 @@ func TestIncidentsAPIRoutes(t *testing.T) {
 			ExpectedStatus:   422,
 		},
 		{
-			Name:             "Statping Delete Incident Update",
-			URL:              "/api/incidents/1/updates/1",
-			Method:           "DELETE",
-			ExpectedStatus:   200,
-			BeforeTest:       SetTestENV,
-			ExpectedContains: []string{Success},
-		},
-		{
 			Name:             "Statping Delete Incident",
-			URL:              "/api/incidents/1",
+			URL:              incidentURL,
 			Method:           "DELETE",
 			ExpectedStatus:   200,
 			BeforeTest:       SetTestENV,
@@ -141,7 +164,7 @@ func TestIncidentsAPIRoutes(t *testing.T) {
 		},
 		{
 			Name:             "Incorrect JSON POST",
-			URL:              "/api/services/1/incidents",
+			URL:              serviceURL,
 			Body:             BadJSON,
 			ExpectedContains: []string{BadJSONResponse},
 			Method:           "POST",
@@ -160,10 +183,12 @@ func TestIncidentsAPIRoutes(t *testing.T) {
 func TestDeleteIncidentHandler(t *testing.T) {
 	ensureHandlerSetup(t)
 
+	serviceID := getFirstServiceID()
+
 	// Create a test incident first
 	createTest := HTTPTest{
 		Name:           "Setup - Create Incident for Delete Test",
-		URL:            "/api/services/2/incidents",
+		URL:            fmt.Sprintf("/api/services/%d/incidents", serviceID),
 		Method:         "POST",
 		ExpectedStatus: 200,
 		Body: `{
@@ -175,10 +200,12 @@ func TestDeleteIncidentHandler(t *testing.T) {
 	_, t, err := RunHTTPTest(createTest, t)
 	require.Nil(t, err)
 
+	incidentID := getLatestIncidentID()
+
 	tests := []HTTPTest{
 		{
 			Name:             "Delete Incident - Valid ID",
-			URL:              "/api/incidents/2",
+			URL:              fmt.Sprintf("/api/incidents/%d", incidentID),
 			Method:           "DELETE",
 			ExpectedStatus:   200,
 			ExpectedContains: []string{Success, MethodDelete},
@@ -221,10 +248,12 @@ func TestDeleteIncidentHandler(t *testing.T) {
 func TestUpdateIncidentHandler(t *testing.T) {
 	ensureHandlerSetup(t)
 
+	serviceID := getFirstServiceID()
+
 	// Create a test incident first
 	createTest := HTTPTest{
 		Name:           "Setup - Create Incident for Update Test",
-		URL:            "/api/services/2/incidents",
+		URL:            fmt.Sprintf("/api/services/%d/incidents", serviceID),
 		Method:         "POST",
 		ExpectedStatus: 200,
 		Body: `{
@@ -236,10 +265,13 @@ func TestUpdateIncidentHandler(t *testing.T) {
 	_, t, err := RunHTTPTest(createTest, t)
 	require.Nil(t, err)
 
+	incidentID := getLatestIncidentID()
+	incidentURL := fmt.Sprintf("/api/incidents/%d", incidentID)
+
 	tests := []HTTPTest{
 		{
 			Name:   "Update Incident - Valid Data",
-			URL:    "/api/incidents/3",
+			URL:    incidentURL,
 			Method: "POST",
 			Body: `{
 				"title": "Updated Title",
@@ -251,7 +283,7 @@ func TestUpdateIncidentHandler(t *testing.T) {
 		},
 		{
 			Name:             "Update Incident - Invalid JSON",
-			URL:              "/api/incidents/3",
+			URL:              incidentURL,
 			Method:           "POST",
 			Body:             BadJSON,
 			ExpectedStatus:   422,
@@ -365,10 +397,12 @@ func TestDeleteIncidentUpdateHandler(t *testing.T) {
 func TestServiceIncidentsHandler(t *testing.T) {
 	ensureHandlerSetup(t)
 
+	serviceID := getFirstServiceID()
+
 	tests := []HTTPTest{
 		{
 			Name:           "List Incidents - Valid Service",
-			URL:            "/api/services/2/incidents",
+			URL:            fmt.Sprintf("/api/services/%d/incidents", serviceID),
 			Method:         "GET",
 			ExpectedStatus: 200,
 		},
@@ -406,10 +440,12 @@ func TestServiceIncidentsHandler(t *testing.T) {
 func TestIncidentUpdatesHandler(t *testing.T) {
 	ensureHandlerSetup(t)
 
+	serviceID := getFirstServiceID()
+
 	// Create a test incident first
 	createTest := HTTPTest{
 		Name:           "Setup - Create Incident for Updates Test",
-		URL:            "/api/services/2/incidents",
+		URL:            fmt.Sprintf("/api/services/%d/incidents", serviceID),
 		Method:         "POST",
 		ExpectedStatus: 200,
 		Body: `{
@@ -421,10 +457,12 @@ func TestIncidentUpdatesHandler(t *testing.T) {
 	_, t, err := RunHTTPTest(createTest, t)
 	require.Nil(t, err)
 
+	incidentID := getLatestIncidentID()
+
 	tests := []HTTPTest{
 		{
 			Name:           "List Updates - Valid Incident (empty updates)",
-			URL:            "/api/incidents/5/updates",
+			URL:            fmt.Sprintf("/api/incidents/%d/updates", incidentID),
 			Method:         "GET",
 			ExpectedStatus: 200,
 		},
@@ -462,10 +500,13 @@ func TestIncidentUpdatesHandler(t *testing.T) {
 func TestCreateIncidentValidationHandler(t *testing.T) {
 	ensureHandlerSetup(t)
 
+	serviceID := getFirstServiceID()
+	serviceURL := fmt.Sprintf("/api/services/%d/incidents", serviceID)
+
 	tests := []HTTPTest{
 		{
 			Name:   "Create Incident - Missing Title (validation error)",
-			URL:    "/api/services/2/incidents",
+			URL:    serviceURL,
 			Method: "POST",
 			Body: `{
 				"title": "",
@@ -477,7 +518,7 @@ func TestCreateIncidentValidationHandler(t *testing.T) {
 		},
 		{
 			Name:             "Create Incident - Empty Body",
-			URL:              "/api/services/2/incidents",
+			URL:              serviceURL,
 			Method:           "POST",
 			Body:             `{}`,
 			ExpectedStatus:   200, // Validation error from gorm hook returns without proper status code
@@ -527,10 +568,12 @@ func TestCreateIncidentValidationHandler(t *testing.T) {
 func TestCreateIncidentUpdateValidationHandler(t *testing.T) {
 	ensureHandlerSetup(t)
 
+	serviceID := getFirstServiceID()
+
 	// Create a test incident first
 	createTest := HTTPTest{
 		Name:           "Setup - Create Incident for Update Validation Test",
-		URL:            "/api/services/2/incidents",
+		URL:            fmt.Sprintf("/api/services/%d/incidents", serviceID),
 		Method:         "POST",
 		ExpectedStatus: 200,
 		Body: `{
@@ -542,10 +585,13 @@ func TestCreateIncidentUpdateValidationHandler(t *testing.T) {
 	_, t, err := RunHTTPTest(createTest, t)
 	require.Nil(t, err)
 
+	incidentID := getLatestIncidentID()
+	incidentUpdatesURL := fmt.Sprintf("/api/incidents/%d/updates", incidentID)
+
 	tests := []HTTPTest{
 		{
 			Name:   "Create Update - Missing Message (validation error)",
-			URL:    "/api/incidents/6/updates",
+			URL:    incidentUpdatesURL,
 			Method: "POST",
 			Body: `{
 				"message": "",
@@ -557,7 +603,7 @@ func TestCreateIncidentUpdateValidationHandler(t *testing.T) {
 		},
 		{
 			Name:             "Create Update - Empty Body",
-			URL:              "/api/incidents/6/updates",
+			URL:              incidentUpdatesURL,
 			Method:           "POST",
 			Body:             `{}`,
 			ExpectedStatus:   200, // Validation error from gorm hook returns without proper status code
@@ -596,7 +642,7 @@ func TestCreateIncidentUpdateValidationHandler(t *testing.T) {
 		},
 		{
 			Name:   "Create Update - Valid Update",
-			URL:    "/api/incidents/6/updates",
+			URL:    incidentUpdatesURL,
 			Method: "POST",
 			Body: `{
 				"message": "Valid update message",

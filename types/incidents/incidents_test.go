@@ -34,7 +34,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	assert.Equal(t, "Example", item.Title)
 }
@@ -71,7 +71,7 @@ func TestCreateValidationError(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	item.Title = "Updated"
 	err = item.Update()
@@ -80,7 +80,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateValidationError(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	item.Title = ""
 	err = item.Update()
@@ -115,7 +115,7 @@ func TestFindByService(t *testing.T) {
 
 func TestIncidentUpdatesLoaded(t *testing.T) {
 	// Find incident should load its updates via AfterFind
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	// Updates should be loaded automatically
 	assert.GreaterOrEqual(t, len(item.Updates), 0)
@@ -125,7 +125,7 @@ func TestIncidentUpdatesLoaded(t *testing.T) {
 
 func TestIncidentUpdateCreate(t *testing.T) {
 	update := &IncidentUpdate{
-		IncidentId: 1,
+		IncidentId: example.Id,
 		Message:    "Test update message",
 		Type:       "investigating",
 	}
@@ -137,7 +137,7 @@ func TestIncidentUpdateCreate(t *testing.T) {
 
 func TestIncidentUpdateCreateValidationError(t *testing.T) {
 	update := &IncidentUpdate{
-		IncidentId: 1,
+		IncidentId: example.Id,
 		Message:    "",
 		Type:       "update",
 	}
@@ -147,7 +147,7 @@ func TestIncidentUpdateCreateValidationError(t *testing.T) {
 }
 
 func TestFindUpdate(t *testing.T) {
-	update, err := FindUpdate(1)
+	update, err := FindUpdate(update1.Id)
 	require.Nil(t, err)
 	assert.Equal(t, "First one here", update.Message)
 }
@@ -158,20 +158,20 @@ func TestFindUpdateNonExistent(t *testing.T) {
 }
 
 func TestIncidentUpdateUpdate(t *testing.T) {
-	update, err := FindUpdate(1)
+	update, err := FindUpdate(update1.Id)
 	require.Nil(t, err)
 	update.Message = "Updated message"
 	err = update.Update()
 	require.Nil(t, err)
 
 	// Verify the update persisted
-	updated, err := FindUpdate(1)
+	updated, err := FindUpdate(update1.Id)
 	require.Nil(t, err)
 	assert.Equal(t, "Updated message", updated.Message)
 }
 
 func TestIncidentUpdateUpdateValidationError(t *testing.T) {
-	update, err := FindUpdate(1)
+	update, err := FindUpdate(update1.Id)
 	require.Nil(t, err)
 	update.Message = ""
 	err = update.Update()
@@ -182,7 +182,7 @@ func TestIncidentUpdateUpdateValidationError(t *testing.T) {
 func TestIncidentUpdateDelete(t *testing.T) {
 	// Create a new update to delete
 	update := &IncidentUpdate{
-		IncidentId: 1,
+		IncidentId: example.Id,
 		Message:    "To be deleted",
 		Type:       "update",
 	}

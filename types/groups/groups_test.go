@@ -40,7 +40,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	assert.Equal(t, "Example Group", item.Name)
 }
@@ -88,7 +88,7 @@ func TestCreateValidationError(t *testing.T) {
 }
 
 func TestUpdateValidationError(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	originalName := item.Name
 	item.Name = ""
@@ -113,7 +113,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 	item.Name = "Updated"
 	item.Order = 1
@@ -204,7 +204,7 @@ func TestDelete(t *testing.T) {
 	all := All()
 	assert.Len(t, all, 2)
 
-	item, err := Find(1)
+	item, err := Find(example.Id)
 	require.Nil(t, err)
 
 	err = item.Delete()
