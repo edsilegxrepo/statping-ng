@@ -19,37 +19,69 @@
 ## Architecture, Design and Principles
 
 ### Test Philosophy
-- **Isolation**: Each test uses `t.TempDir()` for database and file operations, ensuring no cross-test contamination
+- **Chain Isolation**: Each package uses `TestMain` to create isolated database state and stop leaked goroutines
+- **Dynamic IDs**: Tests use `example.Id` or helper functions instead of hardcoded IDs for resilience
 - **Realistic Data**: Integration tests use a 94MB production-scale database fixture (607K hits, 11K failures)
 - **Cross-Platform**: Tests run identically on Windows (MinGW) and Linux
 - **Security-First**: Security regression tests verify authentication, authorization, CSRF, and rate limiting
 
-### Test Layers
+### Test Chain Architecture
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Integration Tests                        │
-│         (Full HTTP stack, real database, live APIs)         │
-├─────────────────────────────────────────────────────────────┤
-│                     Handler Tests                           │
-│           (HTTP handlers, routing, middleware)              │
-├─────────────────────────────────────────────────────────────┤
-│                      Type Tests                             │
-│        (Services, Users, Groups, Checkins, etc.)            │
-├─────────────────────────────────────────────────────────────┤
-│                    Notifier Tests                           │
-│         (Slack, Discord, Email, Webhook, etc.)              │
-├─────────────────────────────────────────────────────────────┤
-│                     Utility Tests                           │
-│              (Crypto, HTTP, File operations)                │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         TEST CHAIN ISOLATION                                │
+│  Each package has TestMain that: StopAll() → ClearCache() → Fresh DB       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐           │
+│  │   handlers/     │   │ types/services/ │   │  types/users/   │           │
+│  │   main_test.go  │   │   main_test.go  │   │   main_test.go  │           │
+│  │                 │   │                 │   │                 │           │
+│  │ StopAll()       │   │ StopAll()       │   │ StopAll()       │           │
+│  │ ClearCache()    │   │ ClearCache()    │   │ ClearCache()    │           │
+│  │ TempDir setup   │   │ OpenTester()    │   │ OpenTester()    │           │
+│  │ └→ api_test     │   │ SetDB (7 pkgs)  │   │ SetDB()         │           │
+│  │ └→ services_... │   │ AutoMigrate()   │   │ AutoMigrate()   │           │
+│  │ └→ users_test   │   │ └→ services_... │   │ └→ users_test   │           │
+│  │ └→ ...          │   │ └→ routine_...  │   │ └→ ...          │           │
+│  └─────────────────┘   └─────────────────┘   └─────────────────┘           │
+│                                                                             │
+│  ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐           │
+│  │  types/groups/  │   │types/incidents/ │   │   Standalone    │           │
+│  │   main_test.go  │   │   main_test.go  │   │   (no TestMain) │           │
+│  │                 │   │                 │   │                 │           │
+│  │ StopAll()       │   │ (no StopAll -   │   │ database/       │           │
+│  │ ClearCache()    │   │  import cycle)  │   │ notifiers/      │           │
+│  │ OpenTester()    │   │ OpenTester()    │   │ types/checkins/ │           │
+│  │ SetDB()         │   │ AutoMigrate()   │   │ types/hits/     │           │
+│  │ └→ groups_test  │   │ └→ incidents_.. │   │ types/failures/ │           │
+│  └─────────────────┘   └─────────────────┘   └─────────────────┘           │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                    Integration Tests (build tag: integration)               │
+│         (Full HTTP stack, real database fixture, live APIs)                 │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Test Chain Dependencies
+
+| Package | TestMain | Isolation | Depends On |
+|---------|----------|-----------|------------|
+| `handlers/` | Yes | StopAll + TempDir | all types |
+| `types/services/` | Yes | StopAll + OpenTester | hits, failures, checkins, incidents, messages, notifications |
+| `types/users/` | Yes | StopAll + OpenTester | none |
+| `types/groups/` | Yes | StopAll + OpenTester | services |
+| `types/incidents/` | Yes | OpenTester only | none (import cycle prevents StopAll) |
+| `database/` | No | Per-test isolation | none |
+| `notifiers/` | No | Per-test isolation | none |
+| `types/checkins/` | No | Per-test isolation | none |
+
 ### Key Design Decisions
-1. **File-Based SQLite for Unit Tests**: `database.OpenTester(tmpDir)` creates isolated file-based databases in temp directories, avoiding in-memory SQLite connection isolation issues
-2. **Fixture Database for Integration**: `testdata/statping.db.xz` provides realistic data volume
-3. **TestMain for Package Setup**: Handler tests use `TestMain` to configure shared temp directories with `sync.Once` to ensure single setup
-4. **Cleanup Functions**: Database connections are properly closed before temp directory cleanup
-5. **Cache Clearing**: `services.ClearCache()` ensures fresh state before test database setup
+1. **Per-Chain TestMain Isolation**: Each package with shared state has a `TestMain` that calls `services.StopAll()` and `services.ClearCache()` before creating a fresh database
+2. **Dynamic ID Lookups**: Tests use `example.Id` or helper functions (`getFirstServiceID()`, `getServiceByIndex()`) instead of hardcoded `1`, `2`, etc.
+3. **Thread-Safe Service Operations**: `Service.Running` channel protected by mutex; `checkpoint`/`sleepDuration` use getters/setters
+4. **File-Based SQLite**: `database.OpenTester(tmpDir)` creates isolated file-based databases, avoiding in-memory connection issues
+5. **Fixture Database for Integration**: `testdata/statping.db.xz` provides realistic data volume
+6. **Goroutine Cleanup**: `StopAll()` stops service check goroutines before clearing cache to prevent data races
 
 ---
 
@@ -146,30 +178,55 @@ go test ./... -p 1 -count=1
 go test ./...
 ```
 
-### Package Isolation Strategy
+### Package Isolation Strategy (Test Chain Pattern)
 
-Each package uses `TestMain` to set up isolated state:
+Each package with shared state uses `TestMain` with a **three-step isolation pattern**:
 
 ```go
 func TestMain(m *testing.M) {
-    // Create isolated temp directory
+    // 1. STOP - Kill leaked goroutines from previous packages
+    services.StopAll()      // Stops all service check goroutines
+    services.ClearCache()   // Clears in-memory service cache
+
+    // 2. SETUP - Create isolated database
     tmpDir, _ := os.MkdirTemp("", "statping-test")
-    
-    // Create isolated database
     db, _ := database.OpenTester(tmpDir)
     SetDB(db)
     
-    // Run tests
+    // 3. RUN - Execute tests in order (chain preserved)
     code := m.Run()
     
-    // Cleanup
+    // 4. CLEANUP - Stop services again, close DB
+    services.StopAll()
     db.Close()
     os.RemoveAll(tmpDir)
     os.Exit(code)
 }
 ```
 
-However, even with this isolation, the global `core.App` and cross-package dependencies mean **sequential execution is the only reliable approach**.
+**Why `StopAll()` is critical:**
+- Service checks spawn background goroutines that write to `allServices` map
+- Without stopping them, they continue running after package tests complete
+- When the next package clears the cache, the goroutines panic on nil map access
+- This caused intermittent data races that were hard to reproduce
+
+**The `StopAll()` helper:**
+```go
+// types/services/database.go
+func StopAll() {
+    servicesLock.RLock()
+    servicesCopy := make([]*Service, 0, len(allServices))
+    for _, s := range allServices {
+        servicesCopy = append(servicesCopy, s)
+    }
+    servicesLock.RUnlock()
+    for _, s := range servicesCopy {
+        s.Close()  // Signals Running channel to stop
+    }
+}
+```
+
+Even with this isolation, the global `core.App` and cross-package dependencies mean **sequential execution is the only reliable approach**.
 
 ---
 
@@ -523,29 +580,40 @@ if SLACK_URL == "" {
 
 ### Current Coverage by Package
 
-| Package | Coverage | Target | Notes |
-|---------|----------|--------|-------|
-| `types/notifications` | 95.0% | 80%+ | Notification types |
-| `types/null` | 93.4% | 80%+ | Null types |
-| `types/groups` | 88.9% | 80%+ | Group types |
-| `types/messages` | 88.9% | 80%+ | Message types |
-| `types/core` | 84.7% | 80%+ | Core types |
-| `source` | 76.9% | 80%+ | Asset management |
-| `types/incidents` | 72.5% | 80%+ | Incident types |
-| `types/services` | 67.8% | 80%+ | Service types and checks |
-| `types/metrics` | 64.3% | 80%+ | Prometheus metrics |
-| `handlers` | 63.4% | 80%+ | HTTP handlers |
-| `types/users` | 56.0% | 80%+ | User types |
-| `utils` | 54.8% | 80%+ | Utilities |
-| `types/hits` | 53.0% | 80%+ | Hit types |
-| `database` | 51.4% | 80%+ | Database abstraction |
-| `notifiers` | 46.7% | 80%+ | Notifier implementations |
-| `types/checkins` | 46.7% | 80%+ | Checkin types |
-| `types` | 44.4% | 80%+ | Base types |
-| `types/failures` | 42.7% | 80%+ | Failure types |
-| `types/configs` | 41.9% | 80%+ | Config types |
-| `cmd` | 19.1% | 80%+ | CLI commands |
-| **Total** | **56.6%** | **80%+** | Baseline was ~36% |
+| Package | Coverage | Target | Status |
+|---------|----------|--------|--------|
+| `types/null` | 98.4% | 80%+ | PASS |
+| `types/users` | 95.2% | 80%+ | PASS |
+| `types/failures` | 95.1% | 80%+ | PASS |
+| `types/notifications` | 95.0% | 80%+ | PASS |
+| `types/groups` | 94.4% | 80%+ | PASS |
+| `types/messages` | 88.9% | 80%+ | PASS |
+| `types/incidents` | 88.8% | 80%+ | PASS |
+| `types/hits` | 85.0% | 80%+ | PASS |
+| `types/core` | 84.7% | 80%+ | PASS |
+| `source` | 81.4% | 80%+ | PASS |
+| `types/services` | 80.1% | 80%+ | PASS |
+| `database` | 80.1% | 80%+ | PASS |
+| `types/checkins` | 80.0% | 80%+ | PASS |
+| `utils` | 73.8% | 80%+ | BELOW |
+| `handlers` | 68.3% | 80%+ | BELOW |
+| `types/metrics` | 64.3% | 80%+ | BELOW |
+| `notifiers` | 46.7% | 80%+ | BELOW |
+| `types` | 44.4% | 80%+ | BELOW |
+| `types/configs` | 41.9% | 80%+ | BELOW |
+| `cmd` | 19.1% | 80%+ | BELOW |
+| **Total** | **66.4%** | **80%+** | Baseline was ~36% |
+
+**Test Architecture Improvements (July 2026):**
+- `handlers/main_test.go` - Per-chain isolation with StopAll/ClearCache
+- `types/services/main_test.go` - Per-chain isolation, sets DB for 7 packages
+- `types/users/main_test.go` - Per-chain isolation
+- `types/groups/main_test.go` - Per-chain isolation
+- `types/incidents/main_test.go` - Per-chain isolation (no StopAll due to import cycle)
+- `types/services/database.go` - Added `StopAll()` helper for goroutine cleanup
+- `types/services/struct.go` - Thread-safe `runningMu` mutex for `Running` channel
+- `types/services/methods.go` - Thread-safe getters/setters for `checkpoint`/`sleepDuration`
+- Dynamic ID lookups in all test files (replaced hardcoded `1`, `2` with `example.Id`)
 
 **Test Additions (July 2026):**
 - `notifiers/*_test.go` - Mock HTTP/SMTP server tests for all notifiers
@@ -554,7 +622,10 @@ if SLACK_URL == "" {
 - `handlers/jwt_test.go` - JWT token operations tests
 - `handlers/middleware_test.go` - Gzip middleware tests
 - `handlers/index_test.go` - Index and health check routes
+- `handlers/incidents_test.go` - Dynamic ID helpers (`getFirstServiceID`, `getLatestIncidentID`)
+- `handlers/services_test.go` - Dynamic helpers (`getServiceByIndex`, `getPrivateService`)
 - `types/services/routine_test.go` - Mock SMTP/IMAP server tests
+- `types/services/routine_comprehensive_test.go` - Comprehensive routine coverage
 - `types/services/database_test.go` - FindWithRelations and cache tests
 - `types/services/methods_test.go` - Service method unit tests
 - `types/services/edge_cases_test.go` - TLS, DNS, redirect, timeout edge cases
@@ -780,4 +851,4 @@ go func() {
 ---
 
 *Last Updated: 2026-07-27*
-*Coverage: 56.6% (target: 80%+)*
+*Coverage: 66.4% (target: 80%+)*
