@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -842,4 +843,181 @@ func TestComplexityCheck(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+// =============================================================================
+// ToFields Tests (covers log.go:111)
+// =============================================================================
+
+func TestToFields(t *testing.T) {
+	// Save and restore log level
+	originalLevel := Log.GetLevel()
+	defer Log.SetLevel(originalLevel)
+
+	t.Run("returns nil when debug not enabled", func(t *testing.T) {
+		Log.SetLevel(logrus.InfoLevel)
+		result := ToFields("test")
+		assert.Nil(t, result)
+	})
+
+	t.Run("processes struct when debug enabled", func(t *testing.T) {
+		Log.SetLevel(logrus.DebugLevel)
+
+		type TestStruct struct {
+			Name    string
+			Count   int
+			Enabled bool
+		}
+
+		s := TestStruct{Name: "test", Count: 42, Enabled: true}
+		result := ToFields(s)
+
+		assert.NotNil(t, result)
+		assert.Equal(t, "test", result["teststruct_name"])
+		assert.Equal(t, 42, result["teststruct_count"])
+		assert.Equal(t, true, result["teststruct_enabled"])
+	})
+
+	t.Run("redacts sensitive fields", func(t *testing.T) {
+		Log.SetLevel(logrus.DebugLevel)
+
+		type ConfigStruct struct {
+			Username string
+			Password string
+			ApiKey   string
+			Token    string
+		}
+
+		s := ConfigStruct{
+			Username: "admin",
+			Password: "secret123",
+			ApiKey:   "key123",
+			Token:    "token456",
+		}
+		result := ToFields(s)
+
+		assert.NotNil(t, result)
+		assert.Equal(t, "admin", result["configstruct_username"])
+		assert.Equal(t, "[REDACTED]", result["configstruct_password"])
+		assert.Equal(t, "[REDACTED]", result["configstruct_apikey"])
+		assert.Equal(t, "[REDACTED]", result["configstruct_token"])
+	})
+
+	t.Run("skips non-struct values", func(t *testing.T) {
+		Log.SetLevel(logrus.DebugLevel)
+
+		result := ToFields("not a struct", 123, true)
+		assert.NotNil(t, result)
+		// Should be empty since none are structs
+		assert.Empty(t, result)
+	})
+
+	t.Run("includes pointer info", func(t *testing.T) {
+		Log.SetLevel(logrus.DebugLevel)
+
+		type SimpleStruct struct {
+			Value int
+		}
+
+		s := SimpleStruct{Value: 1}
+		result := ToFields(s)
+
+		assert.Contains(t, result, "simplestruct_pointer")
+	})
+}
+
+// =============================================================================
+// Perlin Noise 2D Tests (covers perlin.go:85, perlin.go:138)
+// =============================================================================
+
+func TestNoise2D(t *testing.T) {
+	p := NewPerlin(2, 2, 3, 100)
+
+	t.Run("returns values in expected range", func(t *testing.T) {
+		for x := 0.0; x < 10.0; x += 0.5 {
+			for y := 0.0; y < 10.0; y += 0.5 {
+				noise := p.Noise2D(x, y)
+				// Perlin noise typically returns values in [-1, 1]
+				assert.GreaterOrEqual(t, noise, -2.0, "Noise2D(%f, %f) too low", x, y)
+				assert.LessOrEqual(t, noise, 2.0, "Noise2D(%f, %f) too high", x, y)
+			}
+		}
+	})
+
+	t.Run("is deterministic for same seed", func(t *testing.T) {
+		p1 := NewPerlin(2, 2, 3, 42)
+		p2 := NewPerlin(2, 2, 3, 42)
+
+		for i := 0; i < 10; i++ {
+			x := float64(i) * 0.1
+			y := float64(i) * 0.2
+			assert.Equal(t, p1.Noise2D(x, y), p2.Noise2D(x, y))
+		}
+	})
+
+	t.Run("different seeds produce different noise", func(t *testing.T) {
+		p1 := NewPerlin(2, 2, 3, 100)
+		p2 := NewPerlin(2, 2, 3, 200)
+
+		differentCount := 0
+		for i := 0; i < 10; i++ {
+			// Use fractional coordinates to get varied noise values
+			x := float64(i)*0.37 + 0.13
+			y := float64(i)*0.41 + 0.17
+			if p1.Noise2D(x, y) != p2.Noise2D(x, y) {
+				differentCount++
+			}
+		}
+		assert.Greater(t, differentCount, 0, "Different seeds should produce different noise")
+	})
+}
+
+func TestAt2(t *testing.T) {
+	t.Run("computes dot product correctly", func(t *testing.T) {
+		// at2(rx, ry, q) = rx*q[0] + ry*q[1]
+		result := at2(2.0, 3.0, [2]float64{4.0, 5.0})
+		expected := 2.0*4.0 + 3.0*5.0 // 8 + 15 = 23
+		assert.Equal(t, expected, result)
+	})
+
+	t.Run("handles zero values", func(t *testing.T) {
+		result := at2(0.0, 0.0, [2]float64{1.0, 1.0})
+		assert.Equal(t, 0.0, result)
+	})
+
+	t.Run("handles negative values", func(t *testing.T) {
+		result := at2(-1.0, 2.0, [2]float64{3.0, -4.0})
+		expected := -1.0*3.0 + 2.0*(-4.0) // -3 + -8 = -11
+		assert.Equal(t, expected, result)
+	})
+}
+
+// =============================================================================
+// DirWritable Tests (covers utils_windows.go:8)
+// =============================================================================
+
+func TestDirWritable(t *testing.T) {
+	t.Run("writable directory returns true", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		writable, err := DirWritable(tmpDir)
+		assert.NoError(t, err)
+		assert.True(t, writable)
+	})
+
+	t.Run("non-existent path returns error", func(t *testing.T) {
+		_, err := DirWritable("/non/existent/path/12345")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "doesn't exist")
+	})
+
+	t.Run("file path returns error", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		tmpFile := tmpDir + "/testfile.txt"
+		err := os.WriteFile(tmpFile, []byte("test"), 0644)
+		require.NoError(t, err)
+
+		_, err = DirWritable(tmpFile)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "isn't a directory")
+	})
 }
