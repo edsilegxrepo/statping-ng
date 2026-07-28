@@ -155,6 +155,26 @@ This codebase uses several global singletons that cause test failures when packa
 
 When Go runs tests with default parallelism (`-p=N` where N = CPU cores), multiple packages execute simultaneously. Package A's `TestMain` might initialize the database while Package B's tests are mid-execution expecting different data.
 
+### Cross-Package State Pollution
+
+When running `go test ./...`, packages execute in this order:
+```
+cmd -> database -> handlers -> integration -> notifiers -> source -> types -> types/* -> utils
+```
+
+Package `types/services/main_test.go` sets DB for 7 packages:
+```go
+SetDB(db)
+hits.SetDB(db)
+failures.SetDB(db)
+checkins.SetDB(db)
+incidents.SetDB(db)
+messages.SetDB(db)
+notifications.SetDB(db)
+```
+
+If `handlers` runs before `types/services`, handlers creates its own DB state. Then when `types/services` runs, it overwrites the DB connections with its own, but other packages now have stale references.
+
 ### Symptoms of Parallel Execution Failures
 
 ```
@@ -227,6 +247,46 @@ func StopAll() {
 ```
 
 Even with this isolation, the global `core.App` and cross-package dependencies mean **sequential execution is the only reliable approach**.
+
+### Test Execution Order Within Packages
+
+Tests within each package run in alphabetical order by test name. Packages with shared state rely on this ordering:
+
+**types/users/ chain:**
+```
+TestInit (creates user) -> TestFind -> TestAll -> TestCreate -> TestUpdate -> TestDelete -> TestSamples -> TestClose
+```
+
+**types/groups/ chain:**
+```
+TestInit (creates group + services) -> TestFind -> TestAll -> TestCreate -> TestUpdate -> TestDelete -> TestSamples -> TestClose
+```
+
+**types/incidents/ chain:**
+```
+TestInit (creates incident + updates) -> TestFind -> TestAll -> TestCreate -> TestUpdate -> TestDelete -> TestSamples -> TestClose
+```
+
+**handlers/ chain:**
+```
+TestSetupRoutes (MUST RUN FIRST - creates DB via /api/setup) -> all other handler tests
+```
+
+### Debugging Test Failures
+
+```bash
+# See which test corrupted state
+go test ./... -p 1 -v 2>&1 | grep -E "(=== RUN|FAIL)"
+
+# Run each package in isolation to find the culprit
+go test ./database/... -v
+go test ./handlers/... -v
+go test ./types/services/... -v
+
+# AVOID: -count=N with N>1 (TestMain only runs once per process)
+# Use separate invocations instead:
+go test ./... -p 1 -count=1 && go test ./... -p 1 -count=1
+```
 
 ---
 
