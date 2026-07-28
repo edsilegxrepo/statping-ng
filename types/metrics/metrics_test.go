@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -135,5 +136,33 @@ func TestServiceTimer(t *testing.T) {
 	t.Run("returns observer", func(t *testing.T) {
 		observer := ServiceTimer("test-service")
 		assert.NotNil(t, observer)
+	})
+}
+
+func TestQuery(t *testing.T) {
+	t.Run("increments query counter", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			Query("service", "select")
+			Query("user", "insert")
+			Query("group", "update")
+		})
+	})
+}
+
+func TestCollectDatabase(t *testing.T) {
+	t.Run("collects database stats", func(t *testing.T) {
+		stats := sql.DBStats{
+			MaxOpenConnections: 10,
+			OpenConnections:    5,
+			InUse:              3,
+			Idle:               2,
+			WaitCount:          0,
+			WaitDuration:       0,
+			MaxIdleClosed:      1,
+			MaxLifetimeClosed:  0,
+		}
+		assert.NotPanics(t, func() {
+			CollectDatabase(stats)
+		})
 	})
 }

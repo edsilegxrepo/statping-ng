@@ -146,6 +146,7 @@ func TestSetupRoutes(t *testing.T) {
 }
 
 func TestMainApiRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
 	date := utils.Now().Format("2006-01")
 	tests := []HTTPTest{
 		{
@@ -181,6 +182,64 @@ func TestMainApiRoutes(t *testing.T) {
 				assert.Equal(t, "Updated Core", core.App.Name)
 				return nil
 			},
+		},
+		{
+			Name:           "Update Core - All Fields",
+			URL:            "/api/core",
+			Method:         "POST",
+			ExpectedStatus: 200,
+			Body: `{
+					"name": "Full Update Core",
+					"description": "Updated description",
+					"style": "dark",
+					"footer": "Custom footer",
+					"domain": "https://example.com",
+					"language": "en",
+					"use_cdn": false,
+					"allow_reports": false
+				}`,
+			AfterTest: func(t *testing.T) error {
+				assert.Equal(t, "Full Update Core", core.App.Name)
+				assert.Equal(t, "Updated description", core.App.Description)
+				return nil
+			},
+		},
+		{
+			Name:             "Update Core - Invalid JSON",
+			URL:              "/api/core",
+			Method:           "POST",
+			ExpectedStatus:   422,
+			Body:             `{invalid json}`,
+			ExpectedContains: []string{"error"},
+		},
+		{
+			Name:           "Get OAuth Settings",
+			URL:            "/api/oauth",
+			Method:         "GET",
+			ExpectedStatus: 200,
+			BeforeTest:     SetTestENV,
+		},
+		{
+			Name:           "Update OAuth Settings",
+			URL:            "/api/oauth",
+			Method:         "POST",
+			ExpectedStatus: 200,
+			Body: `{
+					"gh_client_id": "test_github_client",
+					"gh_client_secret": "test_github_secret",
+					"google_client_id": "test_google_client",
+					"google_client_secret": "test_google_secret"
+				}`,
+			BeforeTest: SetTestENV,
+		},
+		{
+			Name:             "Update OAuth Settings - Invalid JSON",
+			URL:              "/api/oauth",
+			Method:           "POST",
+			ExpectedStatus:   422,
+			Body:             `{invalid json}`,
+			ExpectedContains: []string{"error"},
+			BeforeTest:       SetTestENV,
 		},
 		{
 			Name:             "Health Check endpoint",
@@ -437,6 +496,11 @@ func RequestWithAuth(test HTTPTest, addAuth bool) (*httptest.ResponseRecorder, e
 func ensureHandlerSetup(t *testing.T) {
 	testSetupMutex.Lock()
 	defer testSetupMutex.Unlock()
+
+	// If already set up (e.g., by TestSetupRoutes), skip
+	if core.App != nil && core.App.Setup && len(services.Services()) >= 6 {
+		return
+	}
 
 	// Use sync.Once to ensure setup runs exactly once per test run
 	setupOnce.Do(func() {

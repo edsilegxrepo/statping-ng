@@ -143,6 +143,15 @@ func TestSettingsImportExport(t *testing.T) {
 			ExpectedStatus: 200,
 			BeforeTest:     SetTestENV,
 		},
+		{
+			Name:             "Import Settings - With Core Update",
+			URL:              "/api/settings/import",
+			Method:           "POST",
+			Body:             `{"core": {"name": "Imported App", "description": "Imported description"}, "services": [], "groups": [], "users": []}`,
+			ExpectedStatus:   200,
+			ExpectedContains: []string{`"status":"success"`},
+			BeforeTest:       SetTestENV,
+		},
 	}
 
 	for _, v := range tests {

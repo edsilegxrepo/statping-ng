@@ -33,10 +33,25 @@ func TestFixedTime(t *testing.T) {
 		timeVal,
 		Day,
 		"2020-05-22T00:00:00Z",
+	}, {
+		timeVal,
+		Week,
+		"2020-05-22T00:00:00Z",
+	}, {
+		timeVal,
+		Month,
+		"2020-05-05T00:00:00Z",
 	}}
 
 	for _, e := range examples {
 		t.Logf("Testing is %v time converts to %v duration\n", e.Time.String(), e.Duration.String())
 		assert.Equal(t, e.Expected, FixedTime(e.Time, e.Duration), fmt.Sprintf("reformating for: %v %v", e.Time, e.Duration))
 	}
+}
+
+func TestTimeConstants(t *testing.T) {
+	assert.Equal(t, 24*time.Hour, Day)
+	assert.Equal(t, 7*Day, Week)
+	assert.Equal(t, 4*Week, Month)
+	assert.Equal(t, 365*Day, Year)
 }
