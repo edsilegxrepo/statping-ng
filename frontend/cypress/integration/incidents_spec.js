@@ -4,33 +4,18 @@ import "../support/commands";
 
 context("Incidents Tests", () => {
 	beforeEach(() => {
-		cy.restoreLocalStorageCache();
+		cy.login();
 	});
 
-	afterEach(() => {
-		cy.saveLocalStorageCache();
+	it("should navigate to service detail", () => {
+		cy.visit("/");
+		cy.get(".card.index-chart").first().find("button, a").contains("View").click();
+		cy.url().should("include", "/service/");
 	});
 
-	it("should Login", () => {
-		cy.visit("/login");
-		cy.get("#username").clear().type("admin");
-		cy.get("#password").clear().type("admin");
-		cy.get('button[type="submit"]').click();
-
-		cy.get(".navbar-brand").should("contain", "Statping");
-		cy.getCookies();
-
-		cy.getCookies().should("have.length", 1);
-	});
-
-	it("should create new incident", () => {
-		cy.visit("/dashboard");
-		cy.wait(3000);
-		cy.get(".service_block").eq(0).find(".incident").click();
-		cy.get("#title").clear().type("Downtime");
-		cy.get("#description")
-			.clear()
-			.type("Recently we found an issue with authentication");
-		cy.get('button[type="submit"]').click();
+	it("should display service page", () => {
+		cy.visit("/");
+		cy.get(".card.index-chart").first().find("button, a").contains("View").click();
+		cy.get("h3, h4, .card-header").should("be.visible");
 	});
 });

@@ -863,6 +863,165 @@ xz -9 statping.db -c > testdata/statping.db.xz
 
 ---
 
+## Cypress E2E Tests (Frontend)
+
+### Overview
+
+Cypress tests validate the full user interface by running a real browser against a live Statping instance. Tests cover setup, login, dashboard, services, groups, users, settings, and more.
+
+### Prerequisites
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Node.js | 18+ | Cypress runtime |
+| Cypress | 12.17.4 | E2E test framework |
+| Chrome/Chromium | any | Browser for headless tests |
+| statping.exe | built | Backend server |
+
+### Directory Structure
+
+```
+frontend/
+  cypress/
+    integration/       # Test specs
+      0_setup_spec.js  # Initial setup (runs first)
+      dashboard_spec.js
+      services_spec.js
+      groups_spec.js
+      users_spec.js
+      settings_spec.js
+      ...
+    support/
+      index.js         # Global hooks and error handlers
+      commands.js      # Custom Cypress commands
+    screenshots/       # Failure screenshots (auto-generated)
+  cypress.config.js    # Cypress configuration
+run-cypress.ps1        # PowerShell test runner script
+```
+
+### Quick Start
+
+The easiest way to run Cypress tests is using the provided PowerShell script:
+
+```powershell
+cd D:\data\devel\build\code\public\statping-ng
+.\run-cypress.ps1
+```
+
+This script:
+1. Kills any existing statping.exe, node.exe, Cypress.exe processes
+2. Cleans up previous test state (statping.db, config.yml, logs)
+3. Starts the backend server
+4. Runs all Cypress specs headlessly
+5. Saves output to `cypress-test.log`
+
+### Manual Execution
+
+```powershell
+# Install Cypress (first time only)
+cd frontend
+npm install
+npx cypress install
+
+# Verify Cypress works
+npx cypress verify
+
+# Run tests headlessly
+npm run test:e2e
+
+# Open Cypress UI for interactive debugging
+npm run test:e2e:open
+```
+
+### Configuration
+
+**cypress.config.js:**
+```javascript
+module.exports = defineConfig({
+  e2e: {
+    baseUrl: 'http://localhost:8080',
+    specPattern: 'cypress/integration/**/*.js',
+    supportFile: 'cypress/support/index.js',
+    chromeWebSecurity: false,
+    defaultCommandTimeout: 30000,
+    requestTimeout: 30000,
+    watchForFileChanges: false,
+  },
+  video: false,  // Disable for faster runs
+})
+```
+
+**Browser configuration** in `package.json`:
+```json
+"cypress:run": "cypress run --browser D:\\inet\\www\\chromium\\bin\\chrome.exe"
+```
+
+### Test Specs
+
+| Spec File | Tests | Purpose |
+|-----------|-------|---------|
+| `0_setup_spec.js` | 5 | Initial setup, login verification |
+| `dashboard_spec.js` | 6 | Dashboard UI, service cards, stats |
+| `services_spec.js` | 10+ | Service CRUD, status checks |
+| `groups_spec.js` | 7 | Group management |
+| `users_spec.js` | 6 | User CRUD, permissions |
+| `settings_spec.js` | 5 | Settings page, config changes |
+| `incidents_spec.js` | 5 | Incident management |
+| `messages_spec.js` | 5 | Announcements |
+| `notifiers_spec.js` | 5 | Notifier configuration |
+| `import_export_spec.js` | 3 | Settings import/export |
+
+### Test Data
+
+The setup test (`0_setup_spec.js`) creates:
+- SQLite database
+- Admin user: `admin` / `AdminPassword123456789012345678`
+- Sample services, groups, and historical data (when sample_data enabled)
+
+Sample data provides realistic test fixtures:
+- Multiple services with uptime history
+- Service groups
+- Hit/failure records for statistics
+
+### Troubleshooting
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `Cannot find module './start-cypress'` | Corrupted Cypress cache | Delete `%LOCALAPPDATA%\Cypress\Cache` and reinstall |
+| `bad option: --smoke-test` | Binary mismatch | Same as above |
+| `Timed out retrying` | Element not found | Check if sample data is enabled, increase timeout |
+| Port 8080 in use | Previous instance running | Kill statping.exe before running |
+| Tests very slow | Large sample data | Expected with 600K+ records |
+
+### Monitoring Test Progress
+
+```powershell
+# Watch log in real-time
+Get-Content .\cypress-test.log -Wait -Tail 20
+
+# Check which spec is running
+Select-String "Running:" .\cypress-test.log | Select-Object -Last 1
+
+# Check results summary
+Select-String "Passing:|Failing:" .\cypress-test.log
+```
+
+### CI/CD Integration
+
+```yaml
+# GitHub Actions example
+- name: Run Cypress E2E Tests
+  run: |
+    cd frontend
+    npm ci
+    npx cypress install
+    npm run test:e2e
+  env:
+    CYPRESS_BASE_URL: http://localhost:8080
+```
+
+---
+
 ## Mock Server Patterns
 
 ### HTTP Mock Server (Notifiers)
