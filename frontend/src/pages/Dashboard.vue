@@ -1,46 +1,20 @@
 <template>
-    <div class="container-fluid px-md-5 mt-md-5">
-      <div v-if="modal" class="modal-backdrop"></div>
-      <Modal/>
-        <TopNav :admin="admin"/>
-        <router-view :admin="admin"/>
-    </div>
+  <div class="container-fluid px-md-5 mt-md-5">
+    <div v-if="modal" class="modal-backdrop"></div>
+    <Modal />
+    <TopNav :admin="admin" />
+    <router-view :admin="admin" />
+  </div>
 </template>
 
-<script>
-import Modal from "@/components/Elements/Modal";
+<script setup>
+import { computed } from 'vue'
+import { useMainStore } from '@/stores/main'
+import Modal from '@/components/Elements/Modal.vue'
+import TopNav from '@/components/Dashboard/TopNav.vue'
 
-const TopNav = () =>
-	import(/* webpackChunkName: "dashboard" */ "@/components/Dashboard/TopNav");
+const store = useMainStore()
 
-export default {
-	name: "Dashboard",
-	components: {
-		Modal,
-		TopNav,
-	},
-	data() {
-		return {
-			authenticated: false,
-			loaded: false,
-		};
-	},
-	computed: {
-		modal() {
-			return this.$store.getters.modal.visible;
-		},
-		admin() {
-			return this.$store.getters.admin;
-		},
-		user() {
-			return this.$store.getters.user;
-		},
-	},
-	mounted() {
-		// if (!this.user || !this.admin) {
-		//   this.$router.push('/login')
-		// }
-	},
-};
+const modal = computed(() => store.modal.visible)
+const admin = computed(() => store.admin)
 </script>
-
