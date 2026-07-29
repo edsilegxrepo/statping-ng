@@ -15,6 +15,16 @@ export default defineConfig({
     watchForFileChanges: false,
     viewportWidth: 1280,
     viewportHeight: 720,
+    setupNodeEvents(on, config) {
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.family === 'chromium') {
+          launchOptions.args.push('--no-sandbox')
+          launchOptions.args.push('--disable-gpu')
+        }
+        return launchOptions
+      })
+      return config
+    },
   },
   video: false,
 })
