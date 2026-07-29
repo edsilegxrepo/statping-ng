@@ -1,0 +1,31 @@
+@use 'sass:color';
+
+@mixin dynamic-color-hov($clr) {
+  &.dyn-dark {
+    background-color: color.adjust($clr, $lightness: -12%) !important;
+    border-color: color.adjust($clr, $lightness: -17%) !important;
+  }
+  &.dyn-dark:HOVER {
+    background-color: color.adjust($clr, $lightness: -17%) !important;
+    border-color: color.adjust($clr, $lightness: -20%) !important;
+  }
+  &.dyn-light {
+    background-color: color.adjust($clr, $lightness: 12%) !important;
+    border-color: color.adjust($clr, $lightness: 17%) !important;
+  }
+  &.dyn-light:HOVER {
+    background-color: color.adjust($clr, $lightness: 17%) !important;
+    border-color: color.adjust($clr, $lightness: 20%) !important;
+  }
+}
+
+@mixin dynamic-color($clr) {
+  &.dyn-dark {
+    background-color: color.adjust($clr, $lightness: -12%) !important;
+    border-color: color.adjust($clr, $lightness: -17%) !important;
+  }
+  &.dyn-light {
+    background-color: color.adjust($clr, $lightness: 12%) !important;
+    border-color: color.adjust($clr, $lightness: 17%) !important;
+  }
+}

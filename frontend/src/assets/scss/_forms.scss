@@ -1,5 +1,6 @@
-@import 'variables';
-@import 'mixin';
+@use 'sass:color';
+@use 'variables' as *;
+@use 'mixin' as *;
 
 .copy-btn {
   position: absolute;
@@ -24,14 +25,14 @@
 }
 
 .form-control:FOCUS {
-  background-color: lighten($input-background, 4%) !important;
+  background-color: color.adjust($input-background, $lightness: 4%) !important;
   border: $input-border;
   color: $input-color;
 }
 
 .form-control[readonly] {
-  background-color: lighten($background-color, 12%) !important;
-  color: lighten($input-color, 30%) !important;
+  background-color: color.adjust($background-color, $lightness: 12%) !important;
+  color: color.adjust($input-color, $lightness: 30%) !important;
 }
 
 /* The slider itself */
