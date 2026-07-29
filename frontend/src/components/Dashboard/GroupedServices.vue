@@ -1,65 +1,38 @@
 <template>
   <div class="row">
-    <h5 v-if="group.name && group_services" class="h5 col-12 mb-3 mt-2 text-dim">
-      <font-awesome-icon @click="toggle" :icon="expanded ? 'minus' : 'plus'" class="pointer mr-3"/> {{group.name}}
-      <span class="badge badge-success text-uppercase float-right ml-2">{{services_online.length}} {{$t('online')}}</span>
-      <span v-if="services_online.services_offline > 0" class="badge badge-danger text-uppercase float-right">
-        {{services_offline.length}} {{$t('offline')}}
+    <h5 v-if="group.name && groupServices.length" class="h5 col-12 mb-3 mt-2 text-dim">
+      <font-awesome-icon @click="toggle" :icon="expanded ? 'minus' : 'plus'" class="pointer mr-3" /> {{ group.name }}
+      <span class="badge badge-success text-uppercase float-right ml-2">{{ servicesOnline.length }} {{ $t('online') }}</span>
+      <span v-if="servicesOffline.length > 0" class="badge badge-danger text-uppercase float-right">
+        {{ servicesOffline.length }} {{ $t('offline') }}
       </span>
     </h5>
-    <div class="col-12 col-md-4" v-if="expanded" v-for="service in group_services">
+    <div v-if="expanded" v-for="service in groupServices" :key="service.id" class="col-12 col-md-4">
       <ServiceInfo :service="service" />
     </div>
   </div>
 </template>
 
-<script>
-const ServiceInfo = () =>
-	import(
-		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ServiceInfo"
-	);
+<script setup>
+import { ref, computed } from 'vue'
+import { useMainStore } from '@/stores/main'
+import ServiceInfo from '@/components/Dashboard/ServiceInfo.vue'
 
-export default {
-	name: "GroupedServices",
-	components: {
-		ServiceInfo,
-	},
-	data() {
-		return {
-			expanded: true,
-		};
-	},
-	props: {
-		group: {
-			required: true,
-			type: Object,
-		},
-	},
-	computed: {
-		services_online() {
-			return this.$store.getters
-				.servicesInGroup(this.group.id)
-				.filter((s) => s.online);
-		},
-		services_offline() {
-			return this.$store.getters
-				.servicesInGroup(this.group.id)
-				.filter((s) => !s.online);
-		},
-		group_services() {
-			return this.$store.getters.servicesInGroup(this.group.id);
-		},
-	},
-	methods: {
-		toggle() {
-			this.expanded = !this.expanded;
-		},
-		dashboard_cookies() {
-			const data = [{ group: 5, show: false }];
-			if (!this.$cookies.isKey("statping_layout")) {
-				this.$cookies.set("statping_layout", JSON.stringify(data));
-			}
-		},
-	},
-};
+const props = defineProps({
+  group: {
+    required: true,
+    type: Object,
+  },
+})
+
+const store = useMainStore()
+const expanded = ref(true)
+
+const groupServices = computed(() => store.servicesInGroup(props.group.id))
+const servicesOnline = computed(() => groupServices.value.filter((s) => s.online))
+const servicesOffline = computed(() => groupServices.value.filter((s) => !s.online))
+
+function toggle() {
+  expanded.value = !expanded.value
+}
 </script>

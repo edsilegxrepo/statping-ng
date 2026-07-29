@@ -1,180 +1,189 @@
 <template>
-    <router-link tag="div" :to="serviceLink(service)" class="dashboard_card card mb-4" style="cursor: pointer;" :class="{'offline-card': !service.online}">
-        <div class="card-header pb-1">
-            <h6 v-observe-visibility="setVisible">
-                <span class="no-decoration font-weight-bold text-dark">{{service.name}}</span>
-                <span class="badge float-right text-uppercase" :class="{'badge-success': service.online, 'badge-danger': !service.online}">
-                    {{service.online ? $t('online') : $t('offline')}}
-                </span>
-            </h6>
-        </div>
+  <router-link :to="serviceLink" custom v-slot="{ navigate }">
+    <div
+      class="dashboard_card card mb-4"
+      style="cursor: pointer"
+      :class="{ 'offline-card': !service.online }"
+      @click="navigate"
+    >
+      <div class="card-header pb-1">
+        <h6>
+          <span class="no-decoration font-weight-bold text-dark">{{ service.name }}</span>
+          <span
+            class="badge float-right text-uppercase"
+            :class="{ 'badge-success': service.online, 'badge-danger': !service.online }"
+          >
+            {{ service.online ? $t('online') : $t('offline') }}
+          </span>
+        </h6>
+      </div>
 
-        <div class="card-body pb-1">
-            <div v-if="loaded" class="row pl-2">
-              <div class="col-md-12 col-sm-12 pl-2 mt-2 mt-md-0 mb-3">
-                  <ServiceSparkLine :title="set2_name" subtitle="Latency Last 24 Hours" :series="set2"/>
-              </div>
-              <ServiceEvents :service="service"/>
-            </div>
-              <div v-else class="row mb-5">
-                <div class="col-12 col-md-12 text-center">
-                  <font-awesome-icon icon="circle-notch" class="text-dim" size="2x" spin/>
-                </div>
-              </div>
+      <div class="card-body pb-1">
+        <div v-if="loaded" class="row pl-2">
+          <div class="col-md-12 col-sm-12 pl-2 mt-2 mt-md-0 mb-3">
+            <ServiceSparkLine :title="set2_name" subtitle="Latency Last 24 Hours" :series="set2" />
+          </div>
+          <ServiceEvents :service="service" />
         </div>
-        <div class="card-footer">
+        <div v-else class="row mb-5">
+          <div class="col-12 col-md-12 text-center">
+            <font-awesome-icon icon="circle-notch" class="text-dim" size="2x" spin />
+          </div>
+        </div>
+      </div>
 
-          <div class="row">
+      <div class="card-footer">
+        <div class="row">
           <div class="col-5 pr-0">
-              <span class="small text-dim">{{ hoverbtn }}</span>
+            <span class="small text-dim">{{ hoverbtn }}</span>
           </div>
 
-            <div class="col-7 pr-2 pl-0">
-              <div class="btn-group float-right">
-                  <button @click.stop="$router.push({path: `/dashboard/service/${service.id}/incidents`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('incidents'))" class="btn btn-sm btn-white incident">
-                    <font-awesome-icon icon="bullhorn"/>
-                  </button>
-                  <button @click.stop="$router.push({path: `/dashboard/service/${service.id}/checkins`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('checkins'))" class="btn btn-sm btn-white checkins">
-                    <font-awesome-icon icon="calendar-check"/>
-                  </button>
-                  <button @click.stop="$router.push({path: `/dashboard/service/${service.id}/failures`, params: {id: service.id}})" @mouseleave="unsetHover" @mouseover="setHover($t('failures'))" class="btn btn-sm btn-white failures">
-                    <font-awesome-icon icon="exclamation-triangle"/>
-                    <span v-if="service.stats.failures !== 0" class="badge badge-danger ml-1">{{service.stats.failures}}</span>
-                  </button>
-              </div>
+          <div class="col-7 pr-2 pl-0">
+            <div class="btn-group float-right">
+              <button
+                @click.stop="goToIncidents"
+                @mouseleave="unsetHover"
+                @mouseover="setHover($t('incidents'))"
+                class="btn btn-sm btn-white incident"
+              >
+                <font-awesome-icon icon="bullhorn" />
+              </button>
+              <button
+                @click.stop="goToCheckins"
+                @mouseleave="unsetHover"
+                @mouseover="setHover($t('checkins'))"
+                class="btn btn-sm btn-white checkins"
+              >
+                <font-awesome-icon icon="calendar-check" />
+              </button>
+              <button
+                @click.stop="goToFailures"
+                @mouseleave="unsetHover"
+                @mouseover="setHover($t('failures'))"
+                class="btn btn-sm btn-white failures"
+              >
+                <font-awesome-icon icon="exclamation-triangle" />
+                <span v-if="service.stats?.failures" class="badge badge-danger ml-1">{{ service.stats.failures }}</span>
+              </button>
             </div>
-
           </div>
-
         </div>
+      </div>
 
-        <span v-for="(failure, index) in failures" v-bind:key="index" class="alert alert-light">
-            {{ $t('failed') }} {{failure.created_at}}<br>
-            {{failure.issue}}
-        </span>
-
-    </router-link>
+      <span v-for="(failure, index) in failures" :key="index" class="alert alert-light">
+        {{ $t('failed') }} {{ failure.created_at }}<br />
+        {{ failure.issue }}
+      </span>
+    </div>
+  </router-link>
 </template>
 
-<script>
-const Checkin = () =>
-	import(/* webpackChunkName: "dashboard" */ "../../forms/Checkin");
-const FormMessage = () =>
-	import(/* webpackChunkName: "dashboard" */ "../../forms/Message");
-const ServiceFailures = () =>
-	import(/* webpackChunkName: "dashboard" */ "../Service/ServiceFailures");
-const ServiceSparkLine = () =>
-	import(/* webpackChunkName: "dashboard" */ "./ServiceSparkLine");
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import Api from '@/API'
+import ServiceSparkLine from './ServiceSparkLine.vue'
+import ServiceEvents from '@/components/Dashboard/ServiceEvents.vue'
 
-import Api from "../../API";
+const props = defineProps({
+  service: {
+    type: Object,
+    required: true,
+  },
+})
 
-const ServiceEvents = () =>
-	import(
-		/* webpackChunkName: "dashboard" */ "@/components/Dashboard/ServiceEvents"
-	);
+const router = useRouter()
+const { t } = useI18n()
 
-export default {
-	name: "ServiceInfo",
-	components: {
-		ServiceEvents,
-		Checkin,
-		ServiceFailures,
-		FormMessage,
-		ServiceSparkLine,
-	},
-	props: {
-		service: {
-			type: Object,
-			required: true,
-		},
-	},
-	data() {
-		return {
-			uptime: null,
-			hovered: false,
-			hoverbtn: "",
-			openTab: "",
-			set2: [],
-			loaded: false,
-			set2_name: "",
-			failures: null,
-			visible: false,
-		};
-	},
-	watch: {},
-	mounted() {
-		this.unsetHover();
-	},
-	methods: {
-		setHover(name) {
-			this.hoverbtn = name;
-		},
-		unsetHover() {
-			this.hoverbtn = `${this.$t("uptime")} ${this.service.online_7_days}%`;
-		},
-		async setVisible(isVisible, _entry) {
-			if (isVisible && !this.visible) {
-				await this.loadInfo();
-				await this.getUptime();
-				this.visible = true;
-			}
-		},
-		async getUptime() {
-			const end = this.endOf("day", this.now());
-			const start = this.beginningOf("day", this.nowSubtract(3 * 86400));
-			this.uptime = await Api.service_uptime(
-				this.service.id,
-				this.toUnix(start),
-				this.toUnix(end),
-			);
-		},
-		async loadInfo() {
-			this.set2 = await this.getHits(86400 * 3, "60m");
-			this.set2_name = this.calc(this.set2);
-			this.loaded = true;
-		},
-		Tab(name) {
-			if (this.openTab === name) {
-				this.openTab = "";
-				return;
-			}
-			this.openTab = name;
-		},
-		sinceYesterday(data) {
-			let total = 0;
-			data.forEach((f) => {
-				total += parseInt(f.y, 10);
-			});
-			total = total / data.length;
-		},
-		async getHits(seconds, group) {
-			let start = this.nowSubtract(seconds);
-			let end = this.endOf("today");
-			const startEnd = this.startEndParams(start, end, group);
-			const fetched = await Api.service_hits(
-				this.service.id,
-				startEnd.start,
-				startEnd.end,
-				group,
-				true,
-			);
-			const data = this.convertToChartData(fetched, 0.001, true);
-			return [{ name: "Latency", ...data }];
-		},
-		calc(s) {
-			let data = s[0].data;
+const uptime = ref(null)
+const hoverbtn = ref('')
+const set2 = ref([])
+const loaded = ref(false)
+const set2_name = ref('')
+const failures = ref(null)
+const visible = ref(false)
 
-			if (data) {
-				let total = 0;
-				data.forEach((f) => {
-					total += parseInt(f.y, 10);
-				});
-				total = total / data.length;
-				return `${Math.round(total)} ms`;
-			} else {
-				return "Offline";
-			}
-		},
-	},
-};
+const serviceLink = computed(() => `/service/${props.service.permalink || props.service.id}`)
+
+onMounted(async () => {
+  unsetHover()
+  await loadInfo()
+})
+
+function setHover(name) {
+  hoverbtn.value = name
+}
+
+function unsetHover() {
+  hoverbtn.value = `${t('uptime')} ${props.service.online_7_days}%`
+}
+
+function goToIncidents() {
+  router.push({ path: `/dashboard/service/${props.service.id}/incidents` })
+}
+
+function goToCheckins() {
+  router.push({ path: `/dashboard/service/${props.service.id}/checkins` })
+}
+
+function goToFailures() {
+  router.push({ path: `/dashboard/service/${props.service.id}/failures` })
+}
+
+async function loadInfo() {
+  set2.value = await getHits(86400 * 3, '60m')
+  set2_name.value = calc(set2.value)
+  loaded.value = true
+}
+
+function nowSubtract(seconds) {
+  return new Date(Date.now() - seconds * 1000)
+}
+
+function endOfToday() {
+  const d = new Date()
+  d.setHours(23, 59, 59, 999)
+  return d
+}
+
+function toUnix(date) {
+  return Math.floor(date.getTime() / 1000)
+}
+
+async function getHits(seconds, group) {
+  const start = nowSubtract(seconds)
+  const end = endOfToday()
+
+  try {
+    const fetched = await Api.service_hits(props.service.id, toUnix(start), toUnix(end), group, true)
+    const data = convertToChartData(fetched)
+    return [{ name: 'Latency', ...data }]
+  } catch (e) {
+    return [{ name: 'Latency', data: [] }]
+  }
+}
+
+function convertToChartData(arr) {
+  if (!arr || !arr.length) return { data: [] }
+  return {
+    data: arr.map((d) => ({
+      x: new Date(d.timeframe).getTime(),
+      y: Math.round(d.amount * 0.001),
+    })),
+  }
+}
+
+function calc(s) {
+  const data = s[0]?.data
+  if (data && data.length) {
+    let total = 0
+    data.forEach((f) => {
+      total += parseInt(f.y, 10)
+    })
+    total = total / data.length
+    return `${Math.round(total)} ms`
+  }
+  return 'Offline'
+}
 </script>
