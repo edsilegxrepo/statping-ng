@@ -16,5 +16,13 @@
 // Import commands.js using ES2015 syntax:
 import "./commands";
 
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
+// Ignore Vue Router NavigationDuplicated errors
+Cypress.on('uncaught:exception', (err, runnable) => {
+  // Vue Router throws NavigationDuplicated when navigating to the same route
+  if (err.message.includes('NavigationDuplicated') ||
+      err.message.includes('Avoided redundant navigation')) {
+    return false;
+  }
+  // Let other errors fail the test
+  return true;
+});
