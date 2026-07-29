@@ -1,60 +1,47 @@
 <template>
   <div id="app">
-    <router-view/>
-    <Footer v-if="$route.path !== '/setup'"/>
+    <router-view />
+    <Footer v-if="$route.path !== '/setup'" />
   </div>
 </template>
 
-<script>
-const Footer = () =>
-	import(/* webpackChunkName: "index" */ "./components/Index/Footer");
+<script setup>
+import { ref, computed, onBeforeMount } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { useMainStore } from './stores/main'
+import Footer from './components/Index/Footer.vue'
 
-export default {
-	name: "app",
-	components: {
-		Footer,
-	},
-	data() {
-		return {
-			loaded: false,
-			version: "",
-		};
-	},
-	computed: {
-		core() {
-			return this.$store.getters.core;
-		},
-	},
-	async beforeMount() {
-		await this.$store.dispatch("loadCore");
+const router = useRouter()
+const route = useRoute()
+const store = useMainStore()
+const { locale } = useI18n()
 
-		this.$i18n.locale = this.core.language || "en";
-		// this.$i18n.locale = "ru";
+const loaded = ref(false)
 
-		if (!this.core.setup) {
-			this.$router.push("/setup");
-		}
-		if (this.$route.path !== "/setup") {
-			if (this.$store.state.admin) {
-				await this.$store.dispatch("loadAdmin");
-			} else {
-				await this.$store.dispatch("loadRequired");
-			}
-			this.loaded = true;
-		}
-	},
-	async mounted() {
-		if (this.$route.path !== "/setup") {
-			if (this.$store.state.admin) {
-				this.logged_in = true;
-				// await this.$store.dispatch('loadAdmin')
-			}
-		}
-	},
-};
+const core = computed(() => store.core)
+
+onBeforeMount(async () => {
+  await store.loadCore()
+
+  locale.value = core.value.language || 'en'
+
+  if (!core.value.setup) {
+    router.push('/setup')
+  }
+
+  if (route.path !== '/setup') {
+    if (store.admin) {
+      await store.loadAdmin()
+    } else {
+      await store.loadRequired()
+    }
+    loaded.value = true
+  }
+})
 </script>
 
 <style lang="scss">
-    @import "./assets/css/bootstrap.min.css";
-    @import "./assets/scss/index";
+@import './assets/css/bootstrap.min.css';
+@import './assets/scss/index';
 </style>

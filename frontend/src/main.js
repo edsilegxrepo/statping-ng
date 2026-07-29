@@ -1,40 +1,31 @@
-import Vue from "vue";
-import VueApexCharts from "vue-apexcharts";
-import VueClipboard from "vue-clipboard2";
-import VueCookies from "vue-cookies";
-import VueI18n from "vue-i18n";
-import VueObserveVisibility from "vue-observe-visibility";
-import VueRouter from "vue-router";
-import router from "./routes";
-import "./mixin";
-import "./icons";
-import language from "./languages";
-import store from "./store";
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import { createI18n } from 'vue-i18n'
+import VueApexCharts from 'vue3-apexcharts'
+import VueCookies from 'vue3-cookies'
 
-const App = () => import(/* webpackChunkName: "index" */ "@/App.vue");
+import App from './App.vue'
+import router from './router'
+import language from './languages'
+import { FontAwesomeIcon, FontAwesomeLayers, FontAwesomeLayersText } from './icons'
 
-Vue.component("apexchart", VueApexCharts);
+const app = createApp(App)
 
-Vue.use(VueClipboard);
-Vue.use(VueRouter);
-Vue.use(VueObserveVisibility);
-Vue.use(VueCookies);
-Vue.use(VueI18n);
+app.component('font-awesome-icon', FontAwesomeIcon)
+app.component('font-awesome-layers', FontAwesomeLayers)
+app.component('font-awesome-layers-text', FontAwesomeLayersText)
 
-const i18n = new VueI18n({
-	fallbackLocale: "en",
-	messages: language,
-});
+const i18n = createI18n({
+  legacy: false,
+  locale: 'en',
+  fallbackLocale: 'en',
+  messages: language,
+})
 
-Vue.$cookies.config("3d");
+app.use(createPinia())
+app.use(router)
+app.use(i18n)
+app.use(VueApexCharts)
+app.use(VueCookies)
 
-Vue.config.productionTip = process.env.NODE_ENV !== "production";
-Vue.config.devtools = process.env.NODE_ENV !== "production";
-Vue.config.performance = process.env.NODE_ENV !== "production";
-
-new Vue({
-	router,
-	store,
-	i18n,
-	render: (h) => h(App),
-}).$mount("#app");
+app.mount('#app')

@@ -330,14 +330,15 @@ Total test coverage improved from **~36% to 69.4%** with 17 of 21 packages at 80
 
 ## 11. Vue 3 Migration Plan
 
-The frontend is currently on Vue 2.7.16 (maintenance mode, EOL December 2023). This section outlines the migration strategy to Vue 3.
+The frontend is currently on Vue 2.7.16 (maintenance mode, EOL December 2023). This section outlines the migration strategy to Vue 3 with Vite.
 
 ### 11.1 Current Frontend State
 
 **Codebase Size:**
-- 83 Vue single-file components
-- Vuex store with modules
+- 55 Vue single-file components
+- Single Vuex store (not modular)
 - Vue Router with route guards
+- Global mixin with 45+ utility methods
 - i18n internationalization
 
 **Current Dependencies:**
@@ -350,30 +351,50 @@ The frontend is currently on Vue 2.7.16 (maintenance mode, EOL December 2023). T
 | vue-apexcharts | 1.6.2 |
 | vue-cookies | 1.8.4 |
 | vuedraggable | 2.24.3 |
+| vue-codemirror | 4.0.6 |
+| vue-clipboard2 | 0.3.1 |
+| vue-observe-visibility | 0.4.6 |
+| vue-flatpickr-component | 8.1.7 |
+| @fortawesome/vue-fontawesome | 0.1.10 |
 | axios | 1.18.1 |
 
-### 11.2 Pre-Migration: Runtime Bug Fixes
+**Build System:** Webpack 4 with uglifyjs-webpack-plugin → terser-webpack-plugin
 
-Fix these bugs BEFORE starting Vue 3 migration:
+### 11.2 Known Issues (Vue 2)
 
-1. **API.js Cookie Access (~Line 411-419)**: Missing `Vue.` prefix on `$cookies.get()`
-2. **mixin.js Date.UTC (~Line 51)**: Invalid `new Date.UTC(val)` syntax
-3. **store.js Missing State (~Line 55)**: Getter references non-existent `state.incidents`
-4. **Index.vue Computed Return (~Line 98-105)**: No return for final else case in `loading_text`
+**Cypress E2E Test Failures:**
+The Vue 2 app has state management issues when Cypress restores browser sessions:
+- Login.vue clears auth cookie on mount (breaks session restore)
+- Route guards re-check auth causing redirect loops
+- App.vue redirects to /setup when Vuex state is empty
+
+These issues make E2E testing unreliable. Vue 3 + Pinia will provide cleaner state management.
+
+**Runtime Bugs to Fix:**
+1. **Index.vue loading_text**: No return for final else case in computed property
+2. **Login.vue mounted()**: Clears cookie unconditionally, breaks session persistence
 
 ### 11.3 Migration Strategy
 
-**Recommended Approach: Gradual Migration with @vue/compat**
+**Approach: Fresh Vite Setup + Incremental Component Migration**
 
-| Phase | Duration | Description |
-|-------|----------|-------------|
-| 0 | 2 hours | Fix 4 runtime bugs |
-| 1 | 4-8 hours | Compat mode setup, core dependencies |
-| 2 | 8-16 hours | Component migration, deprecation fixes |
-| 3 | 4 hours | Remove compat layer, final testing |
-| 4 | 4 hours | Vite migration (optional) |
+Rather than using @vue/compat (which adds complexity), we'll:
+1. Create a new Vite + Vue 3 project structure
+2. Migrate components incrementally, testing each
+3. Use Pinia from the start (not Vuex 4)
 
-**Total: 3-5 days** for a careful, tested migration.
+| Phase | Duration | Description | Validation |
+|-------|----------|-------------|------------|
+| 1 | 2-4 hours | Vite + Vue 3 scaffold, copy static assets | App loads, shows blank page |
+| 2 | 4-6 hours | Pinia store, API layer, router | Can navigate routes |
+| 3 | 4-6 hours | Auth flow (Login, route guards) | Can login/logout |
+| 4 | 4-6 hours | Dashboard + Index pages | Dashboard renders with data |
+| 5 | 8-12 hours | Remaining pages (Settings, Service, Help) | All pages functional |
+| 6 | 4-6 hours | Complex components (charts, forms) | Charts render, forms submit |
+| 7 | 2-4 hours | Cypress E2E tests | All specs pass |
+| 8 | 2-4 hours | Cleanup, optimization | Production build works |
+
+**Total: 30-48 hours (4-6 days)**
 
 ### 11.4 Dependency Migration Map
 
@@ -392,21 +413,139 @@ Fix these bugs BEFORE starting Vue 3 migration:
 
 ### 11.5 Build System: Webpack to Vite
 
-**Target: Vite** for 10-100x faster HMR, native ESM, simpler configuration.
+**Target: Vite 6.x** for 10-100x faster HMR, native ESM, simpler configuration.
 
 ```js
 // vite.config.js
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
-  server: { port: 8888, proxy: { '/api': 'http://localhost:8080' } },
-  build: { outDir: 'dist' }
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@import "@/assets/scss/variables.scss";`,
+      },
+    },
+  },
+  server: {
+    port: 8888,
+    proxy: {
+      '/api': 'http://localhost:8080',
+      '/oauth': 'http://localhost:8080',
+    },
+  },
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia', 'axios'],
+          charts: ['apexcharts', 'vue3-apexcharts'],
+        },
+      },
+    },
+  },
 })
 ```
 
-### 11.6 Code Migration Checklist
+### 11.6 Detailed Phase Instructions
+
+#### Phase 1: Vite + Vue 3 Scaffold (2-4 hours)
+
+```bash
+# Create new branch
+git checkout -b vue3-migration
+
+# Backup current frontend
+mv frontend frontend-vue2
+
+# Initialize Vite project
+npm create vite@latest frontend -- --template vue
+
+# Install core dependencies
+cd frontend
+npm install vue@3 vue-router@4 pinia axios @vueuse/core
+npm install vue-i18n@10 vue3-cookies sass
+npm install vue3-apexcharts apexcharts
+npm install @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/vue-fontawesome@3
+
+# Copy static assets from old frontend
+cp -r ../frontend-vue2/src/assets ./src/
+cp -r ../frontend-vue2/public/* ./public/
+cp ../frontend-vue2/src/languages ./src/
+```
+
+**Validation:** `npm run dev` starts, shows Vite welcome page
+
+#### Phase 2: Pinia Store + API Layer (4-6 hours)
+
+Create modular Pinia store:
+
+```
+src/stores/
+  core.js      - Core settings, setup status
+  services.js  - Services list and CRUD
+  groups.js    - Groups management
+  auth.js      - Authentication state
+  ui.js        - UI state (theme, language)
+```
+
+**Validation:** Store loads, getters work in Vue DevTools
+
+#### Phase 3: Auth Flow (4-6 hours)
+
+1. Migrate `src/API.js` - Remove Vue 2 specific code
+2. Create `src/pages/Login.vue` - NO cookie clearing on mount
+3. Update router guards - Use Pinia auth store
+4. Test session persistence
+
+**Validation:** Can login, session persists across page refresh, logout works
+
+#### Phase 4: Dashboard + Index (4-6 hours)
+
+1. `src/App.vue` - Composition API
+2. `src/pages/Index.vue` 
+3. `src/pages/Dashboard.vue`
+4. `src/components/Index/*`
+
+**Validation:** Dashboard renders with live service data
+
+#### Phase 5: Remaining Pages (8-12 hours)
+
+Migrate in order of dependency:
+1. Settings pages
+2. Service detail pages
+3. User management
+4. Help page
+
+#### Phase 6: Complex Components (4-6 hours)
+
+- Charts → vue3-apexcharts
+- Drag-drop → vue.draggable.next
+- Forms → native Vue 3
+
+#### Phase 7: Cypress E2E Tests (2-4 hours)
+
+Update test infrastructure for Vue 3.
+
+#### Phase 8: Cleanup + Production (2-4 hours)
+
+1. Remove `frontend-vue2/` backup
+2. Remove webpack config files
+3. Update `code_quality.sh` for Vite
+4. Update CI/CD workflows
+5. Remove obsolete root files (install.sh, snapcraft.yaml, etc.)
+6. Production build and test
+
+### 11.7 Code Migration Checklist
 
 **Global API Changes:**
 | Vue 2 | Vue 3 |
@@ -445,7 +584,38 @@ export default defineConfig({
 - Theme switching
 - i18n language switching
 
-### 11.8 Rollback Plan
+### 11.8 Cleanup: Files to Remove
+
+As part of the migration, remove obsolete files that are no longer relevant:
+
+**Root Directory:**
+| File | Reason |
+|------|--------|
+| `install.sh` | Legacy installer script, not used |
+| `snapcraft.yaml` | Snap package config, not maintained |
+| `docker-compose.yml` | Not used |
+| `Dockerfile` | Not used |
+| `.dockerignore` | Not used |
+| `.github/workflows/` | CI/CD not used - remove workflows, keep dependabot.yml |
+| `.vscode/` | Generic config, not needed |
+
+**dev/ Directory:**
+| File | Decision |
+|------|----------|
+| `dev/` | Remove entire directory - Docker-focused, API references outdated |
+
+**Frontend (after Vue 3 migration):**
+| File/Directory | Action |
+|----------------|--------|
+| `frontend/config/` | Remove - Vite replaces webpack config |
+| `frontend/public/base.gohtml` | Keep - backend template |
+| `frontend/node_modules/` | Delete and reinstall with new deps |
+
+**Keep:**
+- `code_quality.sh` - Useful audit script (update for Vite)
+- `statping_config.yml` - Example config
+
+### 11.9 Rollback Plan
 
 1. Create `vue3-migration` branch from main
 2. Tag working states: `vue3-phase1`, `vue3-phase2`, etc.
@@ -455,3 +625,12 @@ export default defineConfig({
 - Critical runtime errors not fixable within 4 hours
 - Chart rendering completely broken
 - State management data loss
+
+### 11.10 Post-Migration Benefits
+
+1. **E2E Tests Work:** Pinia's simpler state management won't have Vue 2's session restore issues
+2. **Performance:** Vite's HMR is 10-100x faster than webpack
+3. **Modern Tooling:** Full TypeScript support, better IDE integration
+4. **Smaller Bundle:** Vue 3's tree-shaking produces smaller production builds
+5. **Future-Proof:** Active LTS support until at least 2027
+6. **Cleaner Codebase:** Removal of legacy files reduces maintenance burden
