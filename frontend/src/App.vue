@@ -42,6 +42,6 @@ onBeforeMount(async () => {
 </script>
 
 <style lang="scss">
-@import './assets/css/bootstrap.min.css';
-@import './assets/scss/index';
+@use './assets/css/bootstrap.min.css';
+@use './assets/scss/index';
 </style>

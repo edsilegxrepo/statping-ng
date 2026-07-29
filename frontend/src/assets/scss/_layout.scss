@@ -1,5 +1,6 @@
-@import 'variables';
-@import 'mixin';
+@use 'sass:color';
+@use 'variables' as *;
+@use 'mixin' as *;
 
 HTML,BODY {
   background-color: $background-color;
@@ -38,7 +39,7 @@ A {
 }
 
 .text-muted {
-  color: lighten($text-color, 30%) !important;
+  color: color.adjust($text-color, $lightness: 30%) !important;
 }
 
 .day-no-data {
@@ -46,7 +47,7 @@ A {
 }
 
 .day-no-data:HOVER {
-  background-color: lighten($day-no-data-background, 5%) !important;
+  background-color: color.adjust($day-no-data-background, $lightness: 5%) !important;
 }
 
 .day-success {
@@ -54,7 +55,7 @@ A {
 }
 
 .day-success:HOVER {
-  background-color: lighten($day-success-background, 5%) !important;
+  background-color: color.adjust($day-success-background, $lightness: 5%) !important;
 }
 
 .day-minor-outage {
@@ -62,7 +63,7 @@ A {
 }
 
 .day-minor-outage:HOVER {
-  background-color: lighten($day-minor-outage-background, 5%) !important;
+  background-color: color.adjust($day-minor-outage-background, $lightness: 5%) !important;
 }
 
 .day-moderate-outage {
@@ -70,7 +71,7 @@ A {
 }
 
 .day-moderate-outage:HOVER {
-  background-color: lighten($day-moderate-outage-background, 5%) !important;
+  background-color: color.adjust($day-moderate-outage-background, $lightness: 5%) !important;
 }
 
 .day-major-outage {
@@ -78,7 +79,7 @@ A {
 }
 
 .day-major-outage:HOVER {
-  background-color: lighten($day-major-outage-background, 5%) !important;
+  background-color: color.adjust($day-major-outage-background, $lightness: 5%) !important;
 }
 
 .day-critical-outage {
@@ -86,7 +87,7 @@ A {
 }
 
 .day-critical-outage:HOVER {
-  background-color: lighten($day-critical-outage-background, 5%) !important;
+  background-color: color.adjust($day-critical-outage-background, $lightness: 5%) !important;
 }
 
 .contain-card {
@@ -153,7 +154,7 @@ A {
 }
 
 .dashboard_card:HOVER {
-  background-color: lighten($group-list-background, 2%) !important;
+  background-color: color.adjust($group-list-background, $lightness: 2%) !important;
   box-shadow: rgba(0,0,0,.05) 0px 1px 5px 3px;
   -webkit-transition-duration: 300ms;
   -moz-transition-duration: 300ms;
@@ -167,7 +168,7 @@ A {
 }
 
 .list-group-item:HOVER {
-  background-color: lighten($group-list-background, 5%) !important;
+  background-color: color.adjust($group-list-background, $lightness: 5%) !important;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px 1px;
   -webkit-transition-duration: 300ms;
   -moz-transition-duration: 300ms;
@@ -215,11 +216,11 @@ A {
 }
 
 .footer .statping {
-  color: lighten($footer-text-color, 10%);
+  color: color.adjust($footer-text-color, $lightness: 10%);
   text-decoration: none;
 }
 .footer .statping:HOVER {
-  color: lighten($footer-text-color, 0%);
+  color: $footer-text-color;
   text-decoration: none;
 }
 
@@ -237,7 +238,7 @@ A {
   margin:10px 20px;
   font-weight:600;
   overflow:auto;
-  color: darken($card-background, 45%);
+  color: color.adjust($card-background, $lightness: -45%);
   font-size: 22px;
 }
 .dates div{
@@ -248,7 +249,7 @@ A {
 }
 .dates strong {
   display:block;
-  color: darken($card-background, 20%);
+  color: color.adjust($card-background, $lightness: -20%);
   font-size:20px;
   font-weight:700;
 }
@@ -258,5 +259,5 @@ A {
   position:absolute;
   right:0;
   top:0;
-  background: darken($card-background, 10%);
+  background: color.adjust($card-background, $lightness: -10%);
 }
