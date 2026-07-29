@@ -1,67 +1,43 @@
 <template>
-<div>
-  <h3>Configuration</h3>
-  For security reasons, all database credentials cannot be editted from this page.
+  <div>
+    <h3>Configuration</h3>
+    For security reasons, all database credentials cannot be edited from this page.
 
-  <codemirror v-show="loaded" v-model="configs" ref="configs" :options="cmOptions" class="mt-4 codemirrorInput"/>
+    <textarea v-if="loaded" v-model="configs" class="form-control code-editor mt-4" rows="20"></textarea>
 
-  <button @click.prevent="save" class="btn col-12 btn-primary mt-3">Save</button>
-</div>
+    <button @click.prevent="save" class="btn col-12 btn-primary mt-3">Save</button>
+  </div>
 </template>
 
-<script>
-import { codemirror } from "vue-codemirror";
-import Api from "../../API";
+<script setup>
+import { ref, onMounted } from 'vue'
+import Api from '@/API'
 
-import("codemirror/lib/codemirror.css");
-import("codemirror/mode/yaml/yaml.js");
+const loaded = ref(false)
+const configs = ref(null)
 
-export default {
-	name: "Configs",
-	components: {
-		codemirror,
-	},
-	data() {
-		return {
-			loaded: false,
-			configs: null,
-			cmOptions: {
-				height: 700,
-				tabSize: 4,
-				lineNumbers: true,
-				matchBrackets: true,
-				mode: "text/x-yaml",
-				line: true,
-			},
-		};
-	},
-	mounted() {
-		this.loaded = false;
-		this.update();
-		this.loaded = true;
-	},
-	watch: {
-		configs() {
-			this.$refs.configs.codemirror.refresh();
-		},
-	},
-	methods: {
-		async update() {
-			this.configs = await Api.configs();
-			this.$refs.configs.codemirror.value = this.configs;
-			this.$refs.configs.codemirror.refresh();
-		},
-		async save() {
-			try {
-				await Api.configs_save(this.configs);
-			} catch (e) {
-				window.console.error(e);
-			}
-		},
-	},
-};
+onMounted(() => {
+  update()
+})
+
+async function update() {
+  loaded.value = false
+  configs.value = await Api.configs()
+  loaded.value = true
+}
+
+async function save() {
+  try {
+    await Api.configs_save(configs.value)
+  } catch (e) {
+    console.error(e)
+  }
+}
 </script>
 
 <style scoped>
-
+.code-editor {
+  font-family: monospace;
+  font-size: 12px;
+}
 </style>
