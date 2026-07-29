@@ -1,23 +1,20 @@
-const { defineConfig } = require('cypress')
+import { defineConfig } from 'cypress'
 
-module.exports = defineConfig({
+export default defineConfig({
   projectId: 'wmw54a',
   env: {
-    DB_HOST: 'localhost',
-    DB_USER: 'root',
-    DB_DATABASE: 'root',
-    DB_PORT: '5432',
-    DB_PASS: 'password123',
-    GO_ENV: 'production'
+    API_URL: 'http://localhost:8080/api',
   },
   e2e: {
-    baseUrl: 'http://localhost:8080',
-    specPattern: 'cypress/integration/**/*.js',
-    supportFile: 'cypress/support/index.js',
+    baseUrl: 'http://localhost:8888',
+    specPattern: 'cypress/e2e/**/*.cy.js',
+    supportFile: 'cypress/support/e2e.js',
     chromeWebSecurity: false,
     defaultCommandTimeout: 30000,
     requestTimeout: 30000,
     watchForFileChanges: false,
+    viewportWidth: 1280,
+    viewportHeight: 720,
   },
-  video: false,  // Disable video for faster runs
+  video: false,
 })
