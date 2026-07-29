@@ -1,0 +1,26 @@
+<template>
+    <div class="offset-md-3 offset-lg-4 offset-0 col-lg-4 col-md-6 mt-5">
+        <div class="col-12 mb-5 text-center">
+            <h1 class="text-uppercase font-weight-bold text-dark mb-0" style="letter-spacing: 6px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 2.2rem;">Platform Monitoring</h1>
+            <hr class="mt-2 mb-0" style="width: 100px; border-top: 3px solid #007bff; margin: 0 auto;">
+        </div>
+
+        <div class="col-12 mt-5 mb-5 text-center">
+            <div class="mb-4">
+                <font-awesome-icon icon="exclamation-triangle" class="text-muted" size="4x"/>
+            </div>
+            <h2 class="font-weight-bold">404 - Page Not Found</h2>
+            <h5 class="text-muted">The requested resource could not be found.</h5>
+            <router-link class="btn btn-primary px-5 shadow-sm mt-4" to="/">Back To Homepage</router-link>
+        </div>
+    </div>
+</template>
+
+<script>
+export default {
+	name: "NotFound",
+};
+</script>
+
+<style scoped>
+</style>

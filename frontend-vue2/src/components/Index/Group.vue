@@ -1,0 +1,52 @@
+<template>
+    <div v-if="services.length > 0" class="col-12 full-col-12">
+        <h4 v-if="group.name !== 'Empty Group'" class="group_header mb-3 mt-4">{{group.name}}</h4>
+        <div class="list-group online_list mb-4">
+
+            <router-link tag="div" v-for="(service, index) in services" v-bind:key="index" class="list-group-item list-group-item-action" :to="serviceLink(service)" style="cursor: pointer;">
+                <span class="no-decoration font-3 text-dark font-weight-bold">
+                  {{service.name}}
+                  <MessagesIcon :messages="service.messages"/>
+                </span>
+                <span class="badge text-uppercase float-right" :class="{'bg-success': service.online, 'bg-danger': !service.online }">
+                    {{service.online ? $t('online') : $t('offline')}}
+                </span>
+
+                <GroupServiceFailures :service="service"/>
+
+                <IncidentsBlock :service="service"/>
+
+            </router-link>
+
+        </div>
+    </div>
+</template>
+
+<script>
+const GroupServiceFailures = () =>
+	import(/* webpackChunkName: "index" */ "./GroupServiceFailures");
+const IncidentsBlock = () =>
+	import(/* webpackChunkName: "index" */ "./IncidentsBlock");
+const MessagesIcon = () =>
+	import(/* webpackChunkName: "index" */ "@/components/Index/MessagesIcon");
+
+export default {
+	name: "Group",
+	components: {
+		IncidentsBlock,
+		GroupServiceFailures,
+		MessagesIcon,
+	},
+	props: {
+		group: {
+			type: Object,
+			required: true,
+		},
+	},
+	computed: {
+		services() {
+			return this.$store.getters.servicesInGroup(this.group.id);
+		},
+	},
+};
+</script>
