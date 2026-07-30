@@ -53,42 +53,42 @@ func TestUnAuthenticatedServicesRoutes(t *testing.T) {
 			Name:           "No Authentication - New Service",
 			URL:            "/api/services",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Update Service",
 			URL:            "/api/services/1",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Service",
 			URL:            "/api/services/1",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Service Hits",
 			URL:            "/api/services/1/hits",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Service Failures",
 			URL:            "/api/services/1/failures",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Reorder Services",
 			URL:            "/api/reorder/services",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 	}

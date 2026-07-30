@@ -21,7 +21,8 @@ func TestJwtTokenOperations(t *testing.T) {
 		user.Admin.Valid = true
 
 		w := httptest.NewRecorder()
-		claim, tokenString := setJwtToken(user, w)
+		r := httptest.NewRequest("POST", "/api/login", nil)
+		claim, tokenString := setJwtToken(user, w, r)
 
 		assert.NotEmpty(t, tokenString, "Token should not be empty")
 		assert.Equal(t, "testuser", claim.Username)
@@ -41,7 +42,8 @@ func TestJwtTokenOperations(t *testing.T) {
 		user.Admin.Valid = true
 
 		w := httptest.NewRecorder()
-		_, tokenString := setJwtToken(user, w)
+		r := httptest.NewRequest("POST", "/api/login", nil)
+		_, tokenString := setJwtToken(user, w, r)
 
 		claim, err := parseToken(tokenString)
 		assert.Nil(t, err)
@@ -70,7 +72,8 @@ func TestJwtTokenOperations(t *testing.T) {
 		user.Admin.Valid = true
 
 		w := httptest.NewRecorder()
-		_, tokenString := setJwtToken(user, w)
+		r := httptest.NewRequest("POST", "/api/login", nil)
+		_, tokenString := setJwtToken(user, w, r)
 
 		req := httptest.NewRequest("GET", "/", nil)
 		req.AddCookie(&http.Cookie{
@@ -85,7 +88,8 @@ func TestJwtTokenOperations(t *testing.T) {
 
 	t.Run("removeJwtToken clears cookie", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		removeJwtToken(w)
+		r := httptest.NewRequest("POST", "/api/logout", nil)
+		removeJwtToken(w, r)
 
 		cookies := w.Result().Cookies()
 		assert.NotEmpty(t, cookies)
@@ -93,6 +97,34 @@ func TestJwtTokenOperations(t *testing.T) {
 			if c.Name == cookieName {
 				assert.Equal(t, "deleted", c.Value)
 				assert.True(t, c.MaxAge < 0)
+			}
+		}
+	})
+
+	t.Run("isSecureRequest detects HTTPS via header", func(t *testing.T) {
+		r := httptest.NewRequest("GET", "/", nil)
+		assert.False(t, isSecureRequest(r))
+
+		r.Header.Set("X-Forwarded-Proto", "https")
+		assert.True(t, isSecureRequest(r))
+	})
+
+	t.Run("cookie has SameSite=Strict", func(t *testing.T) {
+		user := &users.User{
+			Username: "strictuser",
+			Scopes:   "admin",
+		}
+		user.Admin.Bool = true
+		user.Admin.Valid = true
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest("POST", "/api/login", nil)
+		setJwtToken(user, w, r)
+
+		cookies := w.Result().Cookies()
+		for _, c := range cookies {
+			if c.Name == cookieName {
+				assert.Equal(t, http.SameSiteStrictMode, c.SameSite)
 			}
 		}
 	})

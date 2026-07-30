@@ -1,6 +1,6 @@
 <template>
   <div v-show="showing">
-    <apexchart v-if="ready" class="service-chart" width="100%" height="100%" type="area" :options="chartOptions" :series="series" />
+    <apexchart v-if="ready" class="service-chart" width="100%" height="340" type="area" :options="chartOptions" :series="series" />
   </div>
 </template>
 
@@ -40,10 +40,11 @@ const series = ref(null)
 
 const chartOptions = computed(() => ({
   noData: {
-    text: 'Loading...',
+    text: 'No Data Found',
+    style: { color: '#999', fontSize: '14px' },
   },
   chart: {
-    height: '100%',
+    height: 340,
     width: '100%',
     type: 'area',
     animations: {
@@ -60,16 +61,25 @@ const chartOptions = computed(() => ({
     toolbar: { show: false },
   },
   grid: {
-    show: false,
-    padding: { top: 0, right: 0, bottom: 0, left: -10 },
+    show: true,
+    borderColor: '#f0f0f0',
+    padding: { top: 10, right: 10, bottom: 25, left: 10 },
   },
   dropShadow: { enabled: false },
   xaxis: {
     type: 'datetime',
-    labels: { show: false },
+    labels: { show: true, style: { fontSize: '10px', colors: '#999' } },
     tooltip: { enabled: false },
+    axisBorder: { show: false },
+    axisTicks: { show: false },
   },
-  yaxis: { labels: { show: false } },
+  yaxis: {
+    labels: {
+      show: true,
+      style: { fontSize: '10px', colors: '#999' },
+      formatter: (val) => val >= 1000 ? `${(val/1000).toFixed(2)}s` : `${Math.round(val)}ms`
+    }
+  },
   markers: {
     size: 0,
     strokeWidth: 0,
@@ -93,21 +103,33 @@ const chartOptions = computed(() => ({
     x: { show: false },
     y: { formatter: (value) => `${value} %` },
   },
-  legend: { show: false },
   dataLabels: { enabled: false },
   floating: true,
   axisTicks: { show: false },
   axisBorder: { show: false },
   fill: {
-    colors: props.service.online ? ['#3dc82f', '#48d338'] : ['#c60f20', '#dd3545'],
-    opacity: 1,
-    type: 'solid',
+    type: 'gradient',
+    gradient: {
+      shadeIntensity: 1,
+      opacityFrom: 0.4,
+      opacityTo: 0.1,
+      stops: [0, 90, 100],
+    },
   },
+  colors: props.service.online ? ['#48d338', '#17a2b8'] : ['#dd3545', '#fd7e14'],
   stroke: {
-    show: false,
+    show: true,
     curve: 'smooth',
-    lineCap: 'butt',
-    colors: props.service.online ? ['#38bc2a', '#48d338'] : ['#c60f20', '#dd3545'],
+    width: 2,
+    colors: props.service.online ? ['#2fb821', '#138496'] : ['#c60f20', '#e96b0a'],
+  },
+  legend: {
+    show: true,
+    position: 'top',
+    horizontalAlign: 'right',
+    fontSize: '10px',
+    markers: { width: 8, height: 8 },
+    itemMargin: { horizontal: 10 },
   },
 }))
 

@@ -61,11 +61,11 @@ export const useMainStore = defineStore('main', {
     },
 
     serviceByAll: (state) => (element) => {
-      if (!Number.isNaN(parseFloat(element)) && Number.isFinite(element)) {
-        return state.services.find((s) => s.id === parseInt(element, 10))
-      } else {
-        return state.services.find((s) => s.permalink === element)
+      const num = parseInt(element, 10)
+      if (!Number.isNaN(num)) {
+        return state.services.find((s) => s.id === num)
       }
+      return state.services.find((s) => s.permalink === element)
     },
 
     serviceById: (state) => (id) => {

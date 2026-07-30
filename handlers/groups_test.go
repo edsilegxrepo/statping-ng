@@ -16,21 +16,21 @@ func TestUnAuthenticatedGroupRoutes(t *testing.T) {
 			Name:           "No Authentication - New Group",
 			URL:            "/api/groups",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Update Group",
 			URL:            "/api/groups/1",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Group",
 			URL:            "/api/groups/1",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 	}

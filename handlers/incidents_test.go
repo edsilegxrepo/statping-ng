@@ -35,35 +35,35 @@ func TestUnAuthenticatedIncidentRoutes(t *testing.T) {
 			Name:           "No Authentication - New Incident",
 			URL:            "/api/services/1/incidents",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - New Incident Update",
 			URL:            "/api/incidents/updates",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Update Incident",
 			URL:            "/api/incidents/1",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Incident",
 			URL:            "/api/incidents/1",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Incident Update",
 			URL:            "/api/incidents/1/updates/1",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 	}

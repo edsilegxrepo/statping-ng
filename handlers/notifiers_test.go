@@ -62,7 +62,7 @@ func TestAuthenticatedNotifierRoutes(t *testing.T) {
 					"enabled": true,
 					"limits": 55
 				}`,
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{

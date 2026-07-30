@@ -65,12 +65,16 @@ func createHitsAt(serviceID int64, daysToCreate time.Duration, createEvery time.
 
 	var records []*Hit
 	for hi := 0.; hi <= SampleHits; hi++ {
-		latency := p.Noise1D(hi / 500)
+		// Perlin noise returns -1 to 1, normalize to 0-1 range
+		noise := (p.Noise1D(hi/500) + 1) / 2
+		// Generate realistic latency: 50ms to 300ms (in microseconds)
+		latency := int64(50000 + noise*250000)
+		pingTime := int64(10000 + noise*40000)
 
 		hit := &Hit{
 			Service:   serviceID,
-			Latency:   int64(latency * 10000000),
-			PingTime:  int64(latency * 5000000),
+			Latency:   latency,
+			PingTime:  pingTime,
 			CreatedAt: createdAt,
 		}
 

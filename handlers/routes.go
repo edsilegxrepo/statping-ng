@@ -79,14 +79,15 @@ func Router() *mux.Router {
 		r.PathPrefix("/css/").Handler(http.StripPrefix(basePath, staticAssets("css")))
 		r.PathPrefix("/robots.txt").Handler(http.StripPrefix(basePath, indexHandler))
 	} else {
-		tmplFileSrv := http.FileServer(source.TmplBox.HTTPBox())
+		tmplFileSrv := http.FileServer(http.FS(source.TmplBox))
 		tmplBoxHandler := http.StripPrefix(basePath, tmplFileSrv)
 
 		r.PathPrefix("/css/").Handler(http.StripPrefix(basePath, tmplFileSrv))
 		r.PathPrefix("/robots.txt").Handler(tmplBoxHandler)
 	}
 
-	r.PathPrefix("/js/").Handler(http.StripPrefix(basePath, http.FileServer(source.TmplBox.HTTPBox())))
+	r.PathPrefix("/js/").Handler(http.StripPrefix(basePath, http.FileServer(http.FS(source.TmplBox))))
+	r.PathPrefix("/assets/").Handler(http.StripPrefix(basePath, http.FileServer(http.FS(source.TmplBox))))
 
 	api := r.NewRoute().Subrouter()
 	api.Use(apiMiddleware)
@@ -95,7 +96,6 @@ func Router() *mux.Router {
 
 	// API Routes
 	r.Handle("/api", scoped(apiIndexHandler))
-	r.Handle("/api/csrf", http.HandlerFunc(csrfTokenHandler)).Methods("GET")
 	r.Handle("/setup", http.HandlerFunc(setupRedirectHandler)).Methods("GET")
 	r.Handle("/api/setup", http.HandlerFunc(processSetupHandler)).Methods("POST")
 	api.Handle("/api/login", rateLimitLoginMiddleware(apiLoginHandler)).Methods("POST")
@@ -162,6 +162,7 @@ func Router() *mux.Router {
 	// API USER Routes
 	api.Handle("/api/users", authenticated(func(w http.ResponseWriter, r *http.Request) { scoped(apiAllUsersHandler).ServeHTTP(w, r) }, false)).Methods("GET")
 	api.Handle("/api/users", authenticated(apiCreateUsersHandler, false)).Methods("POST")
+	api.Handle("/api/users/token", http.HandlerFunc(apiGetUserTokenHandler)).Methods("GET")
 	api.Handle("/api/users/token", http.HandlerFunc(apiCheckUserTokenHandler)).Methods("POST")
 	api.Handle("/api/users/{id}", authenticated(apiUserHandler, false)).Methods("GET")
 	api.Handle("/api/users/{id}", authenticated(apiUserUpdateHandler, false)).Methods("POST")

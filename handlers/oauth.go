@@ -135,7 +135,7 @@ func oauthLogin(oauth *oAuth, w http.ResponseWriter, r *http.Request) {
 	if err == nil && existingUser != nil {
 		// Existing user - use their existing permissions
 		log.Infoln(fmt.Sprintf("OAuth %s User %s (existing) logged in from IP %s", oauth.Type(), oauth.Email, r.RemoteAddr))
-		setJwtToken(existingUser, w)
+		setJwtToken(existingUser, w, r)
 		http.Redirect(w, r, core.App.Domain+"/dashboard", http.StatusPermanentRedirect)
 		return
 	}
@@ -157,7 +157,7 @@ func oauthLogin(oauth *oAuth, w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Infoln(fmt.Sprintf("OAuth %s User %s (new, non-admin) logged in from IP %s", oauth.Type(), oauth.Email, r.RemoteAddr))
-	setJwtToken(user, w)
+	setJwtToken(user, w, r)
 
 	http.Redirect(w, r, core.App.Domain+"/dashboard", http.StatusPermanentRedirect)
 }

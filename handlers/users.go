@@ -101,6 +101,16 @@ func apiCheckUserTokenHandler(w http.ResponseWriter, r *http.Request) {
 	returnJson(claim, w, r)
 }
 
+func apiGetUserTokenHandler(w http.ResponseWriter, r *http.Request) {
+	claim, err := getJwtToken(r)
+	if err != nil {
+		// Not logged in - return false (not admin)
+		returnJson(false, w, r)
+		return
+	}
+	returnJson(claim.Admin, w, r)
+}
+
 func apiCreateUsersHandler(w http.ResponseWriter, r *http.Request) {
 	var user *users.User
 	err := DecodeJSON(r, &user)

@@ -57,8 +57,8 @@
 
     <Group v-for="group in groups" :key="group.id" :group="group" />
 
-    <div class="col-12 full-col-12">
-      <div v-for="service in services" :ref="(el) => setServiceRef(service.id, el)" :key="service.id">
+    <div class="row">
+      <div v-for="service in services" :ref="(el) => setServiceRef(service.id, el)" :key="service.id" class="col-lg-4 col-md-6 col-12">
         <ServiceBlock :service="service" />
       </div>
     </div>

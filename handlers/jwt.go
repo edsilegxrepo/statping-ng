@@ -16,7 +16,16 @@ type JwtClaim struct {
 	jwt.RegisteredClaims
 }
 
-func removeJwtToken(w http.ResponseWriter) {
+// isSecureRequest returns true if the request is over HTTPS,
+// either directly or via a reverse proxy (X-Forwarded-Proto header)
+func isSecureRequest(r *http.Request) bool {
+	if usingSSL {
+		return true
+	}
+	return r.Header.Get("X-Forwarded-Proto") == "https"
+}
+
+func removeJwtToken(w http.ResponseWriter, r *http.Request) {
 	c := http.Cookie{
 		Name:     cookieName,
 		Value:    "deleted",
@@ -24,13 +33,13 @@ func removeJwtToken(w http.ResponseWriter) {
 		MaxAge:   -1,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   usingSSL,
-		SameSite: http.SameSiteLaxMode,
-	} // #nosec G124
+		Secure:   isSecureRequest(r),
+		SameSite: http.SameSiteStrictMode,
+	}
 	http.SetCookie(w, &c)
 }
 
-func setJwtToken(user *users.User, w http.ResponseWriter) (JwtClaim, string) {
+func setJwtToken(user *users.User, w http.ResponseWriter, r *http.Request) (JwtClaim, string) {
 	expirationTime := time.Now().Add(72 * time.Hour)
 	jwtClaim := JwtClaim{
 		Username: user.Username,
@@ -46,7 +55,6 @@ func setJwtToken(user *users.User, w http.ResponseWriter) (JwtClaim, string) {
 		log.Errorln("error setting token: ", err)
 	}
 	user.Token = tokenString
-	// set cookies
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
 		Value:    tokenString,
@@ -54,9 +62,9 @@ func setJwtToken(user *users.User, w http.ResponseWriter) (JwtClaim, string) {
 		MaxAge:   int(time.Duration(72 * time.Hour).Seconds()),
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   usingSSL,
-		SameSite: http.SameSiteLaxMode,
-	}) // #nosec G124
+		Secure:   isSecureRequest(r),
+		SameSite: http.SameSiteStrictMode,
+	})
 	return jwtClaim, tokenString
 }
 
