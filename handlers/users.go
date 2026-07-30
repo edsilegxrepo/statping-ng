@@ -104,11 +104,11 @@ func apiCheckUserTokenHandler(w http.ResponseWriter, r *http.Request) {
 func apiGetUserTokenHandler(w http.ResponseWriter, r *http.Request) {
 	claim, err := getJwtToken(r)
 	if err != nil {
-		// Not logged in - return false (not admin)
-		returnJson(false, w, r)
+		// Not logged in - return empty response
+		returnJson(nil, w, r)
 		return
 	}
-	returnJson(claim.Admin, w, r)
+	returnJson(claim, w, r)
 }
 
 func apiCreateUsersHandler(w http.ResponseWriter, r *http.Request) {

@@ -104,7 +104,7 @@ const set2_name = ref('')
 const failures = ref(null)
 const visible = ref(false)
 
-const serviceLink = computed(() => `/service/${props.service.permalink || props.service.id}`)
+const serviceLink = computed(() => `/service/${props.service.permalink || props.service.id}?from=dashboard`)
 
 onMounted(async () => {
   unsetHover()

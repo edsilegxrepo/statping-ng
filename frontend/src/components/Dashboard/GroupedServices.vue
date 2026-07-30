@@ -7,7 +7,7 @@
         {{ servicesOffline.length }} {{ $t('offline') }}
       </span>
     </h5>
-    <div v-if="expanded" v-for="service in groupServices" :key="service.id" class="col-12 col-md-4">
+    <div v-if="expanded" v-for="service in groupServices" :key="service.id" class="col-lg-4 col-md-6 col-12">
       <ServiceInfo :service="service" />
     </div>
   </div>

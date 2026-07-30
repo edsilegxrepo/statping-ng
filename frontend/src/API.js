@@ -230,6 +230,10 @@ class Api {
     return axios.get('api/users/token').then((response) => response.data)
   }
 
+  async check_token() {
+    return axios.get('api/users/token').then((response) => response.data)
+  }
+
   async logs() {
     return axios.get('api/logs').then((response) => response.data)
   }

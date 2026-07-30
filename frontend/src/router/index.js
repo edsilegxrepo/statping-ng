@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useCookies } from 'vue3-cookies'
 import Api from '../API'
 import { useMainStore } from '../stores/main'
 
@@ -208,22 +207,14 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     const store = useMainStore()
-    const { cookies } = useCookies()
 
     if (store.loggedIn) {
       next()
       return
     }
 
-    const token = cookies.get('statping_auth')
-    if (!token) {
-      store.setLoggedIn(false)
-      next('/login')
-      return
-    }
-
     try {
-      const jwt = await Api.check_token(token)
+      const jwt = await Api.check_token()
       if (jwt?.admin) {
         store.setAdmin(true)
         store.setLoggedIn(true)

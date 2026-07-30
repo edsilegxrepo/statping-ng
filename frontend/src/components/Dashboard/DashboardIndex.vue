@@ -33,7 +33,7 @@
     </div>
 
     <div class="row">
-      <div v-for="service in servicesNoGroup" :key="service.id" class="col-12 col-md-4">
+      <div v-for="service in servicesNoGroup" :key="service.id" class="col-lg-4 col-md-6 col-12">
         <ServiceInfo :service="service" />
       </div>
     </div>
