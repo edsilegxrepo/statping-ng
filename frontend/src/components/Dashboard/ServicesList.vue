@@ -134,7 +134,7 @@ function gotoEdit(service) {
 }
 
 function gotoService(service) {
-  router.push({ path: `/service/${service.permalink || service.id}` })
+  router.push({ path: `/service/${service.permalink || service.id}`, query: { from: 'dashboard' } })
 }
 
 async function updateOrder(value) {

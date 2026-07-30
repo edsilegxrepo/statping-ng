@@ -482,7 +482,12 @@
     </div>
 
     <div class="form-group row">
-      <div class="col-12">
+      <div class="col-6">
+        <button type="button" @click="cancelEdit" class="btn btn-outline-secondary btn-block">
+          Cancel
+        </button>
+      </div>
+      <div class="col-6">
         <button :disabled="loading" @click.prevent="saveService" type="submit" class="btn btn-success btn-block">
           {{ service.id ? $t('service_update') : $t('service_create') }}
         </button>
@@ -609,6 +614,10 @@ function updatePermalink() {
     .replace(/--+/g, '-')
     .replace(/^-+/, '')
     .replace(/-+$/, '')
+}
+
+function cancelEdit() {
+  router.push('/dashboard/services')
 }
 
 async function saveService() {

@@ -1,5 +1,6 @@
 <template>
   <div class="container-fluid px-md-5 mt-md-5">
+    <TopNav v-if="fromDashboard" :admin="admin" />
     <div v-if="!ready" class="row mt-5">
       <div class="col-12 text-center">
         <font-awesome-icon icon="circle-notch" size="3x" spin />
@@ -149,6 +150,7 @@ import flatPickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import Api from '@/API'
 import MessageBlock from '@/components/Index/MessageBlock.vue'
+import TopNav from '@/components/Dashboard/TopNav.vue'
 import ServiceTopStats from '@/components/Service/ServiceTopStats.vue'
 import ServiceHeatmap from '@/components/Service/ServiceHeatmap.vue'
 import AdvancedChart from '@/components/Service/AdvancedChart.vue'
@@ -181,6 +183,8 @@ const dateConfig = {
 const coreData = computed(() => store.core)
 const service = computed(() => store.serviceByAll(route.params.id))
 const servicesLoaded = computed(() => store.hasPublicData)
+const admin = computed(() => store.admin)
+const fromDashboard = computed(() => route.query.from === 'dashboard')
 const hasData = computed(() => {
   const s = service.value
   if (!s || !s.stats) return true
