@@ -12,14 +12,14 @@ func TestUnAuthenticatedCheckinRoutes(t *testing.T) {
 			Name:           "No Authentication - New Checkin",
 			URL:            "/api/checkins",
 			Method:         "POST",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
 			Name:           "No Authentication - Delete Checkin",
 			URL:            "/api/checkins/1",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // CSRF rejects before auth check
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 	}

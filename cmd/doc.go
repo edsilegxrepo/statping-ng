@@ -2,22 +2,17 @@
 // connects to all the other packages to make a runnable binary for multiple
 // operating system.
 //
-// # Compile Assets
+// # Build Frontend Assets
 //
-// Before building, you must compile the Statping Assets with Rice, to install rice run the command below:
+// Before building, compile the frontend with Vite:
 //
-//	go get github.com/GeertJohan/go.rice
-//	go get github.com/GeertJohan/go.rice/rice
-//
-// Once you have rice install, you can run the following command to build all assets inside the source directory.
-//
-//	cd source && rice embed-go
+//	cd frontend && npm run build
 //
 // # Build Statping Binary
 //
-// To build the statup binary for your local environment, run the command below:
+// To build the statping binary for your local environment, run the command below:
 //
-//	go build -o statup ./cmd
+//	go build -o statping ./cmd
 //
 // # Build All Binary Arch's
 //

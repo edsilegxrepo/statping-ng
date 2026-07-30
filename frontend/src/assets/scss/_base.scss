@@ -2,6 +2,10 @@
 @use 'variables' as *;
 @use 'mixin' as *;
 
+body {
+  min-width: 1500px;
+}
+
 .index-chart {
   height: $service-card-height;
   /*Animation*/
@@ -225,6 +229,10 @@
     font-size: 0.35rem;
   }
 
+  .font-08 {
+    font-size: 0.65rem;
+  }
+
   .font-1 {
     font-size: 0.8rem;
   }
@@ -336,9 +344,11 @@
 
   .chart-container {
     position: relative;
-    height: 240px;
+    height: 360px;
     width: 100%;
-    overflow: hidden;
+    overflow: visible;
+    margin-top: -50px;
+    margin-bottom: -20px;
   }
 
   .service-chart-container {

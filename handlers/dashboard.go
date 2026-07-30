@@ -24,7 +24,7 @@ import (
 )
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	removeJwtToken(w)
+	removeJwtToken(w, r)
 	out := make(map[string]string)
 	out["status"] = "success"
 	returnJson(out, w, r)
@@ -68,12 +68,12 @@ func apiThemeViewHandler(w http.ResponseWriter, r *http.Request) {
 		forms, _ = utils.OpenFile(dir + "/scss/forms.scss")
 		mixins, _ = utils.OpenFile(dir + "/scss/mixin.scss")
 	} else {
-		base, _ = source.TmplBox.String("scss/base.scss")
-		variables, _ = source.TmplBox.String("scss/variables.scss")
-		mobile, _ = source.TmplBox.String("scss/mobile.scss")
-		layout, _ = source.TmplBox.String("scss/layout.scss")
-		forms, _ = source.TmplBox.String("scss/forms.scss")
-		mixins, _ = source.TmplBox.String("scss/mixin.scss")
+		base, _ = source.ReadFileString("scss/base.scss")
+		variables, _ = source.ReadFileString("scss/variables.scss")
+		mobile, _ = source.ReadFileString("scss/mobile.scss")
+		layout, _ = source.ReadFileString("scss/layout.scss")
+		forms, _ = source.ReadFileString("scss/forms.scss")
+		mixins, _ = source.ReadFileString("scss/mixin.scss")
 	}
 
 	resp := &themeApi{
@@ -335,7 +335,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	user, auth := users.AuthUser(username, password)
 	if auth {
 		log.Infoln(fmt.Sprintf("User %v logged in from IP %v", user.Username, r.RemoteAddr))
-		claim, token := setJwtToken(user, w)
+		claim, token := setJwtToken(user, w, r)
 		resp := struct {
 			Token   string `json:"token"`
 			IsAdmin bool   `json:"admin"`

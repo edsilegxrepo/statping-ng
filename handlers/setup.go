@@ -105,6 +105,7 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 		Footer:       null.NewNullString(""),
 		Language:     confgs.Language,
 		AllowReports: null.NewNullBool(sendReports),
+		MigrationId:  utils.Params.GetInt64("MIGRATION_ID"),
 	}
 
 	log.Infoln("Creating new Core")

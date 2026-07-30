@@ -9,7 +9,21 @@
       </div>
     </div>
 
-    <div v-if="ready && service" class="col-12 mb-4">
+    <div v-if="servicesLoaded && service && !hasData" class="col-12 mb-4">
+      <div class="card text-center py-5">
+        <div class="card-body">
+          <h3 class="text-muted mb-3">{{ service.name }}</h3>
+          <span class="badge mb-4" :class="{ 'bg-success': service.online, 'bg-danger': !service.online }">
+            {{ service.online ? 'ONLINE' : 'OFFLINE' }}
+          </span>
+          <p class="text-muted mb-2">No monitoring data available for this service.</p>
+          <p class="text-muted small">This may be a static service or monitoring has not started yet.</p>
+          <router-link to="/" class="btn btn-outline-primary mt-3">Back to Monitors</router-link>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="servicesLoaded && service && hasData" class="col-12 mb-4">
       <span
         class="mt-3 mb-3 text-white d-md-none btn d-block d-md-none text-uppercase"
         :class="{ 'bg-success': service.online, 'bg-danger': !service.online }"
@@ -166,6 +180,12 @@ const dateConfig = {
 
 const coreData = computed(() => store.core)
 const service = computed(() => store.serviceByAll(route.params.id))
+const servicesLoaded = computed(() => store.hasPublicData)
+const hasData = computed(() => {
+  const s = service.value
+  if (!s || !s.stats) return true
+  return s.stats.hits > 0 || s.stats.failures > 0
+})
 
 const params = computed(() => ({
   start: toUnix(new Date(start_time.value)),

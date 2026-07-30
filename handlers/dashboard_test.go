@@ -403,7 +403,7 @@ func TestUnAuthenticatedThemeCreateRemove(t *testing.T) {
 			Name:           "No Auth - Delete Theme",
 			URL:            "/api/theme",
 			Method:         "DELETE",
-			ExpectedStatus: 403, // 403 due to CSRF check before auth
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 		{
@@ -411,7 +411,7 @@ func TestUnAuthenticatedThemeCreateRemove(t *testing.T) {
 			URL:            "/api/settings/configs",
 			Method:         "POST",
 			Body:           "connection: sqlite\n",
-			ExpectedStatus: 403, // 403 due to CSRF check before auth
+			ExpectedStatus: 401, // Auth required
 			NoAuth:         true,
 		},
 	}

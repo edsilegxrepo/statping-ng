@@ -1,18 +1,18 @@
 // Package source holds all the assets for Statping. This includes
 // CSS, JS, SCSS, HTML and other website related content.
-// This package uses Rice to compile all assets into a single 'rice-box.go' file.
+// This package uses Go's native embed directive to compile all assets into the binary.
 //
 // # Required Dependencies
 //
-// - rice -> https://github.com/GeertJohan/go.rice
 // - sass -> https://sass-lang.com/install
 //
 // # Compile Assets
 //
-// To compile all the HTML, JS, SCSS, CSS and image assets you'll need to have rice and sass installed on your local system.
+// The frontend assets are built with Vite and embedded using //go:embed.
+// No external tools like rice are required - just build the Go binary:
 //
-//	sass source/scss/base.scss source/css/base.css
-//	cd source && rice embed-go
+//	cd frontend && npm run build
+//	go build -o statping ./cmd
 //
 // More info on: https://github.com/adamboutcher/statping-ng
 package source

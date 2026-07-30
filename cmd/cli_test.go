@@ -293,10 +293,10 @@ func TestFlagDefaults(t *testing.T) {
 		assert.Equal(t, "8080", flag.DefValue)
 	})
 
-	t.Run("ip default is 0.0.0.0", func(t *testing.T) {
+	t.Run("ip default is 127.0.0.1", func(t *testing.T) {
 		flag := rootCmd.PersistentFlags().Lookup("ip")
 		require.NotNil(t, flag)
-		assert.Equal(t, "0.0.0.0", flag.DefValue)
+		assert.Equal(t, "127.0.0.1", flag.DefValue)
 	})
 
 	t.Run("verbose default is 2", func(t *testing.T) {

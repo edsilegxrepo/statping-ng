@@ -3,22 +3,6 @@
     <div class="row">
       <div class="col-md-3 col-sm-12 mb-4 mb-md-0">
         <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-          <div v-if="version_below" class="col-12 small text-center mt-0 pt-0 pb-0 mb-3">
-            Update {{ github.tag_name }} Available
-            <div class="row">
-              <div class="col-6">
-                <a href="https://github.com/statping-ng/statping-ng/releases/latest" class="btn btn-sm text-success mt-2"
-                  >Download</a
-                >
-              </div>
-              <div class="col-6">
-                <a href="https://github.com/statping-ng/statping-ng/blob/master/CHANGELOG.md" class="btn btn-sm text-dim mt-2"
-                  >Changelog</a
-                >
-              </div>
-            </div>
-          </div>
-
           <h6 class="text-muted">{{ $t('main_settings') }}</h6>
 
           <a
@@ -248,7 +232,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMainStore } from '@/stores/main'
 import { useCookies } from 'vue3-cookies'
-import semver from 'semver'
 import Api from '@/API'
 import CoreSettings from '@/forms/CoreSettings.vue'
 import Notifier from '@/forms/Notifier.vue'
@@ -263,33 +246,15 @@ const store = useMainStore()
 const { cookies } = useCookies()
 
 const tab = ref('v-pills-home-tab')
-const github = ref(null)
 
 const coreData = computed(() => store.core)
 const notifiers = computed(() => store.notifiers)
 
-const version_below = computed(() => {
-  if (!github.value || !coreData.value.version) {
-    return false
-  }
-  return semver.gt(semver.coerce(github.value.tag_name), semver.coerce(coreData.value.version))
-})
 
 onMounted(() => {
   update()
 })
 
-async function update() {
-  await getGithub()
-}
-
-async function getGithub() {
-  try {
-    github.value = await Api.github_release()
-  } catch (e) {
-    console.error(e)
-  }
-}
 
 function changeTab(e) {
   tab.value = e.target.id

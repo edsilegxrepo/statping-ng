@@ -13,7 +13,7 @@ var (
 )
 
 func parseFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&ipAddress, "ip", "s", "0.0.0.0", "server run on host")
+	cmd.PersistentFlags().StringVarP(&ipAddress, "ip", "s", "127.0.0.1", "server run on host (use 0.0.0.0 for containers)")
 	_ = utils.Params.BindPFlag("ip", cmd.PersistentFlags().Lookup("ip"))
 
 	cmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "server port")

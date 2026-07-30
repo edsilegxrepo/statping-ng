@@ -4,57 +4,65 @@ package source
 //go:generate go run generate_languages.go
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/GeertJohan/go.rice"
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/utils"
 )
 
+//go:embed dist/*
+var distFS embed.FS
+
 var (
 	log           = utils.Log.WithField("type", "source")
-	TmplBox       *rice.Box // HTML and other small files from the 'source/dist' directory, this will be loaded into '/assets'
+	TmplBox       fs.FS // Embedded files from 'source/dist' directory
 	RequiredFiles = []string{
-		"css/style.css",
-		"css/style.css.gz",
-		"css/index.css",
-		"scss/index.scss",
-		"scss/base.scss",
-		"scss/forms.scss",
-		"scss/layout.scss",
-		"scss/mixin.scss",
-		"scss/mobile.scss",
-		"scss/variables.scss",
+		"css/base.css",
 		"robots.txt",
 		"base.gohtml",
 	}
 )
 
-// Assets will load the Rice boxes containing the CSS, SCSS, and HTML files.
+// Assets will initialize the embedded filesystem for templates and assets.
 func Assets() error {
 	if utils.Params.GetBool("DISABLE_HTTP") {
 		return nil
 	}
+	// Create a sub-filesystem rooted at "dist"
 	var err error
-	TmplBox, err = rice.FindBox("dist")
+	TmplBox, err = fs.Sub(distFS, "dist")
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	return err
+// ReadFile reads a file from the embedded filesystem
+func ReadFile(name string) ([]byte, error) {
+	return fs.ReadFile(TmplBox, name)
+}
+
+// ReadFileString reads a file from the embedded filesystem as a string
+func ReadFileString(name string) (string, error) {
+	data, err := ReadFile(name)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func scssRendered(name string) string {
-	// Use filepath.Dir and filepath.Base for cross-platform compatibility
-	dir := filepath.Dir(name)          // e.g., .../assets/scss
-	parentDir := filepath.Dir(dir)     // e.g., .../assets
-	file := filepath.Base(name)        // e.g., index.scss
-	ext := filepath.Ext(file)          // e.g., .scss
-	baseName := file[:len(file)-len(ext)] // e.g., index
+	dir := filepath.Dir(name)
+	parentDir := filepath.Dir(dir)
+	file := filepath.Base(name)
+	ext := filepath.Ext(file)
+	baseName := file[:len(file)-len(ext)]
 	return filepath.Join(parentDir, "css", baseName+".css")
 }
 
@@ -99,7 +107,6 @@ func UsingAssets(folder string) bool {
 				log.Warnln(err)
 			}
 			if err := CompileSASS(); err != nil {
-				// CopyToPublic(CssBox, folder+"/css", "base.css")
 				log.Warn(errors.Wrap(err, "Default 'base.css' was insert because SASS did not work."))
 				return true
 			}
@@ -174,30 +181,29 @@ func DeleteAllAssets(folder string) error {
 	return err
 }
 
-// CopyAllToPublic will copy all the files in a rice box into a local folder
-func CopyAllToPublic(box *rice.Box) error {
+// CopyAllToPublic will copy all the files in an embedded filesystem into a local folder
+func CopyAllToPublic(fsys fs.FS) error {
 	exclude := map[string]bool{
-		// "base.gohtml": true,
 		"index.html": true,
 	}
 
-	return box.Walk("/", func(path string, info os.FileInfo, err error) error {
+	return fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.Name() == "" {
+		if d.Name() == "" || d.Name() == "." {
 			return nil
 		}
-		if exclude[info.Name()] {
+		if exclude[d.Name()] {
 			return nil
 		}
-		if strings.Contains(path, "/js") {
+		if strings.Contains(path, "/js") || strings.HasPrefix(path, "js") {
 			return nil
 		}
-		if info.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
-		file, err := box.Bytes(path)
+		file, err := fs.ReadFile(fsys, path)
 		if err != nil {
 			return err
 		}
@@ -205,19 +211,19 @@ func CopyAllToPublic(box *rice.Box) error {
 	})
 }
 
-// CopyToPublic will create a file from a rice Box to the '/assets' directory
-func CopyToPublic(box *rice.Box, path, file string) error {
+// CopyToPublic will create a file from an embedded filesystem to the '/assets' directory
+func CopyToPublic(fsys fs.FS, path, file string) error {
 	assetPath := fmt.Sprintf("%v/assets/%v/%v", utils.Directory, path, file)
 	if path == "" {
 		assetPath = fmt.Sprintf("%v/assets/%v", utils.Directory, file)
 	}
 	log.Infoln(fmt.Sprintf("Copying %v to %v", file, assetPath))
-	base, err := box.String(file)
+	base, err := fs.ReadFile(fsys, file)
 	if err != nil {
 		log.Errorln(fmt.Sprintf("Failed to copy %v to %v, %v.", file, assetPath, err))
 		return err
 	}
-	err = utils.SaveFile(assetPath, []byte(base))
+	err = utils.SaveFile(assetPath, base)
 	if err != nil {
 		log.Errorln(fmt.Sprintf("Failed to write file %v to %v, %v.", file, assetPath, err))
 		return err

@@ -429,25 +429,6 @@ func RunHTTPTest(test HTTPTest, t *testing.T) (string, *testing.T, error) {
 	return stringBody, t, logTest(t, err)
 }
 
-// getCSRFToken fetches a CSRF token from the server for authenticated requests
-func getCSRFToken() (string, []*http.Cookie, error) {
-	req, err := http.NewRequest("GET", "/api/csrf", nil)
-	if err != nil {
-		return "", nil, err
-	}
-	rr := httptest.NewRecorder()
-	Router().ServeHTTP(rr, req)
-
-	// Extract token from response body
-	var tokenResp struct {
-		Token string `json:"token"`
-	}
-	if err := json.Unmarshal(rr.Body.Bytes(), &tokenResp); err != nil {
-		return "", nil, err
-	}
-
-	return tokenResp.Token, rr.Result().Cookies(), nil
-}
 
 func Request(test HTTPTest) (*httptest.ResponseRecorder, error) {
 	return RequestWithAuth(test, !test.NoAuth)
@@ -477,15 +458,9 @@ func RequestWithAuth(test HTTPTest, addAuth bool) (*httptest.ResponseRecorder, e
 		req.Header.Set("Authorization", "Bearer "+core.App.ApiSecret)
 	}
 
-	// For state-changing methods with auth, get and include CSRF token
+	// Set Origin header to pass CSRF validation (same-origin request)
 	if test.Method != "GET" && test.Method != "HEAD" && test.Method != "OPTIONS" {
-		csrfToken, cookies, err := getCSRFToken()
-		if err == nil && csrfToken != "" {
-			req.Header.Set("X-CSRF-Token", csrfToken)
-			for _, cookie := range cookies {
-				req.AddCookie(cookie)
-			}
-		}
+		req.Header.Set("Origin", "http://"+req.Host)
 	}
 
 	rr := httptest.NewRecorder()

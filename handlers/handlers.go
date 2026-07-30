@@ -149,7 +149,7 @@ func loadTemplate(w http.ResponseWriter, r *http.Request) (*template.Template, e
 	mainTemplate.Funcs(handlerFuncs(w, r))
 	// render all templates
 	for _, temp := range templates {
-		tmp, _ := source.TmplBox.String(temp)
+		tmp, _ := source.ReadFileString(temp)
 		mainTemplate, err = mainTemplate.Parse(tmp)
 		if err != nil {
 			log.Errorln(err)
@@ -182,7 +182,7 @@ func ExecuteResponse(w http.ResponseWriter, r *http.Request, file string, data i
 			log.Errorln(err)
 		}
 	} else {
-		render, err := source.TmplBox.String(asset)
+		render, err := source.ReadFileString(asset)
 		if err != nil {
 			log.Errorln(err)
 		}

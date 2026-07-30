@@ -16,7 +16,6 @@
             @mouseout="mouseout"
             :class="getDayClass(d)"
           >
-            <span v-if="d.amount !== 0" class="d-none d-md-block text-center small"></span>
           </div>
         </div>
         <div class="row mt-2">
@@ -84,7 +83,9 @@ function mouseout() {
 
 function mouseover(e) {
   let txt = `${e.amount} Failures`
-  if (e.amount === 0) {
+  if (e.amount === 0 && e.hits === 0) {
+    txt = `No Data`
+  } else if (e.amount === 0) {
     txt = `No Issues`
   }
   hover_text.value = `${e.date.toUTCString().replace(' 00:00:00 GMT', '')} - ${txt}`
@@ -125,74 +126,34 @@ async function lastDaysFailures() {
   const start = beginningOf('day', nowSubtract(86400 * days_to_show))
   const end = endOf('today')
 
-  const failuresPromise = Api.service_failures_data(props.service.id, toUnix(start), toUnix(end), '24h', true)
-  const hitsPromise = Api.service_hits(props.service.id, toUnix(start), toUnix(end), '24h', true)
+  const data = await Api.service_failures_data(props.service.id, toUnix(start), toUnix(end), '24h', true)
 
-  const [failuresDataResult, hitsDataResult] = await Promise.all([failuresPromise, hitsPromise])
-
-  const mergedData = mergeData(failuresDataResult, hitsDataResult)
-
-  mergedData.forEach((d) => {
-    let date = new Date(d.timeframe)
-    if (toUnix(date) * 1000 > Date.now()) {
-      return
-    }
-
+  failureData.value = []
+  data.forEach((d) => {
+    const date = new Date(d.timeframe)
     failureData.value.push({
-      month: date.getUTCMonth() + 1,
-      day: date.getUTCDate(),
+      month: date.getMonth(),
+      day: date.getDate(),
       date: date,
       amount: d.amount,
-      hits: d.hits || 0,
     })
   })
-
-  failureData.value = failureData.value.slice(-days_to_show)
-}
-
-function mergeData(failuresDataArr, hitsDataArr) {
-  const dataMap = new Map()
-
-  hitsDataArr.forEach((d) => {
-    dataMap.set(d.timeframe, {
-      hits: d.amount,
-      amount: 0,
-      date: d.timeframe,
-    })
-  })
-
-  failuresDataArr.forEach((d) => {
-    let data = dataMap.get(d.timeframe) || {
-      hits: 0,
-      amount: 0,
-      date: d.timeframe,
-    }
-    data.amount = d.amount
-    dataMap.set(d.timeframe, data)
-  })
-
-  return Array.from(dataMap, ([date, data]) => ({
-    ...data,
-    timeframe: date,
-  }))
 }
 
 function getDayClass(data) {
-  if (data.amount === 0 && data.hits === 0) {
-    return 'day-no-data'
-  } else if (data.amount === 0 && data.hits > 0) {
+  if (data.amount === 0) {
     return 'day-success'
-  } else {
-    const severity = data.amount
-    if (severity >= outageSeverity.minor.start && severity < outageSeverity.minor.end) {
-      return 'day-minor-outage'
-    } else if (severity >= outageSeverity.moderate.start && severity < outageSeverity.moderate.end) {
-      return 'day-moderate-outage'
-    } else if (severity >= outageSeverity.major.start && severity < outageSeverity.major.end) {
-      return 'day-major-outage'
-    } else if (severity >= outageSeverity.critical.start) {
-      return 'day-critical-outage'
-    }
   }
+  const severity = data.amount
+  if (severity >= outageSeverity.minor.start && severity < outageSeverity.minor.end) {
+    return 'day-minor-outage'
+  } else if (severity >= outageSeverity.moderate.start && severity < outageSeverity.moderate.end) {
+    return 'day-moderate-outage'
+  } else if (severity >= outageSeverity.major.start && severity < outageSeverity.major.end) {
+    return 'day-major-outage'
+  } else if (severity >= outageSeverity.critical.start) {
+    return 'day-critical-outage'
+  }
+  return 'day-success'
 }
 </script>
