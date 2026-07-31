@@ -81,7 +81,6 @@ const czech = {
 	project_name: "Název stavové stránky",
 	description: "Popis",
 	domain: "Doména",
-	enable_cdn: "Povolit CDN",
 	newsletter: "Newsletter",
 	newsletter_note: "Budeme vám posílat e-maily pouze s velkými změnami",
 	loading: "Načítání",

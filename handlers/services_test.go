@@ -48,6 +48,7 @@ func getPublicService() *services.Service {
 }
 
 func TestUnAuthenticatedServicesRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
 	tests := []HTTPTest{
 		{
 			Name:           "No Authentication - New Service",
@@ -301,7 +302,7 @@ func TestServicesRoutes(t *testing.T) {
 			Method:      "POST",
 			Body: `{
 					"name": "New Private Service",
-					"domain": "https://statping.com",
+					"domain": "https://example.com",
 					"expected": "",
 					"expected_status": 200,
 					"check_interval": 30,

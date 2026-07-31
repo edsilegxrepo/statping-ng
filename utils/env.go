@@ -27,7 +27,7 @@ func InitEnvs() {
 	Params.SetDefault("STATPING_DIR", defaultDir)
 	Params.SetDefault("GO_ENV", "production")
 	Params.SetDefault("DEBUG", false)
-	Params.SetDefault("DEMO_MODE", false)
+	Params.SetDefault("ADMIN_LOCK", false)
 	Params.SetDefault("DB_CONN", "")
 	Params.SetDefault("DB_DSN", "")
 	Params.SetDefault("DISABLE_LOGS", false)
@@ -40,7 +40,6 @@ func InitEnvs() {
 	Params.SetDefault("MAX_IDLE_CONN", 25)
 	Params.SetDefault("MAX_LIFE_CONN", 5*time.Minute)
 	Params.SetDefault("SAMPLE_DATA", false)
-	Params.SetDefault("USE_CDN", false)
 	Params.SetDefault("ALLOW_REPORTS", true)
 	Params.SetDefault("POSTGRES_SSLMODE", "disable")
 	Params.SetDefault("NAME", "Platform Monitoring")
@@ -58,6 +57,13 @@ func InitEnvs() {
 	Params.SetDefault("LOGS_MAX_AGE", 28)
 	Params.SetDefault("LOGS_MAX_SIZE", 16)
 	Params.SetDefault("DISABLE_COLORS", false)
+	// Log shipping: send logs to external systems (Loki, Elasticsearch, Splunk, Cribl, webhook)
+	Params.SetDefault("LOG_SHIP_TYPE", "")       // loki, elasticsearch, splunk, cribl, webhook
+	Params.SetDefault("LOG_SHIP_ENDPOINT", "")   // URL to send logs to
+	Params.SetDefault("LOG_SHIP_TOKEN", "")      // Bearer token (or Splunk HEC token)
+	Params.SetDefault("LOG_SHIP_LABELS", "")     // Additional labels (key=value,key2=value2)
+	Params.SetDefault("LOG_SHIP_INDEX", "main")  // Splunk index
+	Params.SetDefault("LOG_SHIP_SOURCETYPE", "") // Splunk/Cribl sourcetype (default: statping)
 
 	dbConn := Params.GetString("DB_CONN")
 	dbInt := Params.GetInt("DB_PORT")

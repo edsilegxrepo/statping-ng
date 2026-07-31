@@ -1,20 +1,281 @@
 package utils
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"unicode"
 
+	"criticalsys.net/secretprotector/pkg/libsecsecrets"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// encryptedPrefix marks a value as encrypted to avoid heuristic detection
-const encryptedPrefix = "enc:"
+// Encrypted value prefix for libsecsecrets format
+const encryptedPrefixV1 = "v1:gcm:"
+
+// Legacy prefix for backward compatibility
+const encryptedPrefixLegacy = "enc:"
+
+var (
+	// ErrMasterKeyNotInitialized is returned when encryption is attempted without a master key
+	ErrMasterKeyNotInitialized = errors.New("master key not initialized - run 'statping init' first")
+
+	// ErrMasterKeyNotFound is returned when no master key source is available
+	ErrMasterKeyNotFound = errors.New("master key not found in STATPING_MASTER_KEY or STATPING_MASTER_KEY_FILE")
+)
+
+var (
+	masterKey     []byte
+	masterKeyMu   sync.RWMutex
+	masterKeyOnce sync.Once
+	masterKeyErr  error
+)
+
+// InitMasterKey resolves and stores the master key at startup.
+// Priority: STATPING_MASTER_KEY env > STATPING_MASTER_KEY_FILE env > $STATPING_DIR/master.key
+// Returns an error if no master key is found (mandatory, no fallback).
+func InitMasterKey() error {
+	masterKeyOnce.Do(func() {
+		ctx := context.Background()
+
+		// Determine file path: from env or default location
+		keyFile := os.Getenv("STATPING_MASTER_KEY_FILE")
+		if keyFile == "" {
+			defaultPath := filepath.Join(Directory, "master.key")
+			if FileExists(defaultPath) {
+				keyFile = defaultPath
+			}
+		}
+
+		key, err := libsecsecrets.ResolveKey(ctx,
+			"",                    // no direct key flag
+			"STATPING_MASTER_KEY", // env var name
+			keyFile,               // file path
+		)
+		if err != nil {
+			if errors.Is(err, libsecsecrets.ErrNoKeySource) {
+				masterKeyErr = ErrMasterKeyNotFound
+			} else {
+				masterKeyErr = fmt.Errorf("failed to resolve master key: %w", err)
+			}
+			return
+		}
+
+		masterKeyMu.Lock()
+		masterKey = key
+		masterKeyMu.Unlock()
+	})
+	return masterKeyErr
+}
+
+// MasterKeyInitialized returns true if the master key has been successfully initialized
+func MasterKeyInitialized() bool {
+	masterKeyMu.RLock()
+	defer masterKeyMu.RUnlock()
+	return masterKey != nil
+}
+
+// ZeroMasterKey clears the master key from memory (call on shutdown)
+func ZeroMasterKey() {
+	masterKeyMu.Lock()
+	defer masterKeyMu.Unlock()
+	if masterKey != nil {
+		libsecsecrets.ZeroBuffer(masterKey)
+		masterKey = nil
+	}
+}
+
+// ResetMasterKey resets the master key state (for testing only)
+func ResetMasterKey() {
+	masterKeyMu.Lock()
+	defer masterKeyMu.Unlock()
+	if masterKey != nil {
+		libsecsecrets.ZeroBuffer(masterKey)
+		masterKey = nil
+	}
+	// Reset sync.Once inside the lock to prevent race conditions
+	masterKeyOnce = sync.Once{}
+	masterKeyErr = nil
+}
+
+// GenerateMasterKey generates a new 256-bit master key and returns it as a hex string
+func GenerateMasterKey() (string, error) {
+	return libsecsecrets.GenerateKey()
+}
+
+// Encrypt encrypts plaintext using the master key with AES-256-GCM.
+// Returns a v1:gcm: prefixed ciphertext.
+func Encrypt(plaintext string) (string, error) {
+	if plaintext == "" {
+		return "", nil
+	}
+
+	masterKeyMu.RLock()
+	key := masterKey
+	masterKeyMu.RUnlock()
+
+	if key == nil {
+		return "", ErrMasterKeyNotInitialized
+	}
+
+	ctx := context.Background()
+	ciphertext, err := libsecsecrets.Encrypt(ctx, plaintext, key)
+	if err != nil {
+		return "", fmt.Errorf("encryption failed: %w", err)
+	}
+
+	return encryptedPrefixV1 + ciphertext, nil
+}
+
+// Decrypt decrypts ciphertext using the master key.
+// Handles both v1:gcm: (new) and enc: (legacy) prefixes.
+// Plaintext values without a prefix are returned as-is for backward compatibility.
+func Decrypt(ciphertext string) (string, error) {
+	if ciphertext == "" {
+		return "", nil
+	}
+
+	// Plaintext passthrough (no prefix)
+	if !strings.HasPrefix(ciphertext, encryptedPrefixV1) && !strings.HasPrefix(ciphertext, encryptedPrefixLegacy) {
+		return ciphertext, nil
+	}
+
+	masterKeyMu.RLock()
+	key := masterKey
+	masterKeyMu.RUnlock()
+
+	if key == nil {
+		return "", ErrMasterKeyNotInitialized
+	}
+
+	ctx := context.Background()
+
+	// Handle v1:gcm: prefix (new format)
+	if strings.HasPrefix(ciphertext, encryptedPrefixV1) {
+		encoded := strings.TrimPrefix(ciphertext, encryptedPrefixV1)
+		plaintext, err := libsecsecrets.Decrypt(ctx, encoded, key)
+		if err != nil {
+			return "", fmt.Errorf("decryption failed: %w", err)
+		}
+		return plaintext, nil
+	}
+
+	// Handle enc: prefix (legacy format - uses SHA256 of master key hex for compatibility)
+	if strings.HasPrefix(ciphertext, encryptedPrefixLegacy) {
+		keyHex := fmt.Sprintf("%x", key)
+		return decryptLegacyWithKey(ciphertext, keyHex)
+	}
+
+	return ciphertext, nil
+}
+
+// EncryptWithKey encrypts plaintext using a provided key (for testing or migration)
+func EncryptWithKey(plaintext string, keyHex string) (string, error) {
+	if plaintext == "" {
+		return "", nil
+	}
+
+	key, err := parseKeyHex(keyHex)
+	if err != nil {
+		return "", err
+	}
+
+	ctx := context.Background()
+	ciphertext, err := libsecsecrets.Encrypt(ctx, plaintext, key)
+	if err != nil {
+		return "", fmt.Errorf("encryption failed: %w", err)
+	}
+
+	return encryptedPrefixV1 + ciphertext, nil
+}
+
+// DecryptWithKey decrypts ciphertext using a provided key (for testing or migration)
+func DecryptWithKey(ciphertext string, keyHex string) (string, error) {
+	if ciphertext == "" {
+		return "", nil
+	}
+
+	key, err := parseKeyHex(keyHex)
+	if err != nil {
+		return "", err
+	}
+
+	ctx := context.Background()
+
+	// Strip prefix and decrypt
+	if strings.HasPrefix(ciphertext, encryptedPrefixV1) {
+		encoded := strings.TrimPrefix(ciphertext, encryptedPrefixV1)
+		plaintext, err := libsecsecrets.Decrypt(ctx, encoded, key)
+		if err != nil {
+			return "", fmt.Errorf("decryption failed: %w", err)
+		}
+		return plaintext, nil
+	}
+
+	// Legacy enc: format
+	if strings.HasPrefix(ciphertext, encryptedPrefixLegacy) {
+		return decryptLegacyWithKey(ciphertext, keyHex)
+	}
+
+	// No prefix - return as-is
+	return ciphertext, nil
+}
+
+// decryptLegacyWithKey decrypts legacy enc: format using the old method
+func decryptLegacyWithKey(ciphertext, keyString string) (string, error) {
+	// Strip the encrypted prefix
+	ciphertext = strings.TrimPrefix(ciphertext, encryptedPrefixLegacy)
+
+	data, err := base64.StdEncoding.DecodeString(ciphertext)
+	if err != nil {
+		return "", err
+	}
+
+	keyHash := sha256.Sum256([]byte(keyString))
+	block, err := aes.NewCipher(keyHash[:])
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	if len(data) < gcm.NonceSize() {
+		return "", fmt.Errorf("ciphertext too short")
+	}
+
+	nonce := data[:gcm.NonceSize()]
+	ciphertextBytes := data[gcm.NonceSize():]
+
+	plaintext, err := gcm.Open(nil, nonce, ciphertextBytes, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(plaintext), nil
+}
+
+// parseKeyHex parses a 64-char hex key or 32-byte raw key into bytes
+func parseKeyHex(keyHex string) ([]byte, error) {
+	ctx := context.Background()
+	return libsecsecrets.ResolveKey(ctx, keyHex, "", "")
+}
+
+// IsEncrypted checks if a string is encrypted (has v1:gcm: or enc: prefix)
+func IsEncrypted(s string) bool {
+	return strings.HasPrefix(s, encryptedPrefixV1) || strings.HasPrefix(s, encryptedPrefixLegacy)
+}
 
 // HashPassword returns the bcrypt hash of a password string
 func HashPassword(password string) string {
@@ -60,16 +321,38 @@ func Sha256Hash(val string) string {
 var characterRunes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 // RandomString generates a random string of n length using crypto/rand
+// Uses rejection sampling to avoid modulo bias
 func RandomString(n int) string {
+	result, err := RandomStringSecure(n)
+	if err != nil {
+		// Panic on crypto/rand failure - this indicates a severe system issue
+		panic("crypto/rand failed: " + err.Error())
+	}
+	return result
+}
+
+// RandomStringSecure generates a random string of n length using crypto/rand
+// Returns an error if crypto/rand fails. Uses rejection sampling to avoid modulo bias.
+func RandomStringSecure(n int) (string, error) {
 	res := make([]byte, n)
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return ""
+	charLen := len(characterRunes)
+
+	// Calculate the maximum value that gives uniform distribution
+	// For 62 characters: 256 % 62 = 8, so we reject values >= 256 - 8 = 248
+	maxValid := 256 - (256 % charLen)
+
+	for i := 0; i < n; {
+		b := make([]byte, 1)
+		if _, err := rand.Read(b); err != nil {
+			return "", err
+		}
+		// Rejection sampling: discard values that would cause bias
+		if int(b[0]) < maxValid {
+			res[i] = characterRunes[int(b[0])%charLen]
+			i++
+		}
 	}
-	for i := range b {
-		res[i] = characterRunes[int(b[i])%len(characterRunes)]
-	}
-	return string(res)
+	return string(res), nil
 }
 
 // IsHash returns true if the string is already a bcrypt hash
@@ -94,78 +377,4 @@ func ComplexityCheck(password string) bool {
 		}
 	}
 	return hasUpper && hasLower && hasDigit
-}
-
-// Encrypt encrypts plaintext using AES-256-GCM with the given key.
-// The key is hashed with SHA-256 to ensure it's exactly 32 bytes.
-// Returns base64-encoded ciphertext with nonce prepended.
-func Encrypt(plaintext, key string) (string, error) {
-	if plaintext == "" {
-		return "", nil
-	}
-
-	keyHash := sha256.Sum256([]byte(key))
-	block, err := aes.NewCipher(keyHash[:])
-	if err != nil {
-		return "", err
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", err
-	}
-
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := rand.Read(nonce); err != nil {
-		return "", err
-	}
-
-	ciphertext := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
-	return encryptedPrefix + base64.StdEncoding.EncodeToString(ciphertext), nil
-}
-
-// Decrypt decrypts base64-encoded ciphertext using AES-256-GCM with the given key.
-// The key is hashed with SHA-256 to ensure it's exactly 32 bytes.
-func Decrypt(ciphertext, key string) (string, error) {
-	if ciphertext == "" {
-		return "", nil
-	}
-
-	// Strip the encrypted prefix if present
-	ciphertext = strings.TrimPrefix(ciphertext, encryptedPrefix)
-
-	data, err := base64.StdEncoding.DecodeString(ciphertext)
-	if err != nil {
-		return "", err
-	}
-
-	keyHash := sha256.Sum256([]byte(key))
-	block, err := aes.NewCipher(keyHash[:])
-	if err != nil {
-		return "", err
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", err
-	}
-
-	if len(data) < gcm.NonceSize() {
-		return "", fmt.Errorf("ciphertext too short")
-	}
-
-	nonce := data[:gcm.NonceSize()]
-	ciphertextBytes := data[gcm.NonceSize():]
-
-	plaintext, err := gcm.Open(nil, nonce, ciphertextBytes, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return string(plaintext), nil
-}
-
-// IsEncrypted checks if a string is encrypted by looking for the encrypted prefix
-func IsEncrypted(s string) bool {
-	return strings.HasPrefix(s, encryptedPrefix)
 }

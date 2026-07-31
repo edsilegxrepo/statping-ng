@@ -13,18 +13,18 @@ import (
 func TestReplaceTemplate(t *testing.T) {
 	t.Parallel()
 	temp := `{"id":{{.Service.Id}},"name":"{{.Service.Name}}"}`
-	replaced := ReplaceTemplate(temp, replacer{Service: services.Example(true)})
+	replaced := ReplaceTemplate(temp, makeReplacer(services.Example(true), failures.Failure{}))
 	assert.Equal(t, `{"id":6283,"name":"Statping Example"}`, replaced)
 
 	temp = `{"id":{{.Service.Id}},"name":"{{.Service.Name}}","failure":"{{.Failure.Issue}}"}`
-	replaced = ReplaceTemplate(temp, replacer{Service: services.Example(false), Failure: failures.Example()})
+	replaced = ReplaceTemplate(temp, makeReplacer(services.Example(false), failures.Example()))
 	assert.Equal(t, `{"id":6283,"name":"Statping Example","failure":"Response did not response a 200 status code"}`, replaced)
 }
 
 func TestReplaceTemplateInvalid(t *testing.T) {
 	t.Parallel()
 	temp := `{"id":{{.Invalid.Field}}`
-	replaced := ReplaceTemplate(temp, replacer{Service: services.Example(true)})
+	replaced := ReplaceTemplate(temp, makeReplacer(services.Example(true), failures.Failure{}))
 	assert.Contains(t, replaced, "template")
 }
 

@@ -12,7 +12,6 @@ import (
 	"github.com/statping-ng/statping-ng/types/incidents"
 	"github.com/statping-ng/statping-ng/types/messages"
 	"github.com/statping-ng/statping-ng/types/notifications"
-	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
@@ -36,7 +35,7 @@ func apiRenewHandler(w http.ResponseWriter, r *http.Request) {
 	if newApi == "" {
 		newApi = utils.NewSHA256Hash()
 	}
-	// EncryptionKey is separate and never changes - no need to re-encrypt secrets
+	// Master key is external - API secret renewal doesn't affect encryption
 	core.App.ApiSecret = newApi
 	if err := core.App.Update(); err != nil {
 		sendErrorJson(err, w, r)
@@ -100,7 +99,6 @@ func apiCoreHandler(w http.ResponseWriter, r *http.Request) {
 		app.Language = c.Language
 	}
 	utils.Params.Set("LANGUAGE", app.Language)
-	app.UseCdn = null.NewNullBool(c.UseCdn.Bool)
 
 	if err := app.Update(); err != nil {
 		sendErrorJson(err, w, r)

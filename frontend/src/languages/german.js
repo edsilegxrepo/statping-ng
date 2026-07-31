@@ -81,7 +81,6 @@ const german = {
 	project_name: "Name der Statusseite",
 	description: "Beschreibung",
 	domain: "Domäne",
-	enable_cdn: "CDN aktivieren",
 	newsletter: "Newsletter",
 	newsletter_note: "Wir senden Ihnen nur eine E-Mail für größere Änderungen",
 	loading: "Laden",

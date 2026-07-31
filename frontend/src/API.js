@@ -8,7 +8,7 @@ const tokenKey = 'statping_auth'
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response) {
+    if (import.meta.env.DEV && error.response) {
       console.error('API Error:', error.response.status, error.response.data)
     }
     return Promise.reject(error)
@@ -266,6 +266,14 @@ class Api {
     return axios.post('api/theme', data).then((response) => response.data)
   }
 
+  async theme_generate(create = true) {
+    if (create) {
+      return axios.post('api/theme/create').then((response) => response.data)
+    } else {
+      return axios.delete('api/theme').then((response) => response.data)
+    }
+  }
+
   async ldap() {
     return axios.get('api/ldap').then((response) => response.data)
   }
@@ -296,6 +304,18 @@ class Api {
 
   async digest_smtp_test() {
     return axios.post('api/digest/smtp-test').then((response) => response.data)
+  }
+
+  async logship_get() {
+    return axios.get('api/logship').then((response) => response.data)
+  }
+
+  async logship_save(data) {
+    return axios.post('api/logship', data).then((response) => response.data)
+  }
+
+  async logship_test(data) {
+    return axios.post('api/logship/test', data).then((response) => response.data)
   }
 
   async settings_export() {

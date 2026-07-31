@@ -11,7 +11,7 @@ func Example(online bool) *Service {
 	return &Service{
 		Id:                  6283,
 		Name:                "Statping Example",
-		Domain:              "https://statping.com",
+		Domain:              "https://example.com",
 		Expected:            null.NewNullString(""),
 		ExpectedStatus:      200,
 		Interval:            int(time.Duration(15 * time.Second).Seconds()),

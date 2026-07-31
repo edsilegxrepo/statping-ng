@@ -28,6 +28,9 @@ var (
 	oauthStateStoreLock sync.RWMutex
 )
 
+// maxOAuthStates limits the number of pending OAuth states to prevent memory exhaustion
+const maxOAuthStates = 10000
+
 // generateOAuthState creates a cryptographically secure state token
 func generateOAuthState() (string, error) {
 	b := make([]byte, 32)
@@ -37,8 +40,24 @@ func generateOAuthState() (string, error) {
 	state := base64.URLEncoding.EncodeToString(b)
 
 	oauthStateStoreLock.Lock()
+	defer oauthStateStoreLock.Unlock()
+
+	// Prevent memory exhaustion from DoS attacks
+	if len(oauthStateStore) >= maxOAuthStates {
+		// Cleanup expired states first
+		now := time.Now()
+		for s, expiry := range oauthStateStore {
+			if now.After(expiry) {
+				delete(oauthStateStore, s)
+			}
+		}
+		// If still at limit after cleanup, reject
+		if len(oauthStateStore) >= maxOAuthStates {
+			return "", errors.New("too many pending OAuth requests, please try again later")
+		}
+	}
+
 	oauthStateStore[state] = time.Now().Add(10 * time.Minute)
-	oauthStateStoreLock.Unlock()
 
 	return state, nil
 }

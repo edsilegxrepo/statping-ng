@@ -31,6 +31,14 @@ func (h CheckinHitters) Since(t time.Time) CheckinHitters {
 	return CheckinHitters{h.db.Where("checkin_hits.created_at > ?", timestamp)}
 }
 
+// SinceCount returns the count of hits since time t (avoids loading all records)
+func (h CheckinHitters) SinceCount(t time.Time) int {
+	timestamp := db.FormatTime(t)
+	var count int64
+	h.db.Where("checkin_hits.created_at > ?", timestamp).Count(&count)
+	return int(count)
+}
+
 func (c *Checkin) LastHit() *CheckinHit {
 	var hit CheckinHit
 	dbHits.Where("checkin = ?", c.Id).Last(&hit)

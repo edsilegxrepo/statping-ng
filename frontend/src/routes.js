@@ -114,7 +114,7 @@ const routes = [
 						next("/login");
 					}
 				} catch (e) {
-					console.error("Auth check failed:", e);
+					if (import.meta.env.DEV) console.error("Auth check failed:", e);
 					store.commit("setLoggedIn", false);
 					next("/login");
 				}

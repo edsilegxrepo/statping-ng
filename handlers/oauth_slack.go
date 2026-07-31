@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -78,8 +77,9 @@ func validateSlack(id slackIdentity) bool {
 
 // slackIdentity will query the Slack API to fetch the users ID, username, and email address.
 func returnSlackIdentity(token string) (slackIdentity, error) {
-	url := fmt.Sprintf("https://slack.com/api/users.identity?token=%s", token)
-	out, _, err := utils.HttpRequest(url, "GET", "application/x-www-form-urlencoded", nil, nil, 10*time.Second, true, nil)
+	// Use Authorization header instead of query parameter to prevent token leakage in logs
+	headers := []string{"Authorization=Bearer " + token}
+	out, _, err := utils.HttpRequest("https://slack.com/api/users.identity", "GET", "application/x-www-form-urlencoded", headers, nil, 10*time.Second, true, nil)
 	if err != nil {
 		return slackIdentity{}, err
 	}

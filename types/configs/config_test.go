@@ -201,7 +201,7 @@ func TestDefaultValues(t *testing.T) {
 	assert.Equal(t, "disable", utils.Params.GetString("POSTGRES_SSLMODE"))
 	assert.Equal(t, "en", utils.Params.GetString("LANGUAGE"))
 	assert.Equal(t, false, utils.Params.GetBool("SAMPLE_DATA"))
-	assert.Equal(t, false, utils.Params.GetBool("DEMO_MODE"))
+	assert.Equal(t, false, utils.Params.GetBool("ADMIN_LOCK"))
 }
 
 func TestDbConfig_DefaultConnectionPoolSettings(t *testing.T) {
@@ -750,7 +750,7 @@ func TestDbConfig_ToYAML_AllFields(t *testing.T) {
 		LetsEncryptEnable: true,
 		LetsEncryptHost:   "status.example.com",
 		LetsEncryptEmail:  "admin@example.com",
-		DemoMode:          true,
+		AdminLock:          true,
 		BasePath:          "/status",
 	}
 
@@ -768,7 +768,7 @@ func TestDbConfig_ToYAML_AllFields(t *testing.T) {
 	assert.Contains(t, yamlStr, "allow_reports: true")
 	assert.Contains(t, yamlStr, "letsencrypt_enable: true")
 	assert.Contains(t, yamlStr, "letsencrypt_host: status.example.com")
-	assert.Contains(t, yamlStr, "demo_mode: true")
+	assert.Contains(t, yamlStr, "admin_lock: true")
 	assert.Contains(t, yamlStr, "base_path: /status")
 }
 

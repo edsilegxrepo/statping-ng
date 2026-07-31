@@ -76,3 +76,4 @@ out/
 # Test artifacts (persistent, for debugging)
 /testfiles/*
 !/testfiles/.gitkeep
+statping.exe~

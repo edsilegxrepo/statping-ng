@@ -99,7 +99,6 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 		Version:      core.App.Version,
 		Started:      utils.Now(),
 		CreatedAt:    utils.Now(),
-		UseCdn:       null.NewNullBool(false),
 		Footer:       null.NewNullString(""),
 		Language:     confgs.Language,
 		MigrationId:  utils.Params.GetInt64("MIGRATION_ID"),

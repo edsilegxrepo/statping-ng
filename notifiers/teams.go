@@ -76,7 +76,8 @@ func (t *teams) sendTeams(card *TeamsAdaptiveCard) (string, error) {
 		return "", err
 	}
 
-	resp, _, err := utils.HttpRequest(t.Host.String, "POST", "application/json", nil, bytes.NewReader(data), time.Duration(15*time.Second), true, nil)
+	// Use SafeHttpRequest to prevent SSRF/DNS rebinding
+	resp, _, err := utils.SafeHttpRequest(t.Host.String, "POST", "application/json", nil, bytes.NewReader(data), time.Duration(15*time.Second))
 	if err != nil {
 		return "", err
 	}
@@ -203,6 +204,9 @@ func (t *teams) Valid(values notifications.Values) error {
 	}
 	if !strings.HasPrefix(values.Host, "https://") {
 		return fmt.Errorf("webhook URL must start with https://")
+	}
+	if err := utils.ValidateExternalURL(values.Host); err != nil {
+		return fmt.Errorf("invalid Teams webhook URL: %w", err)
 	}
 	return nil
 }

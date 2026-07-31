@@ -33,7 +33,14 @@ func (f Failurer) Last() *Failure {
 
 func (f Failurer) List() []*Failure {
 	var fails []*Failure
-	f.db.Find(&fails)
+	f.db.Limit(10000).Find(&fails)
+	return fails
+}
+
+// ListPaginated returns failures with pagination
+func (f Failurer) ListPaginated(limit, offset int) []*Failure {
+	var fails []*Failure
+	f.db.Limit(limit).Offset(offset).Find(&fails)
 	return fails
 }
 
@@ -45,8 +52,15 @@ func (f Failurer) LastAmount(amount int) []*Failure {
 
 func (f Failurer) Since(t time.Time) []*Failure {
 	var fails []*Failure
-	f.db.Since(t).Find(&fails)
+	f.db.Since(t).Limit(10000).Find(&fails)
 	return fails
+}
+
+// SinceCount returns the count of failures since time t (avoids loading all records)
+func (f Failurer) SinceCount(t time.Time) int {
+	var count int64
+	f.db.Since(t).Count(&count)
+	return int(count)
 }
 
 func (f Failurer) Count() int {

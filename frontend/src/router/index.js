@@ -225,7 +225,7 @@ router.beforeEach(async (to, _from, next) => {
         next('/login')
       }
     } catch (e) {
-      console.error('Auth check failed:', e)
+      if (import.meta.env.DEV) console.error('Auth check failed:', e)
       store.setLoggedIn(false)
       next('/login')
     }

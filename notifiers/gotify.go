@@ -1,14 +1,14 @@
 package notifiers
 
 import (
+	"fmt"
 	"strings"
 	"time"
-
-	"github.com/statping-ng/statping-ng/types/null"
 
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/types/notifier"
+	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
 )
@@ -24,6 +24,11 @@ func (g *gotify) Select() *notifications.Notification {
 }
 
 func (g *gotify) Valid(values notifications.Values) error {
+	if values.Host != "" {
+		if err := utils.ValidateExternalURL(values.Host); err != nil {
+			return fmt.Errorf("invalid Gotify server URL: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -69,7 +74,8 @@ func (g *gotify) sendMessage(msg string) (string, error) {
 
 	headers := []string{"X-Gotify-Key=" + g.ApiKey.String}
 
-	content, _, err := utils.HttpRequest(url, "POST", "application/json", headers, strings.NewReader(msg), time.Duration(10*time.Second), true, nil)
+	// Use SafeHttpRequest to prevent SSRF/DNS rebinding
+	content, _, err := utils.SafeHttpRequest(url, "POST", "application/json", headers, strings.NewReader(msg), time.Duration(10*time.Second))
 
 	return string(content), err
 }

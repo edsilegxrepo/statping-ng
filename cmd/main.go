@@ -36,11 +36,10 @@ func init() {
 	utils.Params.Set("COMMIT", COMMIT)
 
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(assetsCmd)
 	rootCmd.AddCommand(exportCmd)
 	rootCmd.AddCommand(importCmd)
-	rootCmd.AddCommand(sassCmd)
 	rootCmd.AddCommand(onceCmd)
 	rootCmd.AddCommand(envCmd)
 	rootCmd.AddCommand(systemctlCmd)
@@ -51,13 +50,13 @@ func init() {
 
 // exit will return an error and return an exit code 1 due to this error
 func exit(err error) {
-	utils.SentryErr(err)
 	log.Fatalln(err)
 	os.Exit(1)
 }
 
 // Close will gracefully stop the database connection, and log file
 func Close() {
+	utils.StopLogShipper()
 	utils.CloseLogs()
 	confgs.Close()
 	fmt.Println("Shutting down Statping")
@@ -83,6 +82,14 @@ func start() {
 	}
 
 	log.Info(fmt.Sprintf("Starting Statping %s", VERSION))
+
+	// Initialize master key for encryption (mandatory)
+	if err := utils.InitMasterKey(); err != nil {
+		log.Errorf("Master key initialization failed: %v", err)
+		log.Error("Run 'statping init --key-file /path/to/master.key' to generate a key")
+		exit(err)
+	}
+	defer utils.ZeroMasterKey()
 
 	utils.Params.Set("SERVER_IP", ipAddress)
 	utils.Params.Set("SERVER_PORT", port)
@@ -150,8 +157,17 @@ func InitApp() error {
 	if _, err := core.Select(); err != nil {
 		return err
 	}
-	// init Sentry error monitoring (its useful)
-	utils.SentryInit(core.App.AllowReports.Bool)
+	// init log shipping if configured (Loki, Elasticsearch, Splunk, Cribl)
+	// Environment variables take precedence, database config is fallback
+	utils.InitLogShipperWithConfig(&utils.LogShipConfig{
+		Enabled:    core.App.LogShipEnabled.Bool,
+		Type:       core.App.LogShipType,
+		Endpoint:   core.App.LogShipEndpoint,
+		Token:      core.App.LogShipToken,
+		Index:      core.App.LogShipIndex,
+		Sourcetype: core.App.LogShipSourcetype,
+		Labels:     core.App.LogShipLabels,
+	})
 	// init prometheus metrics
 	metrics.InitMetrics()
 	// connect each notifier, added them into database if needed

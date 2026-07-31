@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -100,33 +101,68 @@ func TestCSRFMiddlewareBlocksPOSTWithInvalidReferer(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, rr.Code, "POST with mismatched Referer should be blocked")
 }
 
-func TestCSRFMiddlewareAllowsPOSTWithoutOriginOrReferer(t *testing.T) {
+func TestCSRFMiddlewareBlocksPOSTWithoutOriginOrReferer(t *testing.T) {
 	handler := csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
 	req := httptest.NewRequest("POST", "/api/test", nil)
 	req.Host = "localhost:8080"
-	// No Origin or Referer - allowed because SameSite=Strict is primary defense
+	// No Origin or Referer - blocked by default for security
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusOK, rr.Code, "POST without Origin/Referer should be allowed (SameSite is primary defense)")
+	assert.Equal(t, http.StatusForbidden, rr.Code, "POST without Origin/Referer should be blocked by default")
 }
 
-func TestCSRFMiddlewareUsesXForwardedHost(t *testing.T) {
+func TestCSRFMiddlewareAllowsPOSTWithoutOriginOrRefererWhenConfigured(t *testing.T) {
+	// Set ALLOW_NO_ORIGIN for this test
+	utils.Params.Set("ALLOW_NO_ORIGIN", true)
+	defer utils.Params.Set("ALLOW_NO_ORIGIN", false)
+
 	handler := csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
 	req := httptest.NewRequest("POST", "/api/test", nil)
+	req.Host = "localhost:8080"
+	// No Origin or Referer - allowed when ALLOW_NO_ORIGIN is set
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "POST without Origin/Referer should be allowed when ALLOW_NO_ORIGIN is set")
+}
+
+func TestCSRFMiddlewareUsesXForwardedHost(t *testing.T) {
+	// Configure trusted proxy so X-Forwarded-Host is trusted
+	// Reset the trustedProxiesLoaded flag to force reload
+	trustedProxiesLoadMu.Lock()
+	trustedProxiesLoaded = false
+	trustedProxyCIDRs = nil
+	trustedProxiesLoadMu.Unlock()
+
+	utils.Params.Set("TRUSTED_PROXIES", "192.0.2.1/32")
+	defer func() {
+		utils.Params.Set("TRUSTED_PROXIES", "")
+		trustedProxiesLoadMu.Lock()
+		trustedProxiesLoaded = false
+		trustedProxyCIDRs = nil
+		trustedProxiesLoadMu.Unlock()
+	}()
+
+	handler := csrfMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest("POST", "/api/test", nil)
+	req.RemoteAddr = "192.0.2.1:12345" // From trusted proxy
 	req.Host = "127.0.0.1:8080" // Internal host
 	req.Header.Set("X-Forwarded-Host", "statping.example.com")
 	req.Header.Set("Origin", "https://statping.example.com")
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusOK, rr.Code, "Should use X-Forwarded-Host for validation")
+	assert.Equal(t, http.StatusOK, rr.Code, "Should use X-Forwarded-Host for validation when from trusted proxy")
 }
 
 func TestCSRFMiddlewareBlocksWithXForwardedHostMismatch(t *testing.T) {

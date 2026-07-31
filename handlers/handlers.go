@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -16,7 +17,8 @@ import (
 const (
 	cookieName = "statping_auth"
 
-	timeout = time.Second * 30
+	timeout         = time.Second * 30
+	shutdownTimeout = time.Second * 15
 )
 
 var (
@@ -27,8 +29,28 @@ var (
 	templates  = []string{"base.gohtml"}
 )
 
+// StopHTTPServer gracefully shuts down the HTTP server
 func StopHTTPServer(err error) {
 	log.Infoln("Stopping HTTP Server")
+
+	// Stop background goroutines
+	StopRateLimiterCleanup()
+
+	if httpServer != nil {
+		// Create a context with timeout for graceful shutdown
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+
+		if shutdownErr := httpServer.Shutdown(ctx); shutdownErr != nil {
+			log.Errorf("HTTP server shutdown error: %v", shutdownErr)
+			// Force close if graceful shutdown fails
+			if closeErr := httpServer.Close(); closeErr != nil {
+				log.Errorf("HTTP server close error: %v", closeErr)
+			}
+		} else {
+			log.Infoln("HTTP Server stopped gracefully")
+		}
+	}
 }
 
 // RunHTTPServer will start a HTTP server on a specific IP and port
@@ -171,6 +193,8 @@ func ExecuteResponse(w http.ResponseWriter, r *http.Request, file string, data i
 	mainTemplate, err := loadTemplate(w, r)
 	if err != nil {
 		log.Errorln(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
 	asset := file

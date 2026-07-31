@@ -19,26 +19,9 @@
           />
         </div>
 
-        <div class="form-group row">
-          <div class="col-8 col-sm-9">
-            <label>{{ $t('domain') }}</label>
-            <input v-model="coreData.domain" type="url" class="form-control" id="domain" />
-          </div>
-          <div class="col-4 col-sm-3 mt-sm-1 mt-0">
-            <label class="d-inline d-sm-none">{{ $t('enable_cdn') }}</label>
-            <label class="d-none d-sm-block">{{ $t('enable_cdn') }}</label>
-            <span @click="coreData.using_cdn = !!coreData.using_cdn" class="switch" id="using_cdn">
-              <input
-                v-model="coreData.using_cdn"
-                type="checkbox"
-                name="using_cdn"
-                class="switch"
-                id="switch-normal"
-                :checked="coreData.using_cdn"
-              />
-              <label for="switch-normal"></label>
-            </span>
-          </div>
+        <div class="form-group">
+          <label>{{ $t('domain') }}</label>
+          <input v-model="coreData.domain" type="url" class="form-control" id="domain" />
         </div>
 
         <div class="form-group">

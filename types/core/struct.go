@@ -33,7 +33,6 @@ type Core struct {
 	Language      string          `gorm:"column:language" json:"language"`
 	Setup         bool            `gorm:"-" json:"setup"`
 	MigrationId   int64           `gorm:"column:migration_id" json:"migration_id,omitempty"`
-	UseCdn              null.NullBool `gorm:"column:use_cdn;default:false" json:"using_cdn,omitempty"`
 	AllowReports        null.NullBool `gorm:"column:allow_reports;default:true" json:"allow_reports,omitempty"`
 	SessionTimeout      int           `gorm:"column:session_timeout;default:720" json:"session_timeout"`
 	DigestEnabled       null.NullBool `gorm:"column:digest_enabled;default:false" json:"digest_enabled"`
@@ -45,8 +44,9 @@ type Core struct {
 	Notifications []AllNotifiers  `gorm:"-" json:"-"`
 	Integrations  []Integrator    `gorm:"-" json:"-"`
 
-	OAuth `json:"-"`
-	LDAP  `json:"-"`
+	OAuth       `json:"-"`
+	LDAP        `json:"-"`
+	LogShipping `json:"-"`
 }
 
 type LDAP struct {
@@ -64,6 +64,16 @@ type LDAP struct {
 	LdapAuthorizedGroupEnabled null.NullBool `gorm:"column:ldap_authorized_group_enabled;default:false" json:"ldap_authorized_group_enabled"`
 	LdapAuthorizedGroup      string        `gorm:"column:ldap_authorized_group" json:"ldap_authorized_group"`
 	LdapTemplate             string        `gorm:"column:ldap_template" json:"ldap_template"`
+}
+
+type LogShipping struct {
+	LogShipEnabled    null.NullBool `gorm:"column:log_ship_enabled;default:false" json:"log_ship_enabled"`
+	LogShipType       string        `gorm:"column:log_ship_type" json:"log_ship_type"`                       // loki, elasticsearch, splunk, cribl, webhook
+	LogShipEndpoint   string        `gorm:"column:log_ship_endpoint" json:"log_ship_endpoint"`               // URL
+	LogShipToken      string        `gorm:"column:log_ship_token" json:"log_ship_token" scope:"admin"`       // Encrypted token
+	LogShipIndex      string        `gorm:"column:log_ship_index" json:"log_ship_index"`                     // Splunk index
+	LogShipSourcetype string        `gorm:"column:log_ship_sourcetype" json:"log_ship_sourcetype"`           // Splunk/Cribl sourcetype
+	LogShipLabels     string        `gorm:"column:log_ship_labels" json:"log_ship_labels"`                   // key=value,key2=value2
 }
 
 type OAuth struct {

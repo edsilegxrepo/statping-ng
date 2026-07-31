@@ -33,13 +33,27 @@ func (h Hitters) Last() *Hit {
 
 func (h Hitters) Since(t time.Time) []*Hit {
 	var hits []*Hit
-	h.db.Since(t).Find(&hits)
+	h.db.Since(t).Limit(10000).Find(&hits)
 	return hits
+}
+
+// SinceCount returns the count of hits since time t (avoids loading all records)
+func (h Hitters) SinceCount(t time.Time) int {
+	var count int64
+	h.db.Since(t).Count(&count)
+	return int(count)
 }
 
 func (h Hitters) List() []*Hit {
 	var hits []*Hit
-	h.db.Find(&hits)
+	h.db.Limit(10000).Find(&hits)
+	return hits
+}
+
+// ListPaginated returns hits with pagination
+func (h Hitters) ListPaginated(limit, offset int) []*Hit {
+	var hits []*Hit
+	h.db.Limit(limit).Offset(offset).Find(&hits)
 	return hits
 }
 

@@ -81,7 +81,6 @@ const french = {
 	project_name: "Nom de la page d'état",
 	description: "Description",
 	domain: "Domaine",
-	enable_cdn: "Activer le CDN",
 	newsletter: "Bulletin",
 	newsletter_note:
 		"Nous ne vous enverrons qu'un e-mail pour les modifications majeures",

@@ -18,6 +18,8 @@ import (
 
 func init() {
 	_ = utils.InitLogs()
+	// Allow internal URLs for tests using httptest.NewServer (127.0.0.1/localhost)
+	utils.Params.Set("ALLOW_INTERNAL_URLS", true)
 }
 
 func TestCheckHTTP(t *testing.T) {

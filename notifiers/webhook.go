@@ -84,6 +84,12 @@ func (w *webhooker) Select() *notifications.Notification {
 }
 
 func (w *webhooker) Valid(values notifications.Values) error {
+	// Validate URL is not targeting internal resources (SSRF protection)
+	if host := values.Host; host != "" {
+		if err := utils.ValidateExternalURL(host); err != nil {
+			return fmt.Errorf("invalid webhook URL: %w", err)
+		}
+	}
 	return nil
 }
 

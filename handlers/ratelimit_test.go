@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -114,6 +115,21 @@ func TestRateLimiterCleanup(t *testing.T) {
 }
 
 func TestGetClientIP(t *testing.T) {
+	// Configure trusted proxy so X-Forwarded-For/X-Real-IP are trusted
+	trustedProxiesLoadMu.Lock()
+	trustedProxiesLoaded = false
+	trustedProxyCIDRs = nil
+	trustedProxiesLoadMu.Unlock()
+
+	utils.Params.Set("TRUSTED_PROXIES", "127.0.0.1/32")
+	defer func() {
+		utils.Params.Set("TRUSTED_PROXIES", "")
+		trustedProxiesLoadMu.Lock()
+		trustedProxiesLoaded = false
+		trustedProxyCIDRs = nil
+		trustedProxiesLoadMu.Unlock()
+	}()
+
 	tests := []struct {
 		name     string
 		headers  map[string]string
@@ -121,19 +137,19 @@ func TestGetClientIP(t *testing.T) {
 		expected string
 	}{
 		{
-			name:       "X-Forwarded-For single IP",
+			name:       "X-Forwarded-For single IP from trusted proxy",
 			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195"},
 			remoteAddr: "127.0.0.1:8080",
 			expected:   "203.0.113.195",
 		},
 		{
-			name:       "X-Forwarded-For multiple IPs",
+			name:       "X-Forwarded-For multiple IPs from trusted proxy",
 			headers:    map[string]string{"X-Forwarded-For": "203.0.113.195, 70.41.3.18, 150.172.238.178"},
 			remoteAddr: "127.0.0.1:8080",
 			expected:   "203.0.113.195",
 		},
 		{
-			name:       "X-Real-IP",
+			name:       "X-Real-IP from trusted proxy",
 			headers:    map[string]string{"X-Real-IP": "198.51.100.178"},
 			remoteAddr: "127.0.0.1:8080",
 			expected:   "198.51.100.178",
@@ -142,7 +158,7 @@ func TestGetClientIP(t *testing.T) {
 			name:       "No proxy headers",
 			headers:    map[string]string{},
 			remoteAddr: "192.0.2.1:12345",
-			expected:   "192.0.2.1:12345",
+			expected:   "192.0.2.1",
 		},
 	}
 
@@ -158,6 +174,29 @@ func TestGetClientIP(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestGetClientIPIgnoresUntrustedProxy(t *testing.T) {
+	// Reset trusted proxies (no trusted proxies configured)
+	trustedProxiesLoadMu.Lock()
+	trustedProxiesLoaded = false
+	trustedProxyCIDRs = nil
+	trustedProxiesLoadMu.Unlock()
+
+	utils.Params.Set("TRUSTED_PROXIES", "")
+	defer func() {
+		trustedProxiesLoadMu.Lock()
+		trustedProxiesLoaded = false
+		trustedProxyCIDRs = nil
+		trustedProxiesLoadMu.Unlock()
+	}()
+
+	req := httptest.NewRequest("GET", "/", nil)
+	req.RemoteAddr = "192.0.2.1:8080"
+	req.Header.Set("X-Forwarded-For", "203.0.113.195") // Should be ignored
+
+	result := getClientIP(req)
+	assert.Equal(t, "192.0.2.1", result, "Should use RemoteAddr when no trusted proxies configured")
 }
 
 func TestRateLimitMiddleware(t *testing.T) {

@@ -1,86 +1,235 @@
 # Statping-ng Configuration File
 # This file documents all available configuration options.
 # Copy to your STATPING_DIR and customize as needed.
+#
+# Environment variables take precedence over config.yml values.
+# Use SCREAMING_SNAKE_CASE for env vars (e.g., DB_CONN, ADMIN_LOCK)
 
 #=============================================================================
 # DATABASE CONNECTION
 #=============================================================================
 
 # Database type: sqlite3, postgres, mysql
+# Env: DB_CONN
 connection: sqlite3
 
-# SQLite: path to database file (relative to location or absolute)
+# SQLite: path to database file (relative to STATPING_DIR or absolute)
+# Env: (set via connection string)
 sqlfile: statping.db
 
 # PostgreSQL/MySQL connection settings (ignored for sqlite3)
+# Env: DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_DATABASE
 # host: localhost
 # port: 5432
 # user: statping
 # password: secret
 # database: statping
 
+# Direct DSN connection string (overrides individual settings)
+# Env: DB_DSN
+# db_dsn: postgres://user:pass@host:5432/dbname?sslmode=disable
+
 # PostgreSQL SSL mode: disable, require, verify-ca, verify-full
+# Env: POSTGRES_SSLMODE (default: disable)
 # postgres_ssl: disable
 
 # Connection pool settings
-# db_open_connections: 25
-# db_idle_connections: 25
-# db_max_life_connections: 5
+# Env: MAX_OPEN_CONN (default: 25)
+# Env: MAX_IDLE_CONN (default: 25)
+# Env: MAX_LIFE_CONN (default: 5m)
+# max_open_conn: 25
+# max_idle_conn: 25
+# max_life_conn: 5m
+
+# Read-only mode: disable all write operations
+# Env: READ_ONLY (default: false)
+# read_only: false
+
+#=============================================================================
+# HTTP SERVER
+#=============================================================================
+
+# Server IP to bind to (default: 0.0.0.0)
+# Env: SERVER_IP
+# server_ip: 0.0.0.0
+
+# Server port to listen on (default: 8080)
+# Env: SERVER_PORT
+# server_port: 8080
+
+# Disable the HTTP server (CLI/API only mode)
+# Env: DISABLE_HTTP (default: false)
+disable_http: false
+
+# Base path for reverse proxy deployments (e.g., /statping)
+# Env: BASE_PATH
+# base_path: /
+
+# Basic authentication (optional, protects entire UI)
+# Env: AUTH_USERNAME, AUTH_PASSWORD
+# auth_username: admin
+# auth_password: secret
 
 #=============================================================================
 # APPLICATION SETTINGS
 #=============================================================================
 
-# Working directory for Statping data (logs, assets, etc.)
+# Working directory for Statping data (logs, assets, database)
+# Env: STATPING_DIR (default: current directory)
 location: .
 
+# Application name shown in UI
+# Env: NAME (default: Platform Monitoring)
+# name: Platform Monitoring
+
+# Application description shown in UI
+# Env: DESCRIPTION (default: Enterprise Status Page)
+# description: Enterprise Status Page
+
+# Public domain URL (used in notifications, links)
+# Env: DOMAIN (default: http://localhost:8080)
+# domain: https://status.example.com
+
 # Interface language: en, de, es, fr, ja, ko, pt, ru, zh
+# Env: LANGUAGE (default: en)
 language: en
 
-# Base path for reverse proxy deployments (e.g., /statping)
-# base_path: /
-
 # Allow anonymous error reporting to help improve Statping
+# Env: ALLOW_REPORTS (default: true)
 allow_reports: false
+
+# API secret key (auto-generated if not set)
+# Env: API_SECRET
+# api_secret: your-secret-key-here
 
 #=============================================================================
 # INITIAL ADMIN USER (only used during first setup)
 #=============================================================================
 
+# Env: ADMIN_USER (default: admin)
 # admin_user: admin
-# admin_password: admin
+
+# Env: ADMIN_PASSWORD (auto-generated if not set)
+# admin_password: your-secure-password
+
+# Env: ADMIN_EMAIL (default: info@admin.com)
 # admin_email: admin@example.com
+
+# Load sample services/data on first startup
+# Env: SAMPLE_DATA (default: false)
+sample_data: false
 
 #=============================================================================
 # HTTPS / LET'S ENCRYPT
 #=============================================================================
 
 # Enable automatic HTTPS via Let's Encrypt
+# Env: LETSENCRYPT_ENABLE (default: false)
 # letsencrypt_enable: false
+
+# Domain(s) for Let's Encrypt certificate (comma-separated)
+# Env: LETSENCRYPT_HOST
 # letsencrypt_host: status.example.com
+
+# Email for Let's Encrypt notifications
+# Env: LETSENCRYPT_EMAIL
 # letsencrypt_email: admin@example.com
 
-#=============================================================================
-# FEATURE FLAGS
-#=============================================================================
+# Use Let's Encrypt staging (for testing)
+# Env: LETSENCRYPT_LOCAL (default: false)
+# letsencrypt_local: false
 
-# Disable the HTTP server (CLI/API only mode)
-disable_http: false
-
-# Demo mode: read-only, no authentication required
-demo_mode: false
+#=============================================================================
+# LOGGING
+#=============================================================================
 
 # Disable log file output (stdout only)
+# Env: DISABLE_LOGS (default: false)
 disable_logs: false
 
+# Disable colored log output
+# Env: DISABLE_COLORS (default: false)
+disable_colors: false
+
+# Log rotation settings
+# Env: LOGS_MAX_SIZE (default: 16 MB)
+# Env: LOGS_MAX_COUNT (default: 5 backups)
+# Env: LOGS_MAX_AGE (default: 28 days)
+# logs_max_size: 16
+# logs_max_count: 5
+# logs_max_age: 28
+
+# Enable debug mode (enables pprof server on :9090)
+# Env: DEBUG (default: false)
+# debug: false
+
+#=============================================================================
+# DATABASE MAINTENANCE
+#=============================================================================
+
+# Delete old hits/failures older than this duration
+# Env: REMOVE_AFTER (default: 8760h = 365 days)
+# remove_after: 8760h
+
+# How often to run database cleanup
+# Env: CLEANUP_INTERVAL (default: 1h)
+# cleanup_interval: 1h
+
+#=============================================================================
+# SECURITY SETTINGS
+#=============================================================================
+
+# Admin lock: prevent deletion of admin user
+# Env: ADMIN_LOCK (default: false)
+admin_lock: false
+
 # Use external assets from ./assets folder instead of embedded
+# Env: USE_ASSETS (default: false)
 use_assets: false
 
-# Load sample services/data on first startup
-sample_data: false
+# Trusted proxy CIDR ranges for X-Forwarded-For/X-Forwarded-Host headers
+# Comma-separated list of CIDRs (e.g., "10.0.0.0/8,192.168.0.0/16")
+# If not set, proxy headers are NOT trusted (uses RemoteAddr directly)
+# Env: TRUSTED_PROXIES
+# trusted_proxies: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
 
-# Use CDN for static assets (reduces binary size in Docker)
-use_cdn: false
+# Allow requests without Origin/Referer header (legacy clients, privacy tools)
+# Env: ALLOW_NO_ORIGIN (default: false)
+# allow_no_origin: false
 
-# Disable colored log output
-disable_colors: false
+# Allow HTTP service checks to target internal/private IPs
+# Env: ALLOW_INTERNAL_URLS (default: false)
+# allow_internal_urls: false
+
+# Trusted script directory for command notifier
+# Only scripts in this directory can be executed
+# Env: TRUSTED_SCRIPT_DIR (default: $STATPING_DIR/scripts)
+# trusted_script_dir: /opt/statping/scripts
+
+#=============================================================================
+# LOG SHIPPING (send logs to external systems)
+#=============================================================================
+
+# Log shipping type: loki, elasticsearch, splunk, cribl, webhook
+# Env: LOG_SHIP_TYPE
+# log_ship_type: loki
+
+# Endpoint URL for log shipping
+# Env: LOG_SHIP_ENDPOINT
+# log_ship_endpoint: http://loki:3100
+
+# Bearer token (or Splunk HEC token) for authentication
+# Env: LOG_SHIP_TOKEN
+# log_ship_token: secret
+
+# Splunk index
+# Env: LOG_SHIP_INDEX (default: main)
+# log_ship_index: main
+
+# Splunk/Cribl sourcetype
+# Env: LOG_SHIP_SOURCETYPE (default: statping)
+# log_ship_sourcetype: statping
+
+# Additional labels as key=value pairs (comma-separated)
+# Env: LOG_SHIP_LABELS
+# log_ship_labels: env=prod,region=us-east-1

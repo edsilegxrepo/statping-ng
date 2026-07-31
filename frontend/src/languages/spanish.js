@@ -81,7 +81,6 @@ const spanish = {
 	project_name: "Nombre de página de estado",
 	description: "Descripción",
 	domain: "Dominio",
-	enable_cdn: "Habilitar CDN",
 	newsletter: "Noticias",
 	newsletter_note:
 		"Sólo le enviaremos un correo electrónico para cambios importantes",

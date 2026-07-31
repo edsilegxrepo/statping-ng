@@ -47,7 +47,8 @@ var Discorder = &discord{
 
 // Send will send a HTTP Post to the discord API. It accepts type: []byte
 func (d *discord) sendRequest(msg string) (string, error) {
-	out, _, err := utils.HttpRequest(d.Host.String, "POST", "application/json", nil, strings.NewReader(msg), time.Duration(10*time.Second), true, nil)
+	// Use SafeHttpRequest to prevent SSRF/DNS rebinding
+	out, _, err := utils.SafeHttpRequest(d.Host.String, "POST", "application/json", nil, strings.NewReader(msg), time.Duration(10*time.Second))
 	return string(out), err
 }
 
@@ -56,6 +57,11 @@ func (d *discord) Select() *notifications.Notification {
 }
 
 func (d *discord) Valid(values notifications.Values) error {
+	if values.Host != "" {
+		if err := utils.ValidateExternalURL(values.Host); err != nil {
+			return fmt.Errorf("invalid Discord webhook URL: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -75,7 +81,8 @@ func (d *discord) OnSuccess(s *services.Service) (string, error) {
 func (d *discord) OnTest() (string, error) {
 	outError := errors.New("incorrect discord URL, please confirm URL is correct")
 	message := `{"content": "Testing the discord notifier"}`
-	contents, _, err := utils.HttpRequest(Discorder.Host.String, "POST", "application/json", nil, bytes.NewBuffer([]byte(message)), time.Duration(10*time.Second), true, nil)
+	// Use SafeHttpRequest to prevent SSRF/DNS rebinding
+	contents, _, err := utils.SafeHttpRequest(Discorder.Host.String, "POST", "application/json", nil, bytes.NewBuffer([]byte(message)), time.Duration(10*time.Second))
 	if string(contents) == "" {
 		return "", nil
 	}

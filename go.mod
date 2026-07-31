@@ -3,12 +3,12 @@ module github.com/statping-ng/statping-ng
 go 1.26.2
 
 require (
+	criticalsys.net/secretprotector v0.0.0
 	github.com/emersion/go-imap v1.2.1
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6 // indirect
 	github.com/fatih/structs v1.1.0
 	github.com/foomo/simplecert v1.8.8
 	github.com/foomo/tlsconfig v1.0.1
-	github.com/getsentry/sentry-go v0.48.0
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/go-ping/ping v1.2.0
 	github.com/gorilla/mux v1.8.1
@@ -19,7 +19,6 @@ require (
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	github.com/statping-ng/emails v1.0.3
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.54.0
 	golang.org/x/oauth2 v0.36.0
@@ -34,6 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.30
 	github.com/aws/aws-sdk-go-v2/service/sns v1.42.0
 	github.com/aws/aws-sdk-go-v2/service/translate v1.36.0
+	github.com/go-ldap/ldap/v3 v3.4.14
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gomarkdown/markdown v0.0.0-20260614204949-e08cff860f76
 	github.com/tdewolff/minify/v2 v2.24.13
@@ -119,7 +119,6 @@ require (
 	github.com/go-asn1-ber/asn1-ber v1.5.8 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
-	github.com/go-ldap/ldap/v3 v3.4.14 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
@@ -275,4 +274,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/statping-ng/emails => ./emails_local
+replace criticalsys.net/secretprotector => D:/data/devel/build/code/private/secretprotector

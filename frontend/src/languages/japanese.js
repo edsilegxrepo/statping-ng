@@ -81,7 +81,6 @@ const japanese = {
 	project_name: "ステータスページ名",
 	description: "説明",
 	domain: "ドメイン",
-	enable_cdn: "CDN を有効にする",
 	newsletter: "ニュースレター",
 	newsletter_note: "大きな変更についてのみメールをお送りします",
 	loading: "ロード中",

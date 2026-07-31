@@ -23,34 +23,12 @@ import (
 	"github.com/statping-ng/statping-ng/types/users"
 )
 
-// ensureEncryptionKey generates an encryption key for existing installations that don't have one
-// Uses conditional update to prevent race conditions in clustered deployments
+// ensureEncryptionKey is deprecated - external master key is now used instead of DB-stored key.
+// This function is kept as a no-op for backward compatibility.
+// See ENCRYPTION.md for the new master key architecture.
 func (d *DbConfig) ensureEncryptionKey() error {
-	var cr core.Core
-	if err := d.Db.Model(&core.Core{}).First(&cr).Error(); err != nil {
-		return err
-	}
-	if cr.EncryptionKey == "" {
-		log.Infoln("Generating encryption key for existing installation...")
-		encKey, err := utils.GenerateSHA256Hash()
-		if err != nil {
-			return fmt.Errorf("failed to generate encryption key: %w", err)
-		}
-		// Conditional update to prevent race condition - only update if still empty
-		result := d.Db.Exec("UPDATE core SET encryption_key = ? WHERE encryption_key IS NULL OR encryption_key = ''", encKey)
-		if result.Error() != nil {
-			return result.Error()
-		}
-		// Reload to get the actual key (in case another instance set it first)
-		if err := d.Db.Model(&core.Core{}).First(&cr).Error(); err != nil {
-			return err
-		}
-		// Update the in-memory App if it exists
-		if core.App != nil {
-			core.App.EncryptionKey = cr.EncryptionKey
-		}
-		log.Infoln("Encryption key generated successfully")
-	}
+	// No longer needed - master key is now external (STATPING_MASTER_KEY env or file)
+	// Old DB encryption_key column is ignored
 	return nil
 }
 

@@ -81,7 +81,6 @@ const italian = {
 	project_name: "Nome pagina di stato",
 	description: "Descrizione",
 	domain: "Dominio",
-	enable_cdn: "Abilita CDN",
 	newsletter: "Bollettino",
 	newsletter_note:
 		"Ti invieremo solo una e-mail per le modifiche più importanti",

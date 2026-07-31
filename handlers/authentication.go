@@ -21,12 +21,17 @@ func hasSetupEnv() bool {
 }
 
 // hasAPIQuery checks the `api` query parameter against the API Secret Key
+// DEPRECATED: API key in query parameter exposes secrets in logs/history.
+// Use Authorization header instead. This will be removed in a future version.
 func hasAPIQuery(r *http.Request) bool {
 	query := r.URL.Query()
 	key := query.Get("api")
 	if key == "" {
 		return false
 	}
+	// Log deprecation warning (once per request, not per key check)
+	log.Warnln("DEPRECATED: API key passed in URL query parameter. Use Authorization header instead.")
+
 	if subtle.ConstantTimeCompare([]byte(key), []byte(core.App.ApiSecret)) == 1 {
 		return true
 	}

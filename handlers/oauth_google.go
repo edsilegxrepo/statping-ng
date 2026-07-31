@@ -71,7 +71,9 @@ func validateGoogle(info googleUserInfo) bool {
 }
 
 func returnGoogleInfo(token string) (googleUserInfo, error) {
-	resp, _, err := utils.HttpRequest("https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token="+token, "GET", nil, nil, nil, 10*time.Second, true, nil)
+	// Use Authorization header instead of query parameter to prevent token leakage in logs
+	headers := []string{"Authorization=Bearer " + token}
+	resp, _, err := utils.HttpRequest("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", "GET", nil, headers, nil, 10*time.Second, true, nil)
 	if err != nil {
 		return googleUserInfo{}, err
 	}

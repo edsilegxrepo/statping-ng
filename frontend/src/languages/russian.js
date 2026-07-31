@@ -81,7 +81,6 @@ const russian = {
 	project_name: "Имя страницы состояния",
 	description: "Описание",
 	domain: "Домен",
-	enable_cdn: "Включить CDN",
 	newsletter: "Рассылка новостей",
 	newsletter_note:
 		"Мы отправим вам электронное письмо только в случае серьезных изменений",

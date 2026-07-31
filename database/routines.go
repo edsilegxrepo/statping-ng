@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/statping-ng/statping-ng/utils"
@@ -39,20 +38,54 @@ func Maintenance() {
 	}
 }
 
+// allowedTables is a whitelist of tables that can be cleaned up
+var allowedTables = map[string]bool{
+	"failures":     true,
+	"hits":         true,
+	"checkin_hits": true,
+}
+
 // deleteAllSince will delete a specific table's records based on a time using batches.
+// Uses parameterized queries to prevent SQL injection.
 func deleteAllSince(table string, date time.Time) {
-	formattedDate := database.FormatTime(date)
+	if !allowedTables[table] {
+		log.Errorf("deleteAllSince: invalid table name %q", table)
+		return
+	}
+
 	for {
-		sql := fmt.Sprintf("DELETE FROM %s WHERE created_at < '%s' LIMIT 5000", table, formattedDate)
-		if database.DbType() == "postgres" || database.DbType() == "sqlite3" || database.DbType() == "sqlite" {
-			sql = fmt.Sprintf("DELETE FROM %s WHERE id IN (SELECT id FROM %s WHERE created_at < '%s' LIMIT 5000)", table, table, formattedDate)
+		var rowsAffected int64
+		var err error
+
+		switch database.DbType() {
+		case "postgres":
+			result := database.Exec(
+				"DELETE FROM "+table+" WHERE id IN (SELECT id FROM "+table+" WHERE created_at < $1 LIMIT 5000)",
+				date,
+			)
+			rowsAffected = result.RowsAffected()
+			err = result.Error()
+		case "sqlite3", "sqlite":
+			result := database.Exec(
+				"DELETE FROM "+table+" WHERE id IN (SELECT id FROM "+table+" WHERE created_at < ? LIMIT 5000)",
+				date,
+			)
+			rowsAffected = result.RowsAffected()
+			err = result.Error()
+		default: // mysql
+			result := database.Exec(
+				"DELETE FROM "+table+" WHERE created_at < ? LIMIT 5000",
+				date,
+			)
+			rowsAffected = result.RowsAffected()
+			err = result.Error()
 		}
-		q := database.Exec(sql)
-		if err := q.Error(); err != nil {
-			log.WithField("query", sql).Errorln(err)
+
+		if err != nil {
+			log.WithField("table", table).Errorln(err)
 			break
 		}
-		if q.RowsAffected() == 0 {
+		if rowsAffected == 0 {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)

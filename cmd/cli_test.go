@@ -570,7 +570,6 @@ func TestSubcommandMetadata(t *testing.T) {
 		{envCmd, "env", true},
 		{resetCmd, "reset", true},
 		{onceCmd, "once", true},
-		{sassCmd, "sass", true},
 		{systemctlCmd, "systemctl", true},
 	}
 
@@ -588,11 +587,9 @@ func TestSubcommandMetadata(t *testing.T) {
 func TestAllSubcommandsRegistered(t *testing.T) {
 	expectedCommands := []string{
 		"version",
-		"update",
 		"assets",
 		"export",
 		"import",
-		"sass",
 		"once",
 		"env",
 		"systemctl",

@@ -10,66 +10,22 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	"github.com/getsentry/sentry-go"
 	Logger "github.com/sirupsen/logrus"
 	"github.com/statping-ng/statping-ng/types/null"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
-	Log          = Logger.StandardLogger()
-	ljLogger     *lumberjack.Logger
-	LastLines    []*logRow
-	LockLines    sync.Mutex
-	VerboseMode  int
-	allowReports bool
+	Log         = Logger.StandardLogger()
+	ljLogger    *lumberjack.Logger
+	LastLines   []*logRow
+	LockLines   sync.Mutex
+	VerboseMode int
 )
 
 const (
-	logFilePath   = "/logs/statping.log"
-	errorReporter = "https://518d5b04a52b4130bbbbd5b9e70cb7ba@sentry.statping.com/2"
+	logFilePath = "/logs/statping.log"
 )
-
-func SentryInit(allow bool) {
-	allowReports = allow || Params.GetBool("ALLOW_REPORTS")
-	goEnv := Params.GetString("GO_ENV")
-	if allowReports || goEnv == "test" {
-		if err := sentry.Init(sentry.ClientOptions{
-			Dsn:              errorReporter,
-			Environment:      goEnv,
-			Release:          Params.GetString("VERSION"),
-			AttachStacktrace: true,
-		}); err != nil {
-			Log.Errorln(err)
-		}
-		Log.Infoln("Error Reporting initiated, thank you!")
-		sentry.CaptureMessage("sentry connected")
-	}
-}
-
-func SentryErr(err error) {
-	if !allowReports {
-		return
-	}
-	sentry.CaptureException(err)
-}
-
-func sentryTags() map[string]string {
-	val := make(map[string]string)
-	val["database"] = Params.GetString("DB_CONN")
-	return val
-}
-
-func SentryLogEntry(entry *Logger.Entry) {
-	e := sentry.NewEvent()
-	e.Message = entry.Message
-	e.Tags = sentryTags()
-	e.Release = Params.GetString("VERSION")
-	if len(entry.Data) > 0 {
-		e.Contexts["logrus"] = sentry.Context(entry.Data)
-	}
-	sentry.CaptureEvent(e)
-}
 
 type hook struct {
 	Entries []Logger.Entry
@@ -77,9 +33,8 @@ type hook struct {
 
 func (t *hook) Fire(e *Logger.Entry) error {
 	pushLastLine(e.Message)
-	if e.Level == Logger.ErrorLevel && allowReports {
-		SentryLogEntry(e)
-	}
+	// Ship to external log system if configured
+	ShipLog(e)
 	return nil
 }
 
@@ -226,7 +181,6 @@ func CloseLogs() {
 		_ = Log.Writer().Close()
 		_ = ljLogger.Close()
 	}
-	sentry.Flush(5 * time.Second)
 }
 
 func pushLastLine(line interface{}) {

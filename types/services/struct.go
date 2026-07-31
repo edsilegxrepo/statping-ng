@@ -35,6 +35,7 @@ type Service struct {
 	Headers             null.NullString       `gorm:"column:headers" json:"headers" scope:"user,admin" yaml:"headers"`
 	Permalink           null.NullString       `gorm:"index;column:permalink" json:"permalink" yaml:"permalink"`
 	Redirect            null.NullBool         `gorm:"default:false;column:redirect" json:"redirect" scope:"user,admin" yaml:"redirect"`
+	AllowInternal       null.NullBool         `gorm:"default:false;column:allow_internal" json:"allow_internal" scope:"admin" yaml:"allow_internal"`
 	CreatedAt           time.Time             `gorm:"column:created_at" json:"created_at" yaml:"-"`
 	UpdatedAt           time.Time             `gorm:"column:updated_at" json:"updated_at" yaml:"-"`
 	Online              bool                  `gorm:"-" json:"online" yaml:"-"`

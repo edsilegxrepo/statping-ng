@@ -74,6 +74,19 @@
           <a
             @click.prevent="changeTab"
             class="nav-link"
+            :class="{ active: liClass('v-pills-logship-tab') }"
+            id="v-pills-logship-tab"
+            data-toggle="pill"
+            href="#v-pills-logship"
+            role="tab"
+            aria-controls="v-pills-logship"
+            aria-selected="false"
+          >
+            <font-awesome-icon icon="file-export" class="mr-2" /> Log Shipping
+          </a>
+          <a
+            @click.prevent="changeTab"
+            class="nav-link"
             :class="{ active: liClass('v-pills-import-tab') }"
             id="v-pills-import-tab"
             data-toggle="pill"
@@ -227,6 +240,16 @@
 
           <div
             class="tab-pane fade"
+            :class="{ active: liClass('v-pills-logship-tab'), show: liClass('v-pills-logship-tab') }"
+            id="v-pills-logship"
+            role="tabpanel"
+            aria-labelledby="v-pills-logship-tab"
+          >
+            <LogShipSettings />
+          </div>
+
+          <div
+            class="tab-pane fade"
             :class="{ active: liClass('v-pills-configs-tab'), show: liClass('v-pills-configs-tab') }"
             id="v-pills-configs"
             role="tabpanel"
@@ -286,6 +309,7 @@ import Notifier from '@/forms/Notifier.vue'
 import OAuth from '@/forms/OAuth.vue'
 import LdapSettings from '@/forms/LdapSettings.vue'
 import DigestSettings from '@/forms/DigestSettings.vue'
+import LogShipSettings from '@/forms/LogShipSettings.vue'
 import ThemeEditor from '@/components/Dashboard/ThemeEditor.vue'
 import Importer from '@/components/Dashboard/Importer.vue'
 import Variables from '@/components/Dashboard/Variables.vue'
@@ -302,7 +326,7 @@ const notifiers = computed(() => store.notifiers)
 
 
 onMounted(() => {
-  update()
+  // GitHub version check removed (update command depended on defunct statping.com)
 })
 
 

@@ -127,10 +127,15 @@ func Router() *mux.Router {
 	api.Handle("/api/digest/test", authenticated(apiDigestTestHandler, false)).Methods("POST")
 	api.Handle("/api/digest/smtp-test", authenticated(apiDigestSmtpTestHandler, false)).Methods("POST")
 
+	// API Log Shipping Routes
+	api.Handle("/api/logship", authenticated(apiLogShipSettingsHandler, false)).Methods("GET")
+	api.Handle("/api/logship", authenticated(apiLogShipSaveHandler, false)).Methods("POST")
+	api.Handle("/api/logship/test", authenticated(apiLogShipTestHandler, false)).Methods("POST")
+
 	// API SCSS and ASSETS Routes
 	api.Handle("/api/theme", authenticated(apiThemeViewHandler, false)).Methods("GET")
 	api.Handle("/api/theme", authenticated(apiThemeSaveHandler, false)).Methods("POST")
-	api.Handle("/api/theme/create", authenticated(apiThemeCreateHandler, false)).Methods("GET")
+	api.Handle("/api/theme/create", authenticated(apiThemeCreateHandler, false)).Methods("GET", "POST")
 	api.Handle("/api/theme", authenticated(apiThemeRemoveHandler, false)).Methods("DELETE")
 
 	// API GROUPS Routes

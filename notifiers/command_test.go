@@ -103,13 +103,13 @@ func TestRunCommand(t *testing.T) {
 	}
 
 	t.Run("valid command", func(t *testing.T) {
-		out, _, err := runCommand("echo hello")
+		out, _, err := runCommand("echo hello", nil)
 		assert.Nil(t, err)
 		assert.Contains(t, out, "hello")
 	})
 
 	t.Run("empty command returns error", func(t *testing.T) {
-		_, _, err := runCommand("")
+		_, _, err := runCommand("", nil)
 		assert.Error(t, err)
 	})
 }

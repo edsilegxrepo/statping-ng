@@ -81,7 +81,6 @@ const swedish = {
 	project_name: "Namn på statussida",
 	description: "Beskrivning",
 	domain: "Domän",
-	enable_cdn: "Aktivera CDN",
 	newsletter: "Nyhetsbrev",
 	newsletter_note: "Vi kontaktar dig enbart vid större förändringar",
 	loading: "Laddar",

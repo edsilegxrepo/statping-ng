@@ -258,8 +258,8 @@ func TestNewNullInt64(t *testing.T) {
 }
 
 func TestNewNullString(t *testing.T) {
-	val := NewNullString("statping.com")
-	assert.Equal(t, "statping.com", val.String)
+	val := NewNullString("example.com")
+	assert.Equal(t, "example.com", val.String)
 	assert.True(t, val.Valid)
 }
 

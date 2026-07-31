@@ -81,7 +81,6 @@ const english = {
 	project_name: "Status Page Name",
 	description: "Description",
 	domain: "Domain",
-	enable_cdn: "Enable CDN",
 	newsletter: "Newsletter",
 	newsletter_note: "We will only send you an email for major changes",
 	loading: "Loading",

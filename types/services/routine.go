@@ -700,6 +700,17 @@ func CheckHttp(s *Service, record bool) (*Service, error) {
 	timer := prometheus.NewTimer(metrics.ServiceTimer(s.Name))
 	defer timer.ObserveDuration()
 
+	// SSRF protection: block internal URLs unless explicitly allowed
+	// Check both service-level AllowInternal and global ALLOW_INTERNAL_URLS
+	if !s.AllowInternal.Bool && !utils.Params.GetBool("ALLOW_INTERNAL_URLS") {
+		if err := utils.ValidateExternalURL(s.Domain); err != nil {
+			if record {
+				RecordFailure(s, fmt.Sprintf("SSRF protection: %v", err), "ssrf")
+			}
+			return s, err
+		}
+	}
+
 	dnsLookup, err := dnsCheck(s)
 	if err != nil {
 		if record {

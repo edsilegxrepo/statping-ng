@@ -7,6 +7,7 @@ import (
 )
 
 func TestUnAuthenticatedCheckinRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
 	tests := []HTTPTest{
 		{
 			Name:           "No Authentication - New Checkin",

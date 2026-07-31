@@ -65,7 +65,7 @@ func TestSetupRoutes(t *testing.T) {
 	form.Add("sample_data", "on")
 	form.Add("description", "This is an awesome test")
 	form.Add("domain", "http://localhost:8080")
-	form.Add("email", "info@statping.com")
+	form.Add("email", "info@example.com")
 
 	badForm := url.Values{}
 	badForm.Add("db_host", "badconnection")
@@ -80,7 +80,7 @@ func TestSetupRoutes(t *testing.T) {
 	badForm.Add("sample_data", "on")
 	badForm.Add("description", "This is an awesome test")
 	badForm.Add("domain", "http://localhost:8080")
-	badForm.Add("email", "info@statping.com")
+	badForm.Add("email", "info@example.com")
 
 	tests := []HTTPTest{
 		{
@@ -195,7 +195,6 @@ func TestMainApiRoutes(t *testing.T) {
 					"footer": "Custom footer",
 					"domain": "https://example.com",
 					"language": "en",
-					"use_cdn": false,
 					"allow_reports": false
 				}`,
 			AfterTest: func(t *testing.T) error {
@@ -446,7 +445,21 @@ func RequestWithAuth(test HTTPTest, addAuth bool) (*httptest.ResponseRecorder, e
 		}
 	}
 
-	// Skip if addAuth is false (unauthenticated route tests)
+	// Ensure Host is set for CSRF validation
+	if req.Host == "" {
+		req.Host = "localhost"
+	}
+
+	// For state-changing requests, always set Origin to pass CSRF validation
+	// This allows auth tests (NoAuth=true) to properly test authentication
+	// rather than being blocked by CSRF middleware first
+	if test.Method != "GET" && test.Method != "HEAD" && test.Method != "OPTIONS" {
+		if req.Header.Get("Origin") == "" && req.Header.Get("Referer") == "" {
+			req.Header.Set("Origin", "http://"+req.Host)
+		}
+	}
+
+	// Skip auth header if addAuth is false (unauthenticated route tests)
 	if !addAuth {
 		rr := httptest.NewRecorder()
 		Router().ServeHTTP(rr, req)
@@ -456,11 +469,6 @@ func RequestWithAuth(test HTTPTest, addAuth bool) (*httptest.ResponseRecorder, e
 	// For authenticated requests, add auth header if not already set
 	if core.App != nil && core.App.ApiSecret != "" && req.Header.Get("Authorization") == "" && !strings.Contains(test.URL, "api=") {
 		req.Header.Set("Authorization", "Bearer "+core.App.ApiSecret)
-	}
-
-	// Set Origin header to pass CSRF validation (same-origin request)
-	if test.Method != "GET" && test.Method != "HEAD" && test.Method != "OPTIONS" {
-		req.Header.Set("Origin", "http://"+req.Host)
 	}
 
 	rr := httptest.NewRecorder()
@@ -510,7 +518,7 @@ func doHandlerSetup(t *testing.T) error {
 	form.Add("sample_data", "on")
 	form.Add("description", "This is an awesome test")
 	form.Add("domain", "http://localhost:8080")
-	form.Add("email", "info@statping.com")
+	form.Add("email", "info@example.com")
 
 	req, err := http.NewRequest("POST", "/api/setup", strings.NewReader(form.Encode()))
 	if err != nil {

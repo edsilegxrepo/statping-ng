@@ -81,7 +81,6 @@ const chinese = {
 	project_name: "状态页面名称",
 	description: "说明",
 	domain: "域",
-	enable_cdn: "启用 CDN",
 	newsletter: "新闻通讯",
 	newsletter_note: "我们只会向您发送重大变更的电子邮件",
 	loading: "正在加载",

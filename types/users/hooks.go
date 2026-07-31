@@ -25,9 +25,9 @@ func (u *User) Validate() error {
 }
 
 func (u *User) BeforeDelete(tx *gorm.DB) (err error) {
-	if utils.Params.GetBool("DEMO_MODE") {
+	if utils.Params.GetBool("ADMIN_LOCK") {
 		if u.Username == "admin" {
-			return errors.New("cannot delete admin in DEMO_MODE")
+			return errors.New("cannot delete admin in ADMIN_LOCK")
 		}
 	}
 	return nil

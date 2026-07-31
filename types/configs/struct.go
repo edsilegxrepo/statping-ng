@@ -30,7 +30,7 @@ type DbConfig struct {
 	LocalIP           string `yaml:"-" json:"-"`
 
 	DisableHTTP bool   `yaml:"disable_http" json:"disable_http"`
-	DemoMode    bool   `yaml:"demo_mode" json:"demo_mode"`
+	AdminLock   bool   `yaml:"admin_lock" json:"admin_lock"`
 	DisableLogs bool   `yaml:"disable_logs" json:"disable_logs"`
 	UseAssets   bool   `yaml:"use_assets" json:"use_assets"`
 	BasePath    string `yaml:"base_path,omitempty" json:"base_path"`
@@ -44,7 +44,6 @@ type DbConfig struct {
 	MaxLifeConnections int `yaml:"db_max_life_connections,omitempty" json:"db_max_life_connections"`
 
 	SampleData    bool `yaml:"sample_data" json:"sample_data"`
-	UseCDN        bool `yaml:"use_cdn" json:"use_cdn"`
 	DisableColors bool `yaml:"disable_colors" json:"disable_colors"`
 
 	PostgresSSLMode string `yaml:"postgres_ssl,omitempty" json:"postgres_ssl"`

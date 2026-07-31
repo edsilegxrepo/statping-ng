@@ -43,45 +43,46 @@ func (c *Core) BeforeSave(tx *gorm.DB) (err error) {
 }
 
 func (c *Core) encryptSecrets() error {
-	// Check if there are secrets that need encryption
-	hasSecrets := c.GithubClientSecret != "" && !utils.IsEncrypted(c.GithubClientSecret) ||
-		c.GoogleClientSecret != "" && !utils.IsEncrypted(c.GoogleClientSecret) ||
-		c.SlackClientSecret != "" && !utils.IsEncrypted(c.SlackClientSecret) ||
-		c.CustomClientSecret != "" && !utils.IsEncrypted(c.CustomClientSecret) ||
-		c.LdapBindPassword != "" && !utils.IsEncrypted(c.LdapBindPassword)
+	// Master key must be initialized before encrypting secrets
+	if !utils.MasterKeyInitialized() {
+		// Check if there are secrets that need encryption
+		hasSecrets := c.GithubClientSecret != "" && !utils.IsEncrypted(c.GithubClientSecret) ||
+			c.GoogleClientSecret != "" && !utils.IsEncrypted(c.GoogleClientSecret) ||
+			c.SlackClientSecret != "" && !utils.IsEncrypted(c.SlackClientSecret) ||
+			c.CustomClientSecret != "" && !utils.IsEncrypted(c.CustomClientSecret) ||
+			c.LdapBindPassword != "" && !utils.IsEncrypted(c.LdapBindPassword) ||
+			c.LogShipToken != "" && !utils.IsEncrypted(c.LogShipToken)
 
-	if c.EncryptionKey == "" {
 		if hasSecrets {
-			return errors.New("encryption key not available - cannot save secrets")
+			return errors.New("master key not initialized - cannot save secrets")
 		}
 		return nil
 	}
-	key := c.EncryptionKey
 
 	// Encrypt OAuth secrets - fail on any encryption error to prevent plaintext storage
 	if c.GithubClientSecret != "" && !utils.IsEncrypted(c.GithubClientSecret) {
-		encrypted, err := utils.Encrypt(c.GithubClientSecret, key)
+		encrypted, err := utils.Encrypt(c.GithubClientSecret)
 		if err != nil {
 			return errors.Wrap(err, "failed to encrypt GithubClientSecret")
 		}
 		c.GithubClientSecret = encrypted
 	}
 	if c.GoogleClientSecret != "" && !utils.IsEncrypted(c.GoogleClientSecret) {
-		encrypted, err := utils.Encrypt(c.GoogleClientSecret, key)
+		encrypted, err := utils.Encrypt(c.GoogleClientSecret)
 		if err != nil {
 			return errors.Wrap(err, "failed to encrypt GoogleClientSecret")
 		}
 		c.GoogleClientSecret = encrypted
 	}
 	if c.SlackClientSecret != "" && !utils.IsEncrypted(c.SlackClientSecret) {
-		encrypted, err := utils.Encrypt(c.SlackClientSecret, key)
+		encrypted, err := utils.Encrypt(c.SlackClientSecret)
 		if err != nil {
 			return errors.Wrap(err, "failed to encrypt SlackClientSecret")
 		}
 		c.SlackClientSecret = encrypted
 	}
 	if c.CustomClientSecret != "" && !utils.IsEncrypted(c.CustomClientSecret) {
-		encrypted, err := utils.Encrypt(c.CustomClientSecret, key)
+		encrypted, err := utils.Encrypt(c.CustomClientSecret)
 		if err != nil {
 			return errors.Wrap(err, "failed to encrypt CustomClientSecret")
 		}
@@ -90,45 +91,54 @@ func (c *Core) encryptSecrets() error {
 
 	// LDAP bind password
 	if c.LdapBindPassword != "" && !utils.IsEncrypted(c.LdapBindPassword) {
-		encrypted, err := utils.Encrypt(c.LdapBindPassword, key)
+		encrypted, err := utils.Encrypt(c.LdapBindPassword)
 		if err != nil {
 			return errors.Wrap(err, "failed to encrypt LdapBindPassword")
 		}
 		c.LdapBindPassword = encrypted
 	}
+
+	// Log shipping token
+	if c.LogShipToken != "" && !utils.IsEncrypted(c.LogShipToken) {
+		encrypted, err := utils.Encrypt(c.LogShipToken)
+		if err != nil {
+			return errors.Wrap(err, "failed to encrypt LogShipToken")
+		}
+		c.LogShipToken = encrypted
+	}
 	return nil
 }
 
 func (c *Core) decryptSecrets() {
-	if c.EncryptionKey == "" {
+	// If master key not initialized, skip decryption (secrets stay encrypted)
+	if !utils.MasterKeyInitialized() {
 		return
 	}
-	key := c.EncryptionKey
 
 	// Decrypt OAuth secrets
 	if c.GithubClientSecret != "" && utils.IsEncrypted(c.GithubClientSecret) {
-		if decrypted, err := utils.Decrypt(c.GithubClientSecret, key); err == nil {
+		if decrypted, err := utils.Decrypt(c.GithubClientSecret); err == nil {
 			c.GithubClientSecret = decrypted
 		} else {
 			utils.Log.Warnf("Failed to decrypt GithubClientSecret: %v", err)
 		}
 	}
 	if c.GoogleClientSecret != "" && utils.IsEncrypted(c.GoogleClientSecret) {
-		if decrypted, err := utils.Decrypt(c.GoogleClientSecret, key); err == nil {
+		if decrypted, err := utils.Decrypt(c.GoogleClientSecret); err == nil {
 			c.GoogleClientSecret = decrypted
 		} else {
 			utils.Log.Warnf("Failed to decrypt GoogleClientSecret: %v", err)
 		}
 	}
 	if c.SlackClientSecret != "" && utils.IsEncrypted(c.SlackClientSecret) {
-		if decrypted, err := utils.Decrypt(c.SlackClientSecret, key); err == nil {
+		if decrypted, err := utils.Decrypt(c.SlackClientSecret); err == nil {
 			c.SlackClientSecret = decrypted
 		} else {
 			utils.Log.Warnf("Failed to decrypt SlackClientSecret: %v", err)
 		}
 	}
 	if c.CustomClientSecret != "" && utils.IsEncrypted(c.CustomClientSecret) {
-		if decrypted, err := utils.Decrypt(c.CustomClientSecret, key); err == nil {
+		if decrypted, err := utils.Decrypt(c.CustomClientSecret); err == nil {
 			c.CustomClientSecret = decrypted
 		} else {
 			utils.Log.Warnf("Failed to decrypt CustomClientSecret: %v", err)
@@ -137,10 +147,19 @@ func (c *Core) decryptSecrets() {
 
 	// LDAP bind password
 	if c.LdapBindPassword != "" && utils.IsEncrypted(c.LdapBindPassword) {
-		if decrypted, err := utils.Decrypt(c.LdapBindPassword, key); err == nil {
+		if decrypted, err := utils.Decrypt(c.LdapBindPassword); err == nil {
 			c.LdapBindPassword = decrypted
 		} else {
 			utils.Log.Warnf("Failed to decrypt LdapBindPassword: %v", err)
+		}
+	}
+
+	// Log shipping token
+	if c.LogShipToken != "" && utils.IsEncrypted(c.LogShipToken) {
+		if decrypted, err := utils.Decrypt(c.LogShipToken); err == nil {
+			c.LogShipToken = decrypted
+		} else {
+			utils.Log.Warnf("Failed to decrypt LogShipToken: %v", err)
 		}
 	}
 }
@@ -161,9 +180,6 @@ func Select() (*Core, error) {
 	}
 	App = &c
 
-	if utils.Params.GetBool("USE_CDN") {
-		App.UseCdn = null.NewNullBool(true)
-	}
 	// ALLOW_REPORTS controls digest feature availability (default: true)
 	App.AllowReports = null.NewNullBool(utils.Params.GetBool("ALLOW_REPORTS"))
 	if utils.Params.GetString("LANGUAGE") != "" {
@@ -185,10 +201,8 @@ func (c *Core) Create() error {
 			c.ApiSecret = apiEnv
 		}
 	}
-	// Generate a separate encryption key - never exposed via API
-	if c.EncryptionKey == "" {
-		c.EncryptionKey = utils.NewSHA256Hash()
-	}
+	// Note: EncryptionKey field is deprecated - external master key is now used
+	// Field kept for backward compatibility with existing databases
 	q := db.Create(c)
 	utils.Log.Infof("API Key created: %s", c.ApiSecret)
 	return q.Error()

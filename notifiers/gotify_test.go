@@ -86,6 +86,10 @@ func TestGotifyNotifierMock(t *testing.T) {
 	err := utils.InitLogs()
 	require.Nil(t, err)
 
+	// Allow internal URLs for httptest mock server
+	utils.Params.Set("ALLOW_INTERNAL_URLS", true)
+	defer utils.Params.Set("ALLOW_INTERNAL_URLS", false)
+
 	db, err := database.OpenTester()
 	require.Nil(t, err)
 	db.AutoMigrate(&notifications.Notification{})

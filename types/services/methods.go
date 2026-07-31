@@ -319,11 +319,30 @@ func SelectAllServices(start bool) (map[int64]*Service, error) {
 }
 
 func (s *Service) UpdateStats() *Service {
-	s.Online24Hours = s.OnlineDaysPercent(1)
-	s.Online7Days = s.OnlineDaysPercent(7)
-	s.Online1Year = s.OnlineDaysPercent(365)
-	s.AvgResponse = s.AvgTime()
-	s.FailuresLast24Hours = s.FailuresSince(utils.Now().Add(-time.Hour * 24)).Count()
+	now := utils.Now()
+	ago24h := now.Add(-24 * time.Hour)
+	ago7d := now.Add(-7 * 24 * time.Hour)
+	ago1y := now.Add(-365 * 24 * time.Hour)
+
+	// Batch counts using the new SinceCount methods (single query each, no data loading)
+	fails24h := s.FailuresSince(ago24h).Count()
+	hits24h := s.HitsSince(ago24h).Count()
+	checkinHits24h := s.AllCheckinHits().SinceCount(ago24h)
+
+	fails7d := s.FailuresSince(ago7d).Count()
+	hits7d := s.HitsSince(ago7d).Count()
+	checkinHits7d := s.AllCheckinHits().SinceCount(ago7d)
+
+	fails1y := s.FailuresSince(ago1y).Count()
+	hits1y := s.HitsSince(ago1y).Count()
+	checkinHits1y := s.AllCheckinHits().SinceCount(ago1y)
+
+	// Calculate uptime percentages inline (avoids re-querying)
+	s.Online24Hours = calculateUptime(fails24h, hits24h+checkinHits24h)
+	s.Online7Days = calculateUptime(fails7d, hits7d+checkinHits7d)
+	s.Online1Year = calculateUptime(fails1y, hits1y+checkinHits1y)
+	s.AvgResponse = s.AllHits().Avg()
+	s.FailuresLast24Hours = fails24h
 
 	allFails := s.AllFailures()
 	if s.LastOffline.IsZero() {
@@ -344,6 +363,27 @@ func (s *Service) UpdateStats() *Service {
 		FirstHit: firstHit,
 	}
 	return s
+}
+
+// calculateUptime computes uptime percentage from failure and success counts
+func calculateUptime(failCount, successCount int) float32 {
+	if failCount == 0 && successCount > 0 {
+		return 100.0
+	}
+	if successCount == 0 {
+		return 0.0
+	}
+	avg := (float64(failCount) / float64(successCount)) * 100
+	avg = 100 - avg
+	if avg < 0 {
+		avg = 0
+	}
+	if successCount > 100000 {
+		amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.3f", avg), 64)
+		return float32(amount)
+	}
+	amount, _ := strconv.ParseFloat(fmt.Sprintf("%0.2f", avg), 64)
+	return float32(amount)
 }
 
 // AvgTime will return the average amount of time for a service to response back successfully

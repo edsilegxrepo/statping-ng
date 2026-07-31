@@ -1,4 +1,74 @@
+# 0.97.2 (07-31-2026)
+- **Security: Critical Code Review Fixes**:
+  - **Symlink Bypass (CRITICAL)**: Command notifier now resolves symlinks with `filepath.EvalSymlinks()` before validating trusted script directory
+  - **DNS Rebinding (CRITICAL)**: Added `ValidateAndResolveURL()` and `SafeHTTPClient()` to pin DNS resolution and prevent SSRF bypass attacks
+  - **Missing rows.Close() (CRITICAL)**: Fixed database connection leak in `database/grouping.go:ToTimeValue()`
+  - **Argument Injection (HIGH)**: Command notifier now passes service data as environment variables instead of string substitution
+  - **SSRF in Notifiers (HIGH)**: Added `ValidateExternalURL()` checks to ntfy, Gotify, Slack, Discord, Mattermost, and Teams notifiers
+  - **OAuth Token Leakage (HIGH)**: Google and Slack OAuth now use Authorization header instead of URL query parameter
+  - **Rate Limiter DoS (MEDIUM)**: Added 100,000 entry limit with LRU eviction to prevent memory exhaustion
+  - **IPv6 Mapped IPv4 (MEDIUM)**: SSRF protection now normalizes IPv4-mapped IPv6 addresses before checking
+  - **Cloud Metadata (MEDIUM)**: Explicit block for 169.254.169.254 in SSRF validation
+  - **URL Parser Bypass (MEDIUM)**: Reject URLs containing backslashes to prevent parser inconsistencies
+  - **ResetMasterKey Race (MEDIUM)**: `sync.Once` reset now happens inside the mutex lock
+  - **RandomString Bias (LOW)**: Uses rejection sampling to eliminate modulo bias in random string generation
+  - **RandomString Panic (LOW)**: Now panics on crypto/rand failure instead of returning empty string
+  - **Command Valid() (MEDIUM)**: Now validates test command path in `Valid()` method
+- **Test Fixes**:
+  - Fixed CSRF/auth test conflicts by ensuring Origin header is set for all state-changing requests
+  - Tests properly check authentication (401) behavior instead of being blocked by CSRF (403)
+  - Added trusted proxy configuration to rate limiter tests
+  - Fixed handler setup sequence with `ensureHandlerSetup()` helper
+  - Fixed `types/services` tests to set `ALLOW_INTERNAL_URLS=true` for httptest mock servers
+  - Fixed `CheckHttp()` to respect global `ALLOW_INTERNAL_URLS` config flag
+  - Removed references to deleted `sass` and `update` commands from CLI tests
+  - Added `scripts/run-tests.sh` for reliable test execution with `-p=1` (serial package execution)
+- **New Functions**:
+  - `utils.CommandWithEnv()`: Execute commands with additional environment variables
+  - `utils.ValidateAndResolveURL()`: Validate URL and return resolved IPs for DNS pinning
+  - `utils.SafeHTTPClient()`: HTTP client with pre-resolved IPs to prevent DNS rebinding
+  - `utils.SafeHttpRequest()`: HTTP request function with SSRF/DNS rebinding protection
+  - `utils.RandomStringSecure()`: Error-returning variant of RandomString
+- **Notifier Security**: All webhook notifiers (ntfy, Gotify, Slack, Discord, Mattermost, Teams) now use `SafeHttpRequest()` for all HTTP calls, preventing DNS rebinding attacks at request time
+- **Theme Editor**: Added comprehensive CSS placeholder examples (navigation, cards, badges, dark mode, animations)
+
 # 0.97.1 (07-31-2026)
+- **New: External Master Key Encryption**:
+  - Replaced DB-stored encryption key with mandatory external master key
+  - `statping init` command to check dependencies and generate master key
+  - `statping init --key-file /path/to/master.key` generates and stores key
+  - Key sources: `STATPING_MASTER_KEY` env var or `STATPING_MASTER_KEY_FILE` file reference
+  - Uses libsecsecrets (AES-256-GCM) for all secret encryption
+  - Encrypted values prefixed with `v1:gcm:` for versioning
+  - No fallback mode - master key is mandatory for security
+  - See ENCRYPTION.md for full architecture details
+- **Bug Fix: API Secret Not Displayed in Settings**:
+  - Fixed `loadAdmin()` to re-fetch core data after login
+  - Admin-scoped fields (api_secret, OAuth secrets) now properly loaded post-authentication
+- **Removed CDN Feature**:
+  - Removed "Enable CDN" toggle from Settings
+  - Monitoring systems should be self-contained, not depend on external asset servers
+- **Removed Dead External Dependencies**:
+  - Removed Mobile notifier (depended on defunct `push.statping.com`)
+  - Removed Sentry error reporting (depended on defunct `sentry.statping.com`)
+  - Removed `statping update` command (depended on defunct `statping.com/install.sh`)
+  - Removed `statping sass` command (SASS was already removed)
+  - Use Pushover, Gotify, or Telegram for mobile notifications instead
+- **New: ntfy.sh Notifier**:
+  - Push notifications via ntfy.sh (self-hostable)
+  - Configure server URL, topic, optional auth token, priority
+  - Works with public ntfy.sh or self-hosted instances
+- **New: Log Shipping**:
+  - Ship logs to external systems (Loki, Elasticsearch, Splunk HEC, Cribl, webhook)
+  - **UI configuration** in Settings > Log Shipping (token encrypted at rest)
+  - **Environment variables** for Docker/K8s deployments (take precedence over UI)
+  - Test Connection button to verify setup before saving
+  - `LOG_SHIP_TYPE`: loki, elasticsearch, splunk, cribl, webhook
+  - `LOG_SHIP_ENDPOINT`: URL to send logs to
+  - `LOG_SHIP_TOKEN`: Bearer token (or Splunk HEC token)
+  - `LOG_SHIP_INDEX`: Splunk index (default: main)
+  - `LOG_SHIP_SOURCETYPE`: Splunk/Cribl sourcetype (default: statping)
+  - `LOG_SHIP_LABELS`: Additional metadata labels (key=value,key2=value2)
 - **UI: Sticky Top Navigation Bar**:
   - Added professional top navigation banner to public pages
   - Real-time status summary (X/Y services online)
@@ -29,6 +99,23 @@
   - Deleted unused generators (`generate_help.go`, `generate_languages.go`, `generate_version.go`)
   - Removed legacy wiki submodule reference
   - Reduced source package by ~1000 lines
+  - Replaced `statping.com` references with `example.com` (RFC 2606) in tests/samples
+  - Renamed `DEMO_MODE` to `ADMIN_LOCK` for clarity
+- **Security Hardening**:
+  - **SQL Injection**: Fixed SQL injection pattern in `database/routines.go` - now uses parameterized queries with table whitelist
+  - **SSRF Protection**: Added `utils/ssrf.go` with internal IP blocking; applied to HTTP service checks, webhooks, log shipping
+  - **Command Injection**: Command notifier now uses trusted script directory (`TRUSTED_SCRIPT_DIR` or `$STATPING_DIR/scripts`)
+  - **Template Injection**: Notifier templates validated on save; only whitelisted field access allowed
+  - **OAuth DoS**: State store limited to 10,000 pending requests to prevent memory exhaustion
+  - **CSRF Hardening**: Requests without Origin/Referer now blocked by default; X-Forwarded-Host only trusted from `TRUSTED_PROXIES`
+  - **Rate Limiter**: X-Forwarded-For now only trusted from configured `TRUSTED_PROXIES` CIDR ranges
+  - **API Key Deprecation**: Query parameter `?api=` now logs deprecation warning; use Authorization header instead
+- **Performance Improvements**:
+  - **N+1 Queries**: `UpdateStats()` now calculates uptime percentages in fewer queries using `SinceCount()`
+  - **Unbounded Queries**: `List()` and `Since()` methods now have 10,000 row limits; added `ListPaginated()` and `SinceCount()`
+- **Reliability**:
+  - **Graceful Shutdown**: HTTP server now shuts down gracefully with 15-second timeout
+  - **Goroutine Cleanup**: Rate limiter and OAuth state cleanup goroutines now stop on shutdown
 
 # 0.97.0 (07-30-2026)
 - **Frontend: Vue 3 Migration**:

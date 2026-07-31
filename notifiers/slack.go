@@ -58,7 +58,8 @@ var slacker = &slack{
 
 // Send will send a HTTP Post to the slack webhooker API. It accepts type: string
 func (s *slack) sendSlack(msg string) (string, error) {
-	resp, _, err := utils.HttpRequest(s.Host.String, "POST", "application/json", nil, strings.NewReader(msg), time.Duration(10*time.Second), true, nil)
+	// Use SafeHttpRequest to prevent SSRF/DNS rebinding
+	resp, _, err := utils.SafeHttpRequest(s.Host.String, "POST", "application/json", nil, strings.NewReader(msg), time.Duration(10*time.Second))
 	if err != nil {
 		return "", err
 	}
@@ -68,7 +69,8 @@ func (s *slack) sendSlack(msg string) (string, error) {
 func (s *slack) OnTest() (string, error) {
 	example := services.Example(true)
 	testMsg := ReplaceVars(s.SuccessData.String, example, failures.Failure{})
-	contents, _, err := utils.HttpRequest(s.Host.String, "POST", "application/json", nil, bytes.NewBuffer([]byte(testMsg)), time.Duration(10*time.Second), true, nil)
+	// Use SafeHttpRequest to prevent SSRF/DNS rebinding
+	contents, _, err := utils.SafeHttpRequest(s.Host.String, "POST", "application/json", nil, bytes.NewBuffer([]byte(testMsg)), time.Duration(10*time.Second))
 	if err != nil {
 		return "", err
 	}
@@ -98,6 +100,11 @@ func (s *slack) OnSave() (string, error) {
 }
 
 func (s *slack) Valid(values notifications.Values) error {
+	if values.Host != "" {
+		if err := utils.ValidateExternalURL(values.Host); err != nil {
+			return fmt.Errorf("invalid Slack webhook URL: %w", err)
+		}
+	}
 	return nil
 }
 

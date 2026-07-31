@@ -32,7 +32,7 @@
         </tr>
         <tr>
           <td><kbd v-pre>{{.Service.Domain}}</kbd></td>
-          <td>https://statping.com</td>
+          <td>https://example.com</td>
         </tr>
         <tr>
           <td><kbd v-pre>{{.Service.Port}}</kbd></td>

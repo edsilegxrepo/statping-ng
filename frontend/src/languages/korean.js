@@ -81,7 +81,6 @@ const korean = {
 	project_name: "상태 페이지 이름",
 	description: "설명",
 	domain: "도메인",
-	enable_cdn: "CDN 사용",
 	newsletter: "신제품",
 	newsletter_note: "주요 변경 사항에 대한 이메일만 보내드립니다.",
 	loading: "로드 중",

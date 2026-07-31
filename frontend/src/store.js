@@ -197,8 +197,10 @@ export default new Vuex.Store({
 		},
 		async loadAdmin(context) {
 			// Fetch all admin data in parallel for better performance
-			const [groups, services, messages, checkins, notifiers, users, oauth] =
+			// Re-fetch core to get admin-scoped fields like api_secret
+			const [core, groups, services, messages, checkins, notifiers, users, oauth] =
 				await Promise.all([
+					Api.core(),
 					Api.groups(),
 					Api.services(),
 					Api.messages(),
@@ -207,6 +209,7 @@ export default new Vuex.Store({
 					Api.users(),
 					Api.oauth(),
 				]);
+			context.commit("setCore", core);
 			context.commit("setGroups", groups);
 			context.commit("setServices", services);
 			context.commit("setMessages", messages);

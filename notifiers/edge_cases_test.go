@@ -26,6 +26,12 @@ func setupTestEnvironment(t *testing.T) {
 	err := utils.InitLogs()
 	require.Nil(t, err)
 
+	// Allow internal URLs for httptest mock server (SSRF protection bypass for testing)
+	utils.Params.Set("ALLOW_INTERNAL_URLS", true)
+	t.Cleanup(func() {
+		utils.Params.Set("ALLOW_INTERNAL_URLS", false)
+	})
+
 	db, err := database.OpenTester()
 	require.Nil(t, err)
 	db.AutoMigrate(&notifications.Notification{})
@@ -660,27 +666,27 @@ func TestTemplateRenderingErrors(t *testing.T) {
 	setupTestEnvironment(t)
 
 	t.Run("invalid template syntax - unclosed braces", func(t *testing.T) {
-		result := ReplaceTemplate(`{"id": {{.Service.Id}`, replacer{Service: services.Example(true)})
+		result := ReplaceTemplate(`{"id": {{.Service.Id}`, makeReplacer(services.Example(true), failures.Failure{}))
 		assert.Contains(t, result, "template")
 	})
 
 	t.Run("invalid template syntax - missing closing brace", func(t *testing.T) {
-		result := ReplaceTemplate(`{"name": "{{.Service.Name}"`, replacer{Service: services.Example(true)})
+		result := ReplaceTemplate(`{"name": "{{.Service.Name}"`, makeReplacer(services.Example(true), failures.Failure{}))
 		assert.Contains(t, result, "template")
 	})
 
 	t.Run("non-existent field access", func(t *testing.T) {
-		result := ReplaceTemplate(`{"field": "{{.Service.NonExistentField}}"}`, replacer{Service: services.Example(true)})
+		result := ReplaceTemplate(`{"field": "{{.Service.NonExistentField}}"}`, makeReplacer(services.Example(true), failures.Failure{}))
 		assert.Contains(t, result, "template")
 	})
 
 	t.Run("deeply nested non-existent field", func(t *testing.T) {
-		result := ReplaceTemplate(`{"field": "{{.Service.Nested.Deep.Field}}"}`, replacer{Service: services.Example(true)})
+		result := ReplaceTemplate(`{"field": "{{.Service.Nested.Deep.Field}}"}`, makeReplacer(services.Example(true), failures.Failure{}))
 		assert.Contains(t, result, "template")
 	})
 
 	t.Run("nil Failure field access", func(t *testing.T) {
-		result := ReplaceTemplate(`{"issue": "{{.Failure.Issue}}"}`, replacer{Service: services.Example(true)})
+		result := ReplaceTemplate(`{"issue": "{{.Failure.Issue}}"}`, makeReplacer(services.Example(true), failures.Failure{}))
 		// Failure is zero-valued, so Issue will be empty string
 		assert.Contains(t, result, `"issue": ""`)
 	})
@@ -688,24 +694,23 @@ func TestTemplateRenderingErrors(t *testing.T) {
 	t.Run("valid template with special characters in data", func(t *testing.T) {
 		svc := services.Example(true)
 		svc.Name = `Service "with" <special> & chars`
-		result := ReplaceTemplate(`{"name": "{{.Service.Name}}"}`, replacer{Service: svc})
-		// html/template escapes special characters for safety
-		assert.Contains(t, result, "&lt;special&gt;")
-		assert.Contains(t, result, "&amp;")
+		result := ReplaceTemplate(`{"name": "{{.Service.Name}}"}`, makeReplacer(svc, failures.Failure{}))
+		// text/template does NOT escape special characters (we use text/template now for notifiers)
+		assert.Contains(t, result, "special")
 	})
 
 	t.Run("template with function that doesn't exist", func(t *testing.T) {
-		result := ReplaceTemplate(`{"id": "{{nonExistentFunc .Service.Id}}"}`, replacer{Service: services.Example(true)})
+		result := ReplaceTemplate(`{"id": "{{nonExistentFunc .Service.Id}}"}`, makeReplacer(services.Example(true), failures.Failure{}))
 		assert.Contains(t, result, "template")
 	})
 
 	t.Run("empty template string", func(t *testing.T) {
-		result := ReplaceTemplate("", replacer{Service: services.Example(true)})
+		result := ReplaceTemplate("", makeReplacer(services.Example(true), failures.Failure{}))
 		assert.Equal(t, "", result)
 	})
 
 	t.Run("template with only whitespace", func(t *testing.T) {
-		result := ReplaceTemplate("   \n\t   ", replacer{Service: services.Example(true)})
+		result := ReplaceTemplate("   \n\t   ", makeReplacer(services.Example(true), failures.Failure{}))
 		assert.Equal(t, "   \n\t   ", result)
 	})
 }

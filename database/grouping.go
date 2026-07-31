@@ -98,6 +98,7 @@ func (b *GroupQuery) ToTimeValue() (*TimeVar, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	var data []*TimeValue
 	for rows.Next() {
 		var timeframe string

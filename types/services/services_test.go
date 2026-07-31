@@ -79,7 +79,7 @@ func generateTestCert(certPath, keyPath string) error {
 
 var example = &Service{
 	Name:           "Example Service",
-	Domain:         "https://statping.com",
+	Domain:         "https://example.com",
 	ExpectedStatus: 200,
 	Interval:       30,
 	Type:           "http",
@@ -304,6 +304,11 @@ func startupDb(t *testing.T) {
 
 func TestServices(t *testing.T) {
 	ensureEndpointsStarted(t)
+	// Allow internal URLs for tests using localhost mock servers
+	utils.Params.Set("ALLOW_INTERNAL_URLS", true)
+	t.Cleanup(func() {
+		utils.Params.Set("ALLOW_INTERNAL_URLS", false)
+	})
 	tlsCert := utils.Params.GetString("STATPING_DIR") + "/cert.pem"
 	tlsCertKey := utils.Params.GetString("STATPING_DIR") + "/key.pem"
 
@@ -569,7 +574,7 @@ func TestServices(t *testing.T) {
 	t.Run("Test Create", func(t *testing.T) {
 		example := &Service{
 			Name:           "Example Service 2",
-			Domain:         "https://slack.statping.com",
+			Domain:         "https://slack.example.com",
 			ExpectedStatus: 200,
 			Interval:       10,
 			Type:           "http",
@@ -668,7 +673,7 @@ x-httpservice: &httpservice
 services:
 
   - name: Statping Demo
-    domain: https://demo.statping.com
+    domain: https://demo.example.com
     <<: *httpservice
 
   - name: Portainer
@@ -691,7 +696,7 @@ services:
 
 		assert.Equal(t, "Statping Demo", srvs.Services[0].Name)
 		assert.Equal(t, 45, srvs.Services[0].Interval)
-		assert.Equal(t, "https://demo.statping.com", srvs.Services[0].Domain)
+		assert.Equal(t, "https://demo.example.com", srvs.Services[0].Domain)
 
 		err = utils.DeleteFile(utils.Directory + "/services.yml")
 		require.Nil(t, err)

@@ -77,8 +77,6 @@ export default {
 
 			this.offset = (page - 1) * this.limit;
 
-			window.console.log("page", this.page, this.limit, this.offset);
-
 			this.failures = await Api.service_failures(
 				this.service.id,
 				0,

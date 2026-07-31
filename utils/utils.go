@@ -144,7 +144,15 @@ func ToString(s interface{}) string {
 //
 //	in, out, err := Command("sass assets/scss assets/css/base.css")
 func Command(name string, args ...string) (string, string, error) {
+	return CommandWithEnv(name, nil, args...)
+}
+
+// CommandWithEnv runs a command with additional environment variables
+func CommandWithEnv(name string, env []string, args ...string) (string, string, error) {
 	testCmd := exec.Command(name, args...) // #nosec G204
+	if len(env) > 0 {
+		testCmd.Env = append(os.Environ(), env...)
+	}
 	var stdout, stderr []byte
 	var errStdout, errStderr error
 	stdoutIn, _ := testCmd.StdoutPipe()
@@ -324,6 +332,59 @@ func HttpRequest(endpoint, method string, contentType interface{}, headers []str
 	// record HTTP metrics
 	metrics.Histo("bytes", float64(len(contents)), endpoint, method)
 	metrics.Histo("duration", Now().Sub(t1).Seconds(), endpoint, method)
+
+	return contents, resp, err
+}
+
+// SafeHttpRequest is like HttpRequest but validates the URL against SSRF attacks
+// and pins DNS resolution to prevent DNS rebinding. Use for user-configured webhooks.
+func SafeHttpRequest(endpoint, method string, contentType interface{}, headers []string, body io.Reader, timeout time.Duration) ([]byte, *http.Response, error) {
+	// Validate and resolve URL to prevent DNS rebinding
+	resolvedIPs, err := ValidateAndResolveURL(endpoint)
+	if err != nil {
+		return nil, nil, fmt.Errorf("SSRF validation failed: %w", err)
+	}
+
+	var req *http.Request
+	if method == "" {
+		method = "GET"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if req, err = http.NewRequestWithContext(ctx, method, endpoint, body); err != nil {
+		return nil, nil, err
+	}
+
+	req.Header.Set("User-Agent", "Statping-ng")
+	req.Header.Set("Statping-Version", Params.GetString("VERSION"))
+
+	if contentType != nil {
+		req.Header.Set("Content-Type", contentType.(string))
+	}
+
+	for _, h := range headers {
+		keyVal := strings.SplitN(h, "=", 2)
+		if len(keyVal) == 2 && keyVal[0] != "" && keyVal[1] != "" {
+			req.Header.Set(keyVal[0], keyVal[1])
+		}
+	}
+
+	// Use safe client with pinned DNS resolution
+	client := SafeHTTPClient(resolvedIPs, timeout)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, resp, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	// Bounded Reader: Prevent OOM by capping response size to 10MB
+	limitReader := io.LimitReader(resp.Body, 10*1024*1024)
+	contents, err := io.ReadAll(limitReader)
+	if err != nil {
+		return nil, resp, err
+	}
 
 	return contents, resp, err
 }

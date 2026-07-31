@@ -1,14 +1,16 @@
 package main
 
 import (
-	"bytes"
-	"io"
 	"os"
-	"os/exec"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/statping-ng/statping-ng/utils"
+)
+
+var (
+	initKeyFile string
+	initForce   bool
 )
 
 var rootCmd = &cobra.Command{
@@ -17,56 +19,6 @@ var rootCmd = &cobra.Command{
 	Short:   "A simple Application Status Monitor that is opensource and lightweight.",
 	Run: func(cmd *cobra.Command, args []string) {
 		start()
-	},
-}
-
-var updateCmd = &cobra.Command{
-	Use:     "update",
-	Example: "statping update",
-	Short:   "Update to the latest version",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		log.Infoln("Updating Statping to the latest version...")
-		log.Infoln("curl -o- -L https://statping.com/install.sh | bash")
-		curl, err := exec.LookPath("curl")
-		if err != nil {
-			return err
-		}
-		bash, err := exec.LookPath("bash")
-		if err != nil {
-			return err
-		}
-
-		ree := bytes.NewBuffer(nil)
-		c1 := exec.Command(curl, "-o-", "-L", "https://statping.com/install.sh") // #nosec G204
-		c2 := exec.Command(bash)                                                 // #nosec G204
-
-		r, w := io.Pipe()
-		c1.Stdout = w
-		c2.Stdin = r
-
-		var b2 bytes.Buffer
-		c2.Stdout = &b2
-
-		if err := c1.Start(); err != nil {
-			return err
-		}
-		if err := c2.Start(); err != nil {
-			return err
-		}
-		if err := c1.Wait(); err != nil {
-			return err
-		}
-		_ = w.Close()
-		if err := c2.Wait(); err != nil {
-			return err
-		}
-		if _, err := io.Copy(ree, &b2); err != nil {
-			return err
-		}
-
-		log.Infoln(ree.String())
-		os.Exit(0)
-		return nil
 	},
 }
 
@@ -80,6 +32,29 @@ var versionCmd = &cobra.Command{
 		} else {
 			cmd.Printf("%s\n", VERSION)
 		}
+	},
+}
+
+var initCmd = &cobra.Command{
+	Use:     "init",
+	Example: "statping init --key-file /etc/statping/master.key",
+	Short:   "Initialize Statping and verify dependencies (master key, etc.)",
+	Long: `Pre-flight check that verifies all dependencies are configured correctly.
+
+If no master key is found and --key-file is specified, generates a new
+256-bit master key and writes it to the specified file with secure permissions.
+
+Examples:
+  # Check if master key is configured
+  statping init
+
+  # Generate new master key and save to file
+  statping init --key-file /etc/statping/master.key
+
+  # Force overwrite existing key file (DANGER: invalidates encrypted data)
+  statping init --key-file /etc/statping/master.key --force`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return initCli()
 	},
 }
 
@@ -128,18 +103,6 @@ var exportCmd = &cobra.Command{
 	Short:   "Exports your Statping settings to a 'statping-export.json' file.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := exportCli(args); err != nil {
-			return err
-		}
-		return nil
-	},
-}
-
-var sassCmd = &cobra.Command{
-	Use:     "sass",
-	Example: "statping sass",
-	Short:   "Compile .scss files into the css directory",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := sassCli(); err != nil {
 			return err
 		}
 		return nil
@@ -199,6 +162,11 @@ var importCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func init() {
+	initCmd.Flags().StringVar(&initKeyFile, "key-file", "", "path to write generated master key")
+	initCmd.Flags().BoolVar(&initForce, "force", false, "overwrite existing key file (DANGER)")
 }
 
 func Execute() {

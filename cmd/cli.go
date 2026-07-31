@@ -18,6 +18,79 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
+func initCli() error {
+	fmt.Println("Checking dependencies...")
+
+	// Try to initialize master key from existing sources
+	err := utils.InitMasterKey()
+	if err == nil {
+		// Key found and initialized
+		fmt.Println("✓ Master key: configured")
+		fmt.Println("\nReady to start.")
+		return nil
+	}
+
+	// Key not found
+	if errors.Is(err, utils.ErrMasterKeyNotFound) {
+		fmt.Println("✗ Master key: NOT FOUND in STATPING_MASTER_KEY or STATPING_MASTER_KEY_FILE")
+
+		// If --key-file specified, generate and write
+		if initKeyFile != "" {
+			return generateAndWriteKey(initKeyFile)
+		}
+
+		fmt.Println("\nNo master key configured. To generate one:")
+		fmt.Println("  statping init --key-file /path/to/master.key")
+		fmt.Println("\nOr set STATPING_MASTER_KEY environment variable directly.")
+		return errors.New("master key required")
+	}
+
+	// Other error (e.g., permission issue)
+	return err
+}
+
+func generateAndWriteKey(keyFile string) error {
+	// Check if file exists
+	if utils.FileExists(keyFile) && !initForce {
+		return fmt.Errorf("%s already exists. Use --force to overwrite (DANGER: will invalidate all encrypted data)", keyFile)
+	}
+
+	// Generate new key
+	fmt.Println("\nGenerating new master key...")
+	keyHex, err := utils.GenerateMasterKey()
+	if err != nil {
+		return fmt.Errorf("failed to generate key: %w", err)
+	}
+	fmt.Println("✓ Generated 256-bit key")
+
+	// Ensure parent directory exists
+	dir := filepath.Dir(keyFile)
+	if !utils.FolderExists(dir) {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	// Write key to file
+	if err := os.WriteFile(keyFile, []byte(keyHex), 0400); err != nil {
+		return fmt.Errorf("failed to write key file: %w", err)
+	}
+	fmt.Printf("✓ Written to %s\n", keyFile)
+
+	// Set permissions (Unix only, Windows ignores)
+	if err := os.Chmod(keyFile, 0400); err != nil {
+		fmt.Printf("Warning: could not set permissions to 0400: %v\n", err)
+	} else {
+		fmt.Println("✓ Permissions set to 0400")
+	}
+
+	fmt.Println("\nAdd to your environment:")
+	fmt.Printf("  export STATPING_MASTER_KEY_FILE=\"%s\"\n", keyFile)
+	fmt.Println("\nThen run 'statping init' again to verify.")
+
+	return nil
+}
+
 func assetsCli() error {
 	if err := utils.InitLogs(); err != nil {
 		return err
@@ -127,12 +200,6 @@ func exportCli(args []string) error {
 		return fmt.Errorf("could not write file statping-export.json: %v", err.Error())
 	}
 	log.Infoln("Statping export file saved to ", filename)
-	return nil
-}
-
-// sassCli is deprecated - SASS compilation has been removed
-func sassCli() error {
-	fmt.Println("SASS compilation has been removed. Use custom CSS instead.")
 	return nil
 }
 
@@ -418,7 +485,6 @@ func runOnce() error {
 //	source.Assets()
 //	core.CoreApp.Connect(core.CoreApp., utils.Directory)
 //	core.SelectAllServices(false)
-//	core.CoreApp.UseCdn = types.NewNullBool(true)
 //	for _, srv := range core.Services() {
 //		core.CheckService(srv, true)
 //	}

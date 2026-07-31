@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/statping-ng/statping-ng/types/errors"
@@ -10,6 +13,58 @@ import (
 	"github.com/statping-ng/statping-ng/types/notifications"
 	"github.com/statping-ng/statping-ng/types/services"
 )
+
+// allowedTemplateFields defines safe field patterns for notifier templates
+var allowedTemplateFieldPattern = regexp.MustCompile(`^\{\{\s*\.(?:Core\.(?:Name|Description|Domain)|Service\.(?:Id|Name|Domain|Type|Method|Port|Online|Latency|PingTime|LastStatusCode)|Failure\.(?:Id|Issue|ErrorCode|PingTime|CreatedAt))\s*\}\}$`)
+
+// dangerousTemplatePatterns that could enable template injection
+var dangerousTemplatePatterns = []string{
+	"{{template", "{{define", "{{block", "{{call",
+	"{{printf", "{{html", "{{js", "{{urlquery",
+	"{{index", "{{slice", "{{range", "{{with",
+}
+
+// validateNotifierTemplates checks that SuccessData and FailureData templates are safe
+func validateNotifierTemplates(n *notifications.Notification) error {
+	if n.SuccessData.String != "" {
+		if err := validateTemplate(n.SuccessData.String); err != nil {
+			return fmt.Errorf("success_data template: %w", err)
+		}
+	}
+	if n.FailureData.String != "" {
+		if err := validateTemplate(n.FailureData.String); err != nil {
+			return fmt.Errorf("failure_data template: %w", err)
+		}
+	}
+	return nil
+}
+
+// validateTemplate checks a template string for dangerous directives
+func validateTemplate(tmpl string) error {
+	// Check for dangerous patterns
+	lower := strings.ToLower(tmpl)
+	for _, pattern := range dangerousTemplatePatterns {
+		if strings.Contains(lower, pattern) {
+			return fmt.Errorf("template contains disallowed directive: %s", pattern)
+		}
+	}
+
+	// Find all template directives and validate each one
+	re := regexp.MustCompile(`\{\{[^}]+\}\}`)
+	matches := re.FindAllString(tmpl, -1)
+
+	for _, match := range matches {
+		// Skip simple text like {{.Service.Name}}
+		if !allowedTemplateFieldPattern.MatchString(match) {
+			// Allow literal values and simple comparisons, but flag anything suspicious
+			if strings.Contains(match, "(") {
+				return fmt.Errorf("template contains function call: %s", match)
+			}
+		}
+	}
+
+	return nil
+}
 
 func apiAllNotifiersHandler(r *http.Request) interface{} {
 	var notifs []notifications.Notification
@@ -45,6 +100,12 @@ func apiNotifierUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := DecodeJSON(r, &notifer); err != nil {
+		sendErrorJson(err, w, r)
+		return
+	}
+
+	// Validate templates before saving (prevent template injection)
+	if err := validateNotifierTemplates(notifer); err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}

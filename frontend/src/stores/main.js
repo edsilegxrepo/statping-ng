@@ -176,8 +176,9 @@ export const useMainStore = defineStore('main', {
     },
 
     async loadAdmin() {
-      const [groups, services, messages, checkins, notifiers, users, oauth] =
+      const [core, groups, services, messages, checkins, notifiers, users, oauth] =
         await Promise.all([
+          Api.core(),
           Api.groups(),
           Api.services(),
           Api.messages(),
@@ -186,6 +187,7 @@ export const useMainStore = defineStore('main', {
           Api.users(),
           Api.oauth(),
         ])
+      this.core = core
       this.groups = groups
       this.services = services
       this.messages = messages

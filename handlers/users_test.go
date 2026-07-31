@@ -15,6 +15,7 @@ import (
 var _ = fmt.Sprintf // silence unused import when test is skipped
 
 func TestUnAuthenticatedUserRoutes(t *testing.T) {
+	ensureHandlerSetup(t)
 	tests := []HTTPTest{
 		{
 			Name:           "No Authentication - New User",
