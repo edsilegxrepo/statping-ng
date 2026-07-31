@@ -1,3 +1,22 @@
+# 0.97.1 (07-31-2026)
+- **UI: Sticky Top Navigation Bar**:
+  - Added professional top navigation banner to public pages
+  - Real-time status summary (X/Y services online)
+  - 24-hour uptime percentage with color-coded thresholds
+  - Last check timestamp with human-readable format
+  - Active incident count indicator
+  - Dashboard and Login buttons always visible
+  - Responsive design with graceful mobile degradation
+- **Theme System Simplification**:
+  - Replaced SASS compilation with simple CSS-only custom themes
+  - Removed external `sass` binary dependency
+  - Custom CSS saved directly to `assets/custom.css`
+  - Simplified theme API handlers (create/save/delete)
+- **Code Cleanup**:
+  - Deleted unused generators (`generate_help.go`, `generate_languages.go`, `generate_version.go`)
+  - Removed legacy wiki submodule reference
+  - Reduced source package by ~1000 lines
+
 # 0.97.0 (07-30-2026)
 - **Frontend: Vue 3 Migration**:
   - Complete migration from Vue 2.7 to Vue 3.5 with Composition API
