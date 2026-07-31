@@ -5,8 +5,10 @@ import (
 	"html/template"
 )
 
-// Email templates - clean, enterprise-grade HTML emails
-// Compatible with all major email clients (Gmail, Outlook, Apple Mail)
+// Email templates for service alerts
+// Clean, enterprise-grade HTML emails compatible with Gmail, Outlook, Apple Mail
+//
+// Note: Digest emails have their own template in digest.go
 
 const baseEmailTemplate = `<!DOCTYPE html>
 <html lang="en">
@@ -33,14 +35,11 @@ const baseEmailTemplate = `<!DOCTYPE html>
     .header { padding: 32px 40px; text-align: center; }
     .header-success { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
     .header-failure { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); }
-    .header-info { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); }
     .header h1 { margin: 0; color: #ffffff; font-size: 24px; font-weight: 600; line-height: 1.3; }
     .header p { margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px; }
 
     /* Status badge */
-    .status-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-    .badge-online { background-color: rgba(255,255,255,0.2); color: #ffffff; }
-    .badge-offline { background-color: rgba(255,255,255,0.2); color: #ffffff; }
+    .status-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; background-color: rgba(255,255,255,0.2); color: #ffffff; }
 
     /* Body */
     .body { padding: 32px 40px; }
@@ -66,8 +65,7 @@ const baseEmailTemplate = `<!DOCTYPE html>
 
     /* Button */
     .btn-container { text-align: center; padding: 24px 0 8px; }
-    .btn { display: inline-block; padding: 14px 32px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; transition: background-color 0.2s; }
-    .btn:hover { background-color: #1d4ed8; }
+    .btn { display: inline-block; padding: 14px 32px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; }
 
     /* Footer */
     .footer { padding: 24px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center; }
@@ -97,7 +95,7 @@ const baseEmailTemplate = `<!DOCTYPE html>
 const serviceOnlineContent = `
       <tr>
         <td class="header header-success">
-          <div class="status-badge badge-online">● Back Online</div>
+          <div class="status-badge">● Back Online</div>
           <h1>{{.Service.Name}}</h1>
           <p>Service has recovered and is now operational</p>
         </td>
@@ -138,7 +136,7 @@ const serviceOnlineContent = `
 const serviceOfflineContent = `
       <tr>
         <td class="header header-failure">
-          <div class="status-badge badge-offline">● Offline</div>
+          <div class="status-badge">● Offline</div>
           <h1>{{.Service.Name}}</h1>
           <p>Service is currently unreachable</p>
         </td>
@@ -183,70 +181,17 @@ const serviceOfflineContent = `
         </td>
       </tr>`
 
-const digestContent = `
-      <tr>
-        <td class="header header-info">
-          <h1>Daily Service Report</h1>
-          <p>{{.Core.Name}} • {{.Date}}</p>
-        </td>
-      </tr>
-      <tr>
-        <td class="body">
-          <p>Here's your daily summary of service status and performance.</p>
-
-          <div class="info-card">
-            <div class="info-row">
-              <span class="info-label">Total Services</span>
-              <span class="info-value">{{.TotalServices}}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Online</span>
-              <span class="info-value" style="color: #059669; font-weight: 600;">{{.OnlineServices}}</span>
-            </div>
-            {{if gt .OfflineServices 0}}
-            <div class="info-row">
-              <span class="info-label">Offline</span>
-              <span class="info-value" style="color: #dc2626; font-weight: 600;">{{.OfflineServices}}</span>
-            </div>
-            {{end}}
-            <div class="info-row">
-              <span class="info-label">Avg Uptime</span>
-              <span class="info-value">{{.AvgUptime}}%</span>
-            </div>
-          </div>
-
-          {{if .OfflineList}}
-          <div class="issue-box">
-            <p class="issue-label">Currently Offline</p>
-            <p>{{.OfflineList}}</p>
-          </div>
-          {{end}}
-
-          <div class="btn-container">
-            <a href="{{.Core.Domain}}/dashboard" class="btn">View Full Dashboard</a>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="footer">
-          <p>Daily digest from <a href="{{.Core.Domain}}">{{.Core.Name}}</a></p>
-        </td>
-      </tr>`
-
-// EmailTemplates provides access to all email templates
+// EmailTemplates provides access to service alert templates
 var EmailTemplates = struct {
 	ServiceOnline  string
 	ServiceOffline string
-	Digest         string
 }{
 	ServiceOnline:  serviceOnlineContent,
 	ServiceOffline: serviceOfflineContent,
-	Digest:         digestContent,
 }
 
 // RenderEmail renders an email template with the provided data
 func RenderEmail(content string, data interface{}) (string, error) {
-	// First render the content template
 	contentTmpl, err := template.New("content").Parse(content)
 	if err != nil {
 		return "", err
@@ -257,7 +202,6 @@ func RenderEmail(content string, data interface{}) (string, error) {
 		return "", err
 	}
 
-	// Then wrap in the base template
 	type baseData struct {
 		Title   string
 		Content template.HTML
@@ -268,13 +212,7 @@ func RenderEmail(content string, data interface{}) (string, error) {
 		return "", err
 	}
 
-	// Extract title from data if available
 	title := "Service Notification"
-	if d, ok := data.(map[string]interface{}); ok {
-		if t, ok := d["Title"].(string); ok {
-			title = t
-		}
-	}
 
 	var finalBuf bytes.Buffer
 	if err := baseTmpl.Execute(&finalBuf, baseData{
