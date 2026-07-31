@@ -72,12 +72,17 @@ if $DO_CLEAN; then
   # Build artifacts
   log_clean() { printf "  %b✓%b Removed %s\n" "$GREEN" "$RESET" "$1"; }
 
-  rm -f statping.exe && log_clean "statping.exe"
-  rm -f statping.db && log_clean "statping.db"
-  rm -f statping.secrets && log_clean "statping.secrets"
-  rm -f config.yml && log_clean "config.yml"
-  rm -rf logs/ && log_clean "logs/"
-  rm -rf assets/ && log_clean "assets/"
+  # Clean testfiles/ (build outputs, test artifacts)
+  rm -f testfiles/statping.exe && log_clean "testfiles/statping.exe"
+  rm -f testfiles/statping.db && log_clean "testfiles/statping.db"
+  rm -f testfiles/statping.secrets && log_clean "testfiles/statping.secrets"
+  rm -f testfiles/config.yml && log_clean "testfiles/config.yml"
+  rm -rf testfiles/logs/ && log_clean "testfiles/logs/"
+  rm -rf testfiles/assets/ && log_clean "testfiles/assets/"
+
+  # Clean legacy locations (repo root)
+  rm -f statping.exe statping.db statping.secrets config.yml 2>/dev/null
+  rm -rf logs/ assets/ 2>/dev/null
   rm -rf frontend/dist/ && log_clean "frontend/dist/"
   rm -rf source/dist/assets/ && log_clean "source/dist/assets/"
   rm -f source/dist/index.html && log_clean "source/dist/index.html"
@@ -150,11 +155,12 @@ if $DO_BUILD; then
   echo "  JS:  ${INDEX_JS}"
   echo "  CSS: ${INDEX_CSS}"
 
-  # Build Go binary
+  # Build Go binary to testfiles/
   log_step "BUILD" "Building Go binary..."
-  go build -o statping.exe ./cmd
+  mkdir -p testfiles
+  go build -o testfiles/statping.exe ./cmd
 
-  log_success "Build complete"
+  log_success "Build complete (binary: testfiles/statping.exe)"
 fi
 
 #=============================================================================
