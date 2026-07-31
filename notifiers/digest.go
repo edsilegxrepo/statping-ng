@@ -19,6 +19,118 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
+// Email templates are organized by notifier:
+//   - Service alerts (online/offline): notifiers/email_templates.go
+//   - Daily digest: notifiers/digest.go (this file, below)
+//   - Teams/Slack/Discord: JSON payloads inline in their respective notifiers
+
+const digestEmailTemplate = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Digest</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .header p { margin: 10px 0 0; opacity: 0.9; }
+    .content { padding: 30px; }
+    .stats { display: flex; justify-content: space-around; margin-bottom: 30px; text-align: center; }
+    .stat { padding: 15px; }
+    .stat-value { font-size: 32px; font-weight: bold; color: #333; }
+    .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
+    .stat-healthy .stat-value { color: #22c55e; }
+    .stat-failed .stat-value { color: #ef4444; }
+    .section { margin-bottom: 25px; }
+    .section h2 { font-size: 16px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f8f9fa; font-size: 12px; text-transform: uppercase; color: #666; }
+    .status-online { color: #22c55e; font-weight: 600; }
+    .status-offline { color: #ef4444; font-weight: 600; }
+    .error-list { background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 0 4px 4px 0; padding: 15px; }
+    .error-item { padding: 8px 0; border-bottom: 1px solid #fecaca; font-size: 13px; color: #991b1b; }
+    .error-item:last-child { border-bottom: none; }
+    .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    .footer a { color: #6b7280; }
+    .no-issues { text-align: center; padding: 30px; color: #22c55e; }
+    @media (max-width: 620px) {
+      .stats { flex-direction: column; }
+      .stat { padding: 10px 0; }
+      th, td { padding: 8px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>{{.AppName}} Daily Digest</h1>
+      <p>{{.Period}}</p>
+    </div>
+    <div class="content">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">{{.TotalServices}}</div>
+          <div class="stat-label">Total Services</div>
+        </div>
+        <div class="stat stat-healthy">
+          <div class="stat-value">{{.HealthyServices}}</div>
+          <div class="stat-label">Healthy</div>
+        </div>
+        <div class="stat stat-failed">
+          <div class="stat-value">{{.FailedServices}}</div>
+          <div class="stat-label">Currently Down</div>
+        </div>
+      </div>
+
+      {{if .HasFailures}}
+      <div class="section">
+        <h2>Service Issues (Last 24h)</h2>
+        <table>
+          <tr>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Failures</th>
+            <th>Last Issue</th>
+          </tr>
+          {{range .ServiceSummary}}
+          <tr>
+            <td>{{.Name}}</td>
+            <td class="{{if eq .Status "Online"}}status-online{{else}}status-offline{{end}}">{{.Status}}</td>
+            <td>{{.FailureCount}}</td>
+            <td>{{.LastFailure}}</td>
+          </tr>
+          {{end}}
+        </table>
+      </div>
+      {{else}}
+      <div class="no-issues">
+        <div style="font-size: 48px;">&#x2705;</div>
+        <p>All services healthy — no issues in the last 24 hours</p>
+      </div>
+      {{end}}
+
+      {{if .HasAppErrors}}
+      <div class="section">
+        <h2>Application Errors</h2>
+        <div class="error-list">
+          {{range .AppErrors}}
+          <div class="error-item">{{.Message}}</div>
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+    </div>
+    <div class="footer">
+      <p>Generated at {{.GeneratedAt}}</p>
+      <p><a href="{{.Domain}}">{{.Domain}}</a></p>
+    </div>
+  </div>
+</body>
+</html>`
+
 var (
 	digestLog      = utils.Log.WithField("type", "digest")
 	digestOnce     sync.Once
@@ -249,111 +361,7 @@ func formatDuration(d time.Duration) string {
 }
 
 func renderDigestEmail(data digestData) string {
-	tmpl := `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 30px; text-align: center; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .header p { margin: 10px 0 0; opacity: 0.9; }
-        .content { padding: 30px; }
-        .stats { display: flex; justify-content: space-around; margin-bottom: 30px; text-align: center; }
-        .stat { padding: 15px; }
-        .stat-value { font-size: 32px; font-weight: bold; color: #333; }
-        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
-        .stat-healthy .stat-value { color: #28a745; }
-        .stat-failed .stat-value { color: #dc3545; }
-        .section { margin-bottom: 25px; }
-        .section h2 { font-size: 16px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; font-size: 12px; text-transform: uppercase; color: #666; }
-        .status-online { color: #28a745; }
-        .status-offline { color: #dc3545; }
-        .error-list { background: #fff5f5; border-radius: 4px; padding: 15px; }
-        .error-item { padding: 8px 0; border-bottom: 1px solid #ffe0e0; font-size: 13px; }
-        .error-item:last-child { border-bottom: none; }
-        .error-time { color: #999; font-size: 11px; }
-        .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
-        .no-issues { text-align: center; padding: 30px; color: #28a745; }
-        .no-issues i { font-size: 48px; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>{{.AppName}} Daily Digest</h1>
-            <p>{{.Period}}</p>
-        </div>
-        <div class="content">
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-value">{{.TotalServices}}</div>
-                    <div class="stat-label">Total Services</div>
-                </div>
-                <div class="stat stat-healthy">
-                    <div class="stat-value">{{.HealthyServices}}</div>
-                    <div class="stat-label">Healthy</div>
-                </div>
-                <div class="stat stat-failed">
-                    <div class="stat-value">{{.FailedServices}}</div>
-                    <div class="stat-label">Currently Down</div>
-                </div>
-            </div>
-
-            {{if .HasFailures}}
-            <div class="section">
-                <h2>Service Issues (Last 24h)</h2>
-                <table>
-                    <tr>
-                        <th>Service</th>
-                        <th>Status</th>
-                        <th>Failures</th>
-                        <th>Last Issue</th>
-                    </tr>
-                    {{range .ServiceSummary}}
-                    <tr>
-                        <td>{{.Name}}</td>
-                        <td class="{{if eq .Status "Online"}}status-online{{else}}status-offline{{end}}">{{.Status}}</td>
-                        <td>{{.FailureCount}}</td>
-                        <td>{{.LastFailure}}</td>
-                    </tr>
-                    {{end}}
-                </table>
-            </div>
-            {{else}}
-            <div class="no-issues">
-                <div style="font-size: 48px;">&#x2705;</div>
-                <p>All services healthy - no issues in the last 24 hours!</p>
-            </div>
-            {{end}}
-
-            {{if .HasAppErrors}}
-            <div class="section">
-                <h2>Application Errors</h2>
-                <div class="error-list">
-                    {{range .AppErrors}}
-                    <div class="error-item">
-                        <span class="error-time">{{.Timestamp}}</span>
-                        <div>{{.Message}}</div>
-                    </div>
-                    {{end}}
-                </div>
-            </div>
-            {{end}}
-        </div>
-        <div class="footer">
-            <p>Generated at {{.GeneratedAt}}</p>
-            <p><a href="{{.Domain}}">{{.Domain}}</a></p>
-        </div>
-    </div>
-</body>
-</html>`
-
-	t, err := template.New("digest").Parse(tmpl)
+	t, err := template.New("digest").Parse(digestEmailTemplate)
 	if err != nil {
 		digestLog.Errorf("Failed to parse digest template: %v", err)
 		return ""
