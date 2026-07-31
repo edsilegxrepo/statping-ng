@@ -16,13 +16,9 @@ func init() {
 }
 
 // setupTempDir creates a temporary directory for isolated testing
-func setupTempDir(t *testing.T) (string, func()) {
+func setupTempDir(t *testing.T) string {
 	t.Helper()
-	tmpDir, err := os.MkdirTemp("", "source_test_*")
-	require.NoError(t, err)
-	return tmpDir, func() {
-		_ = os.RemoveAll(tmpDir)
-	}
+	return t.TempDir()
 }
 
 func TestAssets(t *testing.T) {
@@ -61,16 +57,14 @@ func TestReadFileString(t *testing.T) {
 }
 
 func TestUsingAssets_NoAssetsFolder(t *testing.T) {
-	tmpDir, cleanup := setupTempDir(t)
-	defer cleanup()
+	tmpDir := setupTempDir(t)
 
 	result := UsingAssets(tmpDir)
 	assert.False(t, result)
 }
 
 func TestUsingAssets_WithAssetsFolder(t *testing.T) {
-	tmpDir, cleanup := setupTempDir(t)
-	defer cleanup()
+	tmpDir := setupTempDir(t)
 
 	assetsDir := filepath.Join(tmpDir, "assets")
 	err := os.Mkdir(assetsDir, 0o750)
@@ -81,8 +75,7 @@ func TestUsingAssets_WithAssetsFolder(t *testing.T) {
 }
 
 func TestCustomCSS_FullCycle(t *testing.T) {
-	tmpDir, cleanup := setupTempDir(t)
-	defer cleanup()
+	tmpDir := setupTempDir(t)
 
 	origDir := utils.Directory
 	utils.Directory = tmpDir
@@ -126,8 +119,7 @@ func TestCustomCSS_FullCycle(t *testing.T) {
 }
 
 func TestSaveCustomCSS_CreatesAssetsDir(t *testing.T) {
-	tmpDir, cleanup := setupTempDir(t)
-	defer cleanup()
+	tmpDir := setupTempDir(t)
 
 	origDir := utils.Directory
 	utils.Directory = tmpDir
@@ -144,8 +136,7 @@ func TestSaveCustomCSS_CreatesAssetsDir(t *testing.T) {
 }
 
 func TestDeleteCustomCSS_NoFile(t *testing.T) {
-	tmpDir, cleanup := setupTempDir(t)
-	defer cleanup()
+	tmpDir := setupTempDir(t)
 
 	origDir := utils.Directory
 	utils.Directory = tmpDir
