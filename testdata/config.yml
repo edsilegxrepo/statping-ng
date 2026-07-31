@@ -1,0 +1,86 @@
+# Statping-ng Configuration File
+# This file documents all available configuration options.
+# Copy to your STATPING_DIR and customize as needed.
+
+#=============================================================================
+# DATABASE CONNECTION
+#=============================================================================
+
+# Database type: sqlite3, postgres, mysql
+connection: sqlite3
+
+# SQLite: path to database file (relative to location or absolute)
+sqlfile: statping.db
+
+# PostgreSQL/MySQL connection settings (ignored for sqlite3)
+# host: localhost
+# port: 5432
+# user: statping
+# password: secret
+# database: statping
+
+# PostgreSQL SSL mode: disable, require, verify-ca, verify-full
+# postgres_ssl: disable
+
+# Connection pool settings
+# db_open_connections: 25
+# db_idle_connections: 25
+# db_max_life_connections: 5
+
+#=============================================================================
+# APPLICATION SETTINGS
+#=============================================================================
+
+# Working directory for Statping data (logs, assets, etc.)
+location: .
+
+# Interface language: en, de, es, fr, ja, ko, pt, ru, zh
+language: en
+
+# Base path for reverse proxy deployments (e.g., /statping)
+# base_path: /
+
+# Allow anonymous error reporting to help improve Statping
+allow_reports: false
+
+#=============================================================================
+# INITIAL ADMIN USER (only used during first setup)
+#=============================================================================
+
+# admin_user: admin
+# admin_password: admin
+# admin_email: admin@example.com
+
+#=============================================================================
+# HTTPS / LET'S ENCRYPT
+#=============================================================================
+
+# Enable automatic HTTPS via Let's Encrypt
+# letsencrypt_enable: false
+# letsencrypt_host: status.example.com
+# letsencrypt_email: admin@example.com
+
+#=============================================================================
+# FEATURE FLAGS
+#=============================================================================
+
+# Disable the HTTP server (CLI/API only mode)
+disable_http: false
+
+# Demo mode: read-only, no authentication required
+demo_mode: false
+
+# Disable log file output (stdout only)
+disable_logs: false
+
+# Use external assets from ./assets folder instead of embedded
+use_assets: false
+
+# Load sample services/data on first startup
+sample_data: false
+
+# Use CDN for static assets (reduces binary size in Docker)
+use_cdn: false
+
+# Disable colored log output
+disable_colors: false
