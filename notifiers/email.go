@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-mail/mail"
-	"github.com/statping-ng/emails"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/failures"
 	"github.com/statping-ng/statping-ng/types/notifications"
@@ -79,69 +78,94 @@ var email = &emailer{
 	},
 }
 
+type emailData struct {
+	Core    *core.Core
+	Service *services.Service
+	Failure failures.Failure
+	Email   string
+}
+
 type emailOutgoing struct {
 	To       string
 	Subject  string
 	Template string
 	From     string
-	Data     replacer
-	Source   string
-	Sent     bool
 }
 
 // OnFailure will trigger failing service
 func (e *emailer) OnFailure(s *services.Service, f failures.Failure) (string, error) {
-	subscriber := e.Var2.String
-	subject := fmt.Sprintf("Service %s is Offline", s.Name)
-	tmpl := renderEmail(s, subscriber, f, emails.Failure)
+	subject := fmt.Sprintf("🔴 %s is Offline", s.Name)
+
+	data := emailData{
+		Core:    core.App,
+		Service: s,
+		Failure: f,
+		Email:   e.Var2.String,
+	}
+
+	tmpl, err := RenderEmail(EmailTemplates.ServiceOffline, data)
+	if err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
 	email := &emailOutgoing{
 		To:       e.Var2.String,
 		Subject:  subject,
 		Template: tmpl,
 		From:     e.Var1.String,
 	}
-	return tmpl, e.dialSend(email)
+	return subject, e.dialSend(email)
 }
 
 // OnSuccess will trigger successful service
 func (e *emailer) OnSuccess(s *services.Service) (string, error) {
-	subscriber := e.Var2.String
-	subject := fmt.Sprintf("Service %s is Back Online", s.Name)
-	tmpl := renderEmail(s, subscriber, failures.Failure{}, emails.Success)
+	subject := fmt.Sprintf("✅ %s is Back Online", s.Name)
+
+	data := emailData{
+		Core:    core.App,
+		Service: s,
+		Failure: failures.Failure{},
+		Email:   e.Var2.String,
+	}
+
+	tmpl, err := RenderEmail(EmailTemplates.ServiceOnline, data)
+	if err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
 	email := &emailOutgoing{
 		To:       e.Var2.String,
 		Subject:  subject,
 		Template: tmpl,
 		From:     e.Var1.String,
 	}
-	return tmpl, e.dialSend(email)
-}
-
-func renderEmail(s *services.Service, subscriber string, f failures.Failure, emailData string) string {
-	data := replacer{
-		Core:    *core.App,
-		Service: s,
-		Failure: f,
-		Email:   subscriber,
-		Custom:  nil,
-	}
-	output, err := emails.Parse(emailData, data)
-	if err != nil {
-		log.Errorln(err)
-		return emailData
-	}
-	return output
+	return subject, e.dialSend(email)
 }
 
 // OnTest triggers when this notifier has been saved
 func (e *emailer) OnTest() (string, error) {
-	subscriber := e.Var2.String
 	service := services.Example(true)
-	subject := fmt.Sprintf("Service %v is Back Online", service.Name)
+	subject := fmt.Sprintf("🔴 %s is Offline (Test)", service.Name)
+
+	data := emailData{
+		Core:    core.App,
+		Service: service,
+		Failure: failures.Example(),
+		Email:   e.Var2.String,
+	}
+
+	tmpl, err := RenderEmail(EmailTemplates.ServiceOffline, data)
+	if err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
 	email := &emailOutgoing{
 		To:       e.Var2.String,
 		Subject:  subject,
-		Template: renderEmail(service, subscriber, failures.Example(), emailFailure),
+		Template: tmpl,
 		From:     e.Var1.String,
 	}
 	return subject, e.dialSend(email)
@@ -163,7 +187,7 @@ func (e *emailer) dialSend(email *emailOutgoing) error {
 	m.SetBody("text/html", email.Template)
 
 	if err := mailer.DialAndSend(m); err != nil {
-		utils.Log.Errorln(fmt.Sprintf("email '%v' sent to: %v (size: %v) %v", email.Subject, email.To, len([]byte(email.Source)), err))
+		utils.Log.Errorln(fmt.Sprintf("email '%v' sent to: %v - error: %v", email.Subject, email.To, err))
 		return err
 	}
 
