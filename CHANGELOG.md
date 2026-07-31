@@ -24,8 +24,10 @@
   - `sync.Once` pattern for digest scheduler initialization
 - **LDAP/LDAPS Authentication**:
   - Full LDAP/LDAPS support with configurable bind DN and search base
-  - User/group attribute mapping
+  - User/group attribute mapping (OpenLDAP, Active Directory, FreeIPA templates)
   - Encrypted bind password storage (AES-256-GCM)
+  - Test Connection button for validating LDAP settings
+  - Semicolon-separated authorized groups (commas are part of DN syntax)
 - **Build System**:
   - Merged `build.sh` and `code_quality.sh` into unified `tools/build.sh`
   - Added `--audit`, `--test`, `--all`, `--clean`, `--clean-all`, `--extra-scans` flags
@@ -45,6 +47,11 @@
   - New `ServicePtrOrder` sort type replaces deprecated `ServiceOrder`
   - Fixed IPv6 address format in SMTP diagnostics (`net.JoinHostPort`)
   - Added explicit 30-second timeout to digest SMTP connections
+- **Test Coverage**:
+  - Added unit tests for digest handler API endpoints
+  - Added unit tests for LDAP handler (settings, templates, group membership)
+  - Added unit tests for Teams notifier (card structure, interfaces)
+  - Added unit tests for digest notifier (email parsing, formatting, rendering)
 - **Bug Fixes**:
   - Fixed `MigrationId` type mismatch causing database errors
   - Fixed service chart rendering issues
