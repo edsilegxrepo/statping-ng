@@ -1,6 +1,8 @@
 <template>
-  <div class="container-fluid px-md-5 sm-container">
-    <Header />
+  <div>
+    <TopNav />
+    <div class="container-fluid px-md-5 sm-container">
+      <Header />
 
     <div v-if="loaded && groups.length === 0 && services.length === 0" class="row mt-5 mb-5">
       <div class="col-12 mt-5 mb-4 text-center">
@@ -62,6 +64,7 @@
         <ServiceBlock :service="service" />
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -73,6 +76,7 @@ import Api from '@/API'
 
 import Group from '@/components/Index/Group.vue'
 import Header from '@/components/Index/Header.vue'
+import TopNav from '@/components/Index/TopNav.vue'
 import MessageBlock from '@/components/Index/MessageBlock.vue'
 import ServiceBlock from '@/components/Service/ServiceBlock.vue'
 import GroupServiceFailures from '@/components/Index/GroupServiceFailures.vue'

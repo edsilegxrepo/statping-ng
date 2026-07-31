@@ -1,6 +1,8 @@
 <template>
-  <div class="container-fluid px-md-5 mt-md-5">
+  <div>
     <TopNav v-if="fromDashboard" :admin="admin" />
+    <PublicTopNav v-else />
+    <div class="container-fluid px-md-5 mt-md-5">
     <div v-if="!ready" class="row mt-5">
       <div class="col-12 text-center">
         <font-awesome-icon icon="circle-notch" size="3x" spin />
@@ -139,6 +141,7 @@
         @close="selectedDay = null"
       />
     </div>
+    </div>
   </div>
 </template>
 
@@ -151,6 +154,7 @@ import 'flatpickr/dist/flatpickr.css'
 import Api from '@/API'
 import MessageBlock from '@/components/Index/MessageBlock.vue'
 import TopNav from '@/components/Dashboard/TopNav.vue'
+import PublicTopNav from '@/components/Index/TopNav.vue'
 import ServiceTopStats from '@/components/Service/ServiceTopStats.vue'
 import ServiceHeatmap from '@/components/Service/ServiceHeatmap.vue'
 import AdvancedChart from '@/components/Service/AdvancedChart.vue'
