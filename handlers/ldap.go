@@ -117,8 +117,8 @@ func isUserInGroup(memberOf []string, groupDN string) bool {
 	if groupDN == "" {
 		return true
 	}
-	// Support comma-separated group DNs
-	groups := strings.Split(groupDN, ",")
+	// Support semicolon-separated group DNs (commas are part of DN syntax)
+	groups := strings.Split(groupDN, ";")
 	for _, group := range groups {
 		group = strings.TrimSpace(group)
 		if group == "" {
