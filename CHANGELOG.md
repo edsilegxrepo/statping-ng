@@ -12,6 +12,19 @@
   - Removed external `sass` binary dependency
   - Custom CSS saved directly to `assets/custom.css`
   - Simplified theme API handlers (create/save/delete)
+- **Email Templates Modernization**:
+  - Replaced MJML-generated bloat with clean, enterprise-grade HTML
+  - Deleted `emails_local/` module (separate go.mod, ~700 lines)
+  - Deleted `notifiers/email_rendered.go` (unused duplicate)
+  - New responsive templates: ServiceOnline, ServiceOffline (~200 lines total)
+  - Modern gradient headers, status badges, info cards
+  - Compatible with Gmail, Outlook, Apple Mail
+- **Test Infrastructure**:
+  - Added `testfiles/` directory for persistent test artifacts (gitignored)
+  - Build outputs now go to `testfiles/statping.exe`
+  - All tests use `t.TempDir()` for ephemeral files
+  - Added fully documented `testdata/config.yml` example
+  - Cleaned `testdata/` to only immutable fixtures
 - **Code Cleanup**:
   - Deleted unused generators (`generate_help.go`, `generate_languages.go`, `generate_version.go`)
   - Removed legacy wiki submodule reference
