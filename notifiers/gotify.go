@@ -75,13 +75,13 @@ func (g *gotify) sendMessage(msg string) (string, error) {
 }
 
 // OnFailure will trigger failing service
-func (g *gotify) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (g *gotify) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	out, err := g.sendMessage(ReplaceVars(g.FailureData.String, s, f))
 	return out, err
 }
 
 // OnSuccess will trigger successful service
-func (g *gotify) OnSuccess(s services.Service) (string, error) {
+func (g *gotify) OnSuccess(s *services.Service) (string, error) {
 	out, err := g.sendMessage(ReplaceVars(g.SuccessData.String, s, failures.Failure{}))
 	return out, err
 }

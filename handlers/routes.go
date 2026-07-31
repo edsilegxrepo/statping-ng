@@ -115,6 +115,18 @@ func Router() *mux.Router {
 	api.Handle("/api/oauth/state", http.HandlerFunc(oauthStateHandler)).Methods("GET")
 	api.Handle("/oauth/{provider}", http.HandlerFunc(oauthHandler))
 
+	// API LDAP Routes
+	api.Handle("/api/ldap", authenticated(apiLdapSettingsHandler, false)).Methods("GET")
+	api.Handle("/api/ldap", authenticated(apiLdapSaveHandler, false)).Methods("POST")
+	api.Handle("/api/ldap/test", authenticated(apiLdapTestHandler, false)).Methods("POST")
+	api.Handle("/api/ldap/templates", authenticated(apiLdapTemplatesHandler, false)).Methods("GET")
+
+	// API Digest Routes
+	api.Handle("/api/digest", authenticated(apiDigestSettingsHandler, false)).Methods("GET")
+	api.Handle("/api/digest", authenticated(apiDigestSaveHandler, false)).Methods("POST")
+	api.Handle("/api/digest/test", authenticated(apiDigestTestHandler, false)).Methods("POST")
+	api.Handle("/api/digest/smtp-test", authenticated(apiDigestSmtpTestHandler, false)).Methods("POST")
+
 	// API SCSS and ASSETS Routes
 	api.Handle("/api/theme", authenticated(apiThemeViewHandler, false)).Methods("GET")
 	api.Handle("/api/theme", authenticated(apiThemeSaveHandler, false)).Methods("POST")

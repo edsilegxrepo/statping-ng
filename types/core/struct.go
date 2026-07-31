@@ -24,6 +24,7 @@ type Core struct {
 	Description   string          `gorm:"not null;column:description" json:"description,omitempty"`
 	ConfigFile    string          `gorm:"column:config" json:"-"`
 	ApiSecret     string          `gorm:"column:api_secret" json:"api_secret" scope:"admin"`
+	EncryptionKey string          `gorm:"column:encryption_key" json:"-"` // Never exposed - used only for encrypting secrets
 	Style         string          `gorm:"not null;column:style" json:"style,omitempty"`
 	Footer        null.NullString `gorm:"column:footer" json:"footer"`
 	Domain        string          `gorm:"not null;column:domain" json:"domain"`
@@ -32,15 +33,37 @@ type Core struct {
 	Language      string          `gorm:"column:language" json:"language"`
 	Setup         bool            `gorm:"-" json:"setup"`
 	MigrationId   int64           `gorm:"column:migration_id" json:"migration_id,omitempty"`
-	UseCdn        null.NullBool   `gorm:"column:use_cdn;default:false" json:"using_cdn,omitempty"`
-	AllowReports  null.NullBool   `gorm:"column:allow_reports;default:false" json:"allow_reports,omitempty"`
-	CreatedAt     time.Time       `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt     time.Time       `gorm:"column:updated_at" json:"updated_at"`
+	UseCdn              null.NullBool `gorm:"column:use_cdn;default:false" json:"using_cdn,omitempty"`
+	AllowReports        null.NullBool `gorm:"column:allow_reports;default:true" json:"allow_reports,omitempty"`
+	SessionTimeout      int           `gorm:"column:session_timeout;default:720" json:"session_timeout"`
+	DigestEnabled       null.NullBool `gorm:"column:digest_enabled;default:false" json:"digest_enabled"`
+	DigestEmails        string        `gorm:"column:digest_emails" json:"digest_emails"`
+	DigestHour          int           `gorm:"column:digest_hour;default:8" json:"digest_hour"`
+	CreatedAt      time.Time       `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt      time.Time       `gorm:"column:updated_at" json:"updated_at"`
 	Started       time.Time       `gorm:"-" json:"started_on"`
 	Notifications []AllNotifiers  `gorm:"-" json:"-"`
 	Integrations  []Integrator    `gorm:"-" json:"-"`
 
 	OAuth `json:"-"`
+	LDAP  `json:"-"`
+}
+
+type LDAP struct {
+	LdapEnabled              null.NullBool `gorm:"column:ldap_enabled;default:false" json:"ldap_enabled"`
+	LdapHost                 string        `gorm:"column:ldap_host" json:"ldap_host"`
+	LdapPort                 int           `gorm:"column:ldap_port;default:636" json:"ldap_port"`
+	LdapStartTLS             null.NullBool `gorm:"column:ldap_start_tls;default:false" json:"ldap_start_tls"`
+	LdapSkipVerify           null.NullBool `gorm:"column:ldap_skip_verify;default:false" json:"ldap_skip_verify"`
+	LdapBindDN               string        `gorm:"column:ldap_bind_dn" json:"ldap_bind_dn" scope:"admin"`
+	LdapBindPassword         string        `gorm:"column:ldap_bind_password" json:"ldap_bind_password" scope:"admin"`
+	LdapBaseDN               string        `gorm:"column:ldap_base_dn" json:"ldap_base_dn"`
+	LdapUserFilter           string        `gorm:"column:ldap_user_filter" json:"ldap_user_filter"`
+	LdapUsernameAttr         string        `gorm:"column:ldap_username_attr" json:"ldap_username_attr"`
+	LdapEmailAttr            string        `gorm:"column:ldap_email_attr" json:"ldap_email_attr"`
+	LdapAuthorizedGroupEnabled null.NullBool `gorm:"column:ldap_authorized_group_enabled;default:false" json:"ldap_authorized_group_enabled"`
+	LdapAuthorizedGroup      string        `gorm:"column:ldap_authorized_group" json:"ldap_authorized_group"`
+	LdapTemplate             string        `gorm:"column:ldap_template" json:"ldap_template"`
 }
 
 type OAuth struct {

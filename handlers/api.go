@@ -36,11 +36,16 @@ func apiRenewHandler(w http.ResponseWriter, r *http.Request) {
 	if newApi == "" {
 		newApi = utils.NewSHA256Hash()
 	}
+	// EncryptionKey is separate and never changes - no need to re-encrypt secrets
 	core.App.ApiSecret = newApi
 	if err := core.App.Update(); err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}
+
+	// Reset JWT key since it's derived from ApiSecret
+	resetCookies()
+
 	output := apiResponse{
 		Status: "success",
 	}
@@ -96,7 +101,6 @@ func apiCoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.Params.Set("LANGUAGE", app.Language)
 	app.UseCdn = null.NewNullBool(c.UseCdn.Bool)
-	app.AllowReports = null.NewNullBool(c.AllowReports.Bool)
 
 	if err := app.Update(); err != nil {
 		sendErrorJson(err, w, r)

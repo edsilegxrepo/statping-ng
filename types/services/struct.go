@@ -70,13 +70,12 @@ type Service struct {
 	prevOnline       bool  `gorm:"-" json:"-" yaml:"-"`
 }
 
-// ServiceOrder will reorder the services based on 'order_id' (Order)
-type ServiceOrder []Service
+// ServicePtrOrder sorts service pointers by Order field without copying mutex
+type ServicePtrOrder []*Service
 
-// Sort interface for resroting the Services in order
-func (c ServiceOrder) Len() int           { return len(c) }
-func (c ServiceOrder) Swap(i, j int)      { c[int64(i)], c[int64(j)] = c[int64(j)], c[int64(i)] }
-func (c ServiceOrder) Less(i, j int) bool { return c[i].Order < c[j].Order }
+func (c ServicePtrOrder) Len() int           { return len(c) }
+func (c ServicePtrOrder) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c ServicePtrOrder) Less(i, j int) bool { return c[i].Order < c[j].Order }
 
 type Stats struct {
 	Failures int       `gorm:"-" json:"failures"`

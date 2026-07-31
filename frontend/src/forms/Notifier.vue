@@ -322,7 +322,7 @@ async function testNotifier(method = 'success') {
     notifier: form,
     method: method,
   }
-  const tested = await Api.notifier_test(req, props.notifier.method)
+  const tested = await Api.notifier_test(props.notifier.method, req)
   if (tested.success) {
     success.value = true
   } else {

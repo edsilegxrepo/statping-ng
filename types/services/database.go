@@ -177,15 +177,15 @@ func All() map[int64]*Service {
 	return Services()
 }
 
-func AllInOrder() []Service {
+func AllInOrder() []*Service {
 	servicesLock.RLock()
-	var services []Service
+	var services []*Service
 	for _, service := range allServices {
 		service.UpdateStats()
-		services = append(services, *service)
+		services = append(services, service)
 	}
 	servicesLock.RUnlock()
-	sort.Sort(ServiceOrder(services))
+	sort.Sort(ServicePtrOrder(services))
 	return services
 }
 

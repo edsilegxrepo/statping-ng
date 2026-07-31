@@ -23,6 +23,37 @@ import (
 	"github.com/statping-ng/statping-ng/types/users"
 )
 
+// ensureEncryptionKey generates an encryption key for existing installations that don't have one
+// Uses conditional update to prevent race conditions in clustered deployments
+func (d *DbConfig) ensureEncryptionKey() error {
+	var cr core.Core
+	if err := d.Db.Model(&core.Core{}).First(&cr).Error(); err != nil {
+		return err
+	}
+	if cr.EncryptionKey == "" {
+		log.Infoln("Generating encryption key for existing installation...")
+		encKey, err := utils.GenerateSHA256Hash()
+		if err != nil {
+			return fmt.Errorf("failed to generate encryption key: %w", err)
+		}
+		// Conditional update to prevent race condition - only update if still empty
+		result := d.Db.Exec("UPDATE core SET encryption_key = ? WHERE encryption_key IS NULL OR encryption_key = ''", encKey)
+		if result.Error() != nil {
+			return result.Error()
+		}
+		// Reload to get the actual key (in case another instance set it first)
+		if err := d.Db.Model(&core.Core{}).First(&cr).Error(); err != nil {
+			return err
+		}
+		// Update the in-memory App if it exists
+		if core.App != nil {
+			core.App.EncryptionKey = cr.EncryptionKey
+		}
+		log.Infoln("Encryption key generated successfully")
+	}
+	return nil
+}
+
 func (d *DbConfig) ResetCore() error {
 	if d.Db.HasTable("core") {
 		return nil
@@ -161,6 +192,11 @@ func (d *DbConfig) MigrateDatabase() error {
 
 	log.Infoln("Statping Database Tables Migrated")
 
+	// Ensure existing users have enabled=true (for migration from versions without this field)
+	if err := d.Db.Exec("UPDATE users SET enabled = 1 WHERE enabled IS NULL").Error(); err != nil {
+		log.Warnln("Could not update existing users enabled field:", err)
+	}
+
 	if !d.Db.HasIndex(&hits.Hit{}, "idx_service_hit_created_at") {
 		if err := d.Db.Model(&hits.Hit{}).AddIndex("idx_service_hit_created_at", "service", "created_at").Error(); err != nil {
 			log.Errorln(err)
@@ -196,6 +232,11 @@ func (d *DbConfig) MigrateDatabase() error {
 		}
 	}
 	log.Infoln("Database Indexes Created")
+
+	// Generate encryption key for existing installations that don't have one
+	if err := d.ensureEncryptionKey(); err != nil {
+		log.Warnln("Could not ensure encryption key:", err)
+	}
 
 	if database.DbType() == "postgres" || database.DbType() == "mysql" {
 		log.Infoln("Adding Foreign Key Constraints...")

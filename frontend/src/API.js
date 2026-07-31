@@ -266,6 +266,38 @@ class Api {
     return axios.post('api/theme', data).then((response) => response.data)
   }
 
+  async ldap() {
+    return axios.get('api/ldap').then((response) => response.data)
+  }
+
+  async ldap_save(data) {
+    return axios.post('api/ldap', data).then((response) => response.data)
+  }
+
+  async ldap_test(data) {
+    return axios.post('api/ldap/test', data).then((response) => response.data)
+  }
+
+  async ldap_templates() {
+    return axios.get('api/ldap/templates').then((response) => response.data)
+  }
+
+  async digest() {
+    return axios.get('api/digest').then((response) => response.data)
+  }
+
+  async digest_save(data) {
+    return axios.post('api/digest', data).then((response) => response.data)
+  }
+
+  async digest_test() {
+    return axios.post('api/digest/test').then((response) => response.data)
+  }
+
+  async digest_smtp_test() {
+    return axios.post('api/digest/smtp-test').then((response) => response.data)
+  }
+
   async settings_export() {
     return axios.get('api/settings/export').then((response) => response.data)
   }

@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/statping-ng/statping-ng/notifiers"
 	"github.com/statping-ng/statping-ng/types/configs"
@@ -38,7 +37,6 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	project := r.PostForm.Get("project")
 	description := r.PostForm.Get("description")
 	domain := r.PostForm.Get("domain")
-	sendReports, _ := strconv.ParseBool(r.PostForm.Get("send_reports"))
 	sampleData := r.PostForm.Get("sample_data") == "on" || r.PostForm.Get("sample_data") == "true" || r.PostForm.Get("sample_data") == "1"
 
 	log.WithFields(utils.ToFields(core.App, confgs)).Debugln("new configs posted")
@@ -104,7 +102,6 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 		UseCdn:       null.NewNullBool(false),
 		Footer:       null.NewNullString(""),
 		Language:     confgs.Language,
-		AllowReports: null.NewNullBool(sendReports),
 		MigrationId:  utils.Params.GetInt64("MIGRATION_ID"),
 	}
 

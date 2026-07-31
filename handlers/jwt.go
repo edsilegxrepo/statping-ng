@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
+	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/users"
 )
 
@@ -39,8 +40,21 @@ func removeJwtToken(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &c)
 }
 
+const (
+	defaultSessionTimeout = 720   // 12 hours in minutes
+	maxSessionTimeout     = 43200 // 30 days in minutes
+)
+
 func setJwtToken(user *users.User, w http.ResponseWriter, r *http.Request) (JwtClaim, string) {
-	expirationTime := time.Now().Add(72 * time.Hour)
+	// Get session timeout from settings (in minutes), default to 720 (12 hours)
+	timeoutMinutes := core.App.SessionTimeout
+	if timeoutMinutes <= 0 {
+		timeoutMinutes = defaultSessionTimeout
+	}
+	if timeoutMinutes > maxSessionTimeout {
+		timeoutMinutes = maxSessionTimeout
+	}
+	expirationTime := time.Now().Add(time.Duration(timeoutMinutes) * time.Minute)
 	jwtClaim := JwtClaim{
 		Username: user.Username,
 		Admin:    user.Admin.Bool,
@@ -59,7 +73,7 @@ func setJwtToken(user *users.User, w http.ResponseWriter, r *http.Request) (JwtC
 		Name:     cookieName,
 		Value:    tokenString,
 		Expires:  expirationTime,
-		MaxAge:   int(time.Duration(72 * time.Hour).Seconds()),
+		MaxAge:   timeoutMinutes * 60,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   isSecureRequest(r),

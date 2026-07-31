@@ -21,7 +21,7 @@ import (
 
 const limitedFailures = 25
 
-func (s Service) Hash() string {
+func (s *Service) Hash() string {
 	format := fmt.Sprintf("name:%sdomain:%sport:%dtype:%smethod:%s", s.Name, s.Domain, s.Port, s.Type, s.Method)
 	h := sha256.New()
 	h.Write([]byte(format))
@@ -72,7 +72,7 @@ func (s *Service) LoadTLSCert() (config *tls.Config, err error) {
 	return
 }
 
-func (s Service) configureTLS() (config *tls.Config, err error) {
+func (s *Service) configureTLS() (config *tls.Config, err error) {
 	if !s.requiresTLS() {
 		return nil, nil
 	}
@@ -84,7 +84,7 @@ func (s Service) configureTLS() (config *tls.Config, err error) {
 	return
 }
 
-func (s Service) requiresTLS() bool {
+func (s *Service) requiresTLS() bool {
 	return s.VerifySSL.Bool || ((s.Type == "smtp" || s.Type == "imap") && (s.Port == 465 || s.Port == 587 || s.Port == 993))
 }
 
@@ -93,7 +93,7 @@ func (s *Service) Duration() time.Duration {
 }
 
 // Start will create a channel for the service checking go routine
-func (s Service) UptimeData(hits []*hits.Hit, checkinHits []*checkins.CheckinHit, fails []*failures.Failure) (*UptimeSeries, error) {
+func (s *Service) UptimeData(hits []*hits.Hit, checkinHits []*checkins.CheckinHit, fails []*failures.Failure) (*UptimeSeries, error) {
 	if len(hits) == 0 && len(checkinHits) == 0 {
 		return nil, errors.New("service does not have any successful hits")
 	}
@@ -347,12 +347,12 @@ func (s *Service) UpdateStats() *Service {
 }
 
 // AvgTime will return the average amount of time for a service to response back successfully
-func (s Service) AvgTime() int64 {
+func (s *Service) AvgTime() int64 {
 	return s.AllHits().Avg()
 }
 
 // OnlineDaysPercent returns the service's uptime percent within last 24 hours
-func (s Service) OnlineDaysPercent(days int) float32 {
+func (s *Service) OnlineDaysPercent(days int) float32 {
 	ago := utils.Now().Add(-time.Duration(days) * types.Day)
 	return s.OnlineSince(ago)
 }
@@ -396,11 +396,11 @@ func (s *Service) OnlineSince(ago time.Time) float32 {
 }
 
 // Uptime returns the duration of how long the service was online
-func (s Service) Uptime() utils.Duration {
+func (s *Service) Uptime() utils.Duration {
 	return utils.Duration{Duration: utils.Now().Sub(s.LastOffline)}
 }
 
 // Downtime returns the duration of how long the service has been offline
-func (s Service) Downtime() utils.Duration {
+func (s *Service) Downtime() utils.Duration {
 	return utils.Duration{Duration: utils.Now().Sub(s.LastOnline)}
 }

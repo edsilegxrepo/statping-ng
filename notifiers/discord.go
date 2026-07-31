@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 )
 
 var _ notifier.Notifier = (*discord)(nil)
+var _ notifier.DigestNotifier = (*discord)(nil)
 
 type discord struct {
 	*notifications.Notification
@@ -58,13 +60,13 @@ func (d *discord) Valid(values notifications.Values) error {
 }
 
 // OnFailure will trigger failing service
-func (d *discord) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (d *discord) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	out, err := d.sendRequest(ReplaceVars(d.FailureData.String, s, f))
 	return out, err
 }
 
 // OnSuccess will trigger successful service
-func (d *discord) OnSuccess(s services.Service) (string, error) {
+func (d *discord) OnSuccess(s *services.Service) (string, error) {
 	out, err := d.sendRequest(ReplaceVars(d.SuccessData.String, s, failures.Failure{}))
 	return out, err
 }
@@ -98,4 +100,82 @@ func (d *discord) OnSave() (string, error) {
 type discordTestJson struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+
+// OnDigest sends the daily digest to Discord
+func (d *discord) OnDigest(data notifier.DigestData) (string, error) {
+	// Build Discord embed
+	var fields []map[string]interface{}
+
+	fields = append(fields, map[string]interface{}{
+		"name":   "Total Services",
+		"value":  fmt.Sprintf("%d", data.TotalServices),
+		"inline": true,
+	})
+	fields = append(fields, map[string]interface{}{
+		"name":   "Healthy",
+		"value":  fmt.Sprintf("%d", data.HealthyServices),
+		"inline": true,
+	})
+	fields = append(fields, map[string]interface{}{
+		"name":   "Currently Down",
+		"value":  fmt.Sprintf("%d", data.FailedServices),
+		"inline": true,
+	})
+
+	// Add service issues
+	if data.HasFailures {
+		var issueLines []string
+		for _, svc := range data.ServiceSummary {
+			icon := ":white_check_mark:"
+			if svc.Status == "Offline" {
+				icon = ":x:"
+			}
+			issueLines = append(issueLines, fmt.Sprintf("%s **%s** - %d failures", icon, svc.Name, svc.FailureCount))
+		}
+		fields = append(fields, map[string]interface{}{
+			"name":  "Service Issues (Last 24h)",
+			"value": strings.Join(issueLines, "\n"),
+		})
+	}
+
+	// Add app errors count
+	if data.HasAppErrors {
+		fields = append(fields, map[string]interface{}{
+			"name":  "Application Errors",
+			"value": fmt.Sprintf(":warning: %d errors in the last 24 hours", len(data.AppErrors)),
+		})
+	}
+
+	color := 0x28a745 // green
+	if data.FailedServices > 0 {
+		color = 0xdc3545 // red
+	}
+
+	description := ":tada: All services healthy - no issues in the last 24 hours!"
+	if data.HasFailures {
+		description = fmt.Sprintf(":warning: %d services had issues in the last 24 hours", len(data.ServiceSummary))
+	}
+
+	embed := map[string]interface{}{
+		"title":       fmt.Sprintf(":bar_chart: %s Daily Digest", data.AppName),
+		"description": description,
+		"color":       color,
+		"fields":      fields,
+		"footer": map[string]interface{}{
+			"text": data.Period,
+		},
+		"timestamp": time.Now().Format(time.RFC3339),
+	}
+
+	payload := map[string]interface{}{
+		"embeds": []map[string]interface{}{embed},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	return d.sendRequest(string(jsonData))
 }

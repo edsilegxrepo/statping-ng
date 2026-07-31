@@ -22,8 +22,9 @@ type Notification struct {
 	Var2        null.NullString `gorm:"column:var2" json:"var2,omitempty"`
 	ApiKey      null.NullString `gorm:"column:api_key" json:"api_key,omitempty"`
 	ApiSecret   null.NullString `gorm:"column:api_secret" json:"api_secret,omitempty"`
-	Enabled     null.NullBool   `gorm:"column:enabled;type:boolean;default:false" json:"enabled,omitempty"`
-	Limits      int             `gorm:"not null;column:limits" json:"limits"`
+	Enabled       null.NullBool   `gorm:"column:enabled;type:boolean;default:false" json:"enabled,omitempty"`
+	ReceiveDigest null.NullBool   `gorm:"column:receive_digest;type:boolean;default:false" json:"receive_digest,omitempty"`
+	Limits        int             `gorm:"not null;column:limits" json:"limits"`
 	Removable   bool            `gorm:"column:removable" json:"removable"`
 	SuccessData null.NullString `gorm:"type:text;column:success_data" json:"success_data,omitempty"`
 	FailureData null.NullString `gorm:"type:text;column:failure_data" json:"failure_data,omitempty"`

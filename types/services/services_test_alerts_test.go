@@ -28,7 +28,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service already online",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notification,
 				ExpectedSuccess:  0,
@@ -38,7 +38,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers online",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notification,
 				ExpectedSuccess:  0,
@@ -48,7 +48,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers offline, was online",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notification,
 				ExpectedSuccess:  0,
@@ -58,7 +58,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers offline again, already was offline, notify",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notification,
 				ExpectedSuccess:  0,
@@ -88,7 +88,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service already online",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  0,
@@ -98,7 +98,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers offline (1st)",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  0,
@@ -108,7 +108,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers offline (2nd) ignore",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  0,
@@ -118,7 +118,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers offline (3rd) NOTIFY",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  0,
@@ -128,7 +128,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers back online, notify",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  1,
@@ -158,7 +158,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service already offline",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  1,
@@ -168,7 +168,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers offline again, ignore",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  1,
@@ -178,7 +178,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers offline again, ignore",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  1,
@@ -188,7 +188,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers back online, NOTIFY",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  2,
@@ -198,7 +198,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service triggers online, ignore",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  2,
@@ -222,7 +222,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service offline",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  2,
@@ -232,7 +232,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service online",
 				OnSuccess:        false,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  2,
@@ -242,7 +242,7 @@ func TestServiceNotifications(t *testing.T) {
 			{
 				Name:             "service offline",
 				OnSuccess:        true,
-				Service:          &service,
+				Service:          service,
 				Failure:          &failure,
 				Notifier:         notif,
 				ExpectedSuccess:  2,
@@ -318,12 +318,12 @@ type exampleNotifier struct {
 	tests    int
 }
 
-func (e *exampleNotifier) OnSuccess(s Service) (string, error) {
+func (e *exampleNotifier) OnSuccess(s *Service) (string, error) {
 	e.success++
 	return "", nil
 }
 
-func (e *exampleNotifier) OnFailure(s Service, f failures.Failure) (string, error) {
+func (e *exampleNotifier) OnFailure(s *Service, f failures.Failure) (string, error) {
 	e.failures++
 	return "", nil
 }

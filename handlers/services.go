@@ -76,7 +76,7 @@ func apiServiceHandler(r *http.Request) interface{} {
 	if srv.Type == "cmd" && srv.ExpectedStatus == math.MinInt32 {
 		srv.ExpectedStatus = 0
 	}
-	return *srv
+	return srv
 }
 
 func apiCreateServiceHandler(w http.ResponseWriter, r *http.Request) {
@@ -306,7 +306,7 @@ func apiServiceDeleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func apiAllServicesHandler(r *http.Request) interface{} {
-	var srvs []services.Service
+	var srvs []*services.Service
 	for _, v := range services.AllInOrder() {
 		if !v.Public.Bool && !IsUser(r) {
 			continue

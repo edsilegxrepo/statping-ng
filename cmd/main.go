@@ -164,6 +164,8 @@ func InitApp() error {
 	services.CheckServices()
 	// start routine to delete old records (failures, hits)
 	go database.Maintenance()
+	// start daily digest scheduler
+	notifiers.StartDigestScheduler()
 	core.App.Setup = true
 	core.App.Started = utils.Now()
 	return nil

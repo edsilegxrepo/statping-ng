@@ -147,7 +147,7 @@ func (w *webhooker) OnTest() (string, error) {
 }
 
 // OnFailure will trigger failing service
-func (w *webhooker) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (w *webhooker) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	msg := ReplaceVars(w.FailureData.String, s, f)
 	resp, err := w.sendHttpWebhook(msg)
 	if err != nil {
@@ -159,7 +159,7 @@ func (w *webhooker) OnFailure(s services.Service, f failures.Failure) (string, e
 }
 
 // OnSuccess will trigger successful service
-func (w *webhooker) OnSuccess(s services.Service) (string, error) {
+func (w *webhooker) OnSuccess(s *services.Service) (string, error) {
 	msg := ReplaceVars(w.SuccessData.String, s, failures.Failure{})
 	resp, err := w.sendHttpWebhook(msg)
 	if err != nil {

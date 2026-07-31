@@ -17,7 +17,7 @@ var log = utils.Log.WithField("type", "notifier")
 
 type replacer struct {
 	Core    core.Core
-	Service services.Service
+	Service *services.Service
 	Failure failures.Failure
 	Email   string
 	Custom  map[string]string
@@ -32,6 +32,7 @@ func InitNotifiers() {
 		email,
 		LineNotify,
 		Telegram,
+		Teams,
 		Twilio,
 		Webhook,
 		Mobile,
@@ -68,7 +69,7 @@ func Add(notifs ...services.ServiceNotifier) {
 	}
 }
 
-func ReplaceVars(input string, s services.Service, f failures.Failure) string {
+func ReplaceVars(input string, s *services.Service, f failures.Failure) string {
 	return ReplaceTemplate(input, replacer{Service: s, Failure: f, Core: *core.App})
 }
 

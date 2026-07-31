@@ -89,7 +89,7 @@ func TestCore_Create(t *testing.T) {
 		err = core.Create()
 		require.NoError(t, err)
 		assert.NotEmpty(t, core.ApiSecret)
-		assert.Len(t, core.ApiSecret, 16)
+		assert.Len(t, core.ApiSecret, 32)
 	})
 
 	t.Run("creates core with provided API secret", func(t *testing.T) {

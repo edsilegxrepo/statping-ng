@@ -1,3 +1,55 @@
+# 0.97.0 (07-30-2026)
+- **Frontend: Vue 3 Migration**:
+  - Complete migration from Vue 2.7 to Vue 3.5 with Composition API
+  - Replaced Vuex with Pinia for state management
+  - Migrated from Webpack 4 to Vite 6 (10-100x faster HMR)
+  - Upgraded vue-router 3.x → 4.x, vue-i18n 8.x → 10.x
+  - Migrated all 55 SFCs to Composition API
+  - Fixed Login.vue session persistence bug (no longer clears cookie on mount)
+  - Replaced Cypress with Playwright + Vitest for E2E testing
+- **Security: Encryption Key Separation**:
+  - Added dedicated `EncryptionKey` field separate from `ApiSecret`
+  - API secret rotation no longer breaks encrypted data
+  - Encryption key never exposed via API (`json:"-"`)
+  - Race-safe key generation with conditional UPDATE for clustered deployments
+  - Encryption failures now block save (GORM hooks return errors)
+- **Microsoft Teams Notifier**:
+  - New Teams notifier using Power Automate Workflows webhooks
+  - Modern Adaptive Cards for service alerts (up/down with latency)
+  - Implements `DigestNotifier` interface for daily digest support
+- **Multi-Channel Daily Digest**:
+  - Added `DigestNotifier` interface for digest-capable notifiers
+  - New `receive_digest` toggle on all notifiers (not just email)
+  - Teams, Slack, Discord can now receive daily service summaries
+  - `sync.Once` pattern for digest scheduler initialization
+- **LDAP/LDAPS Authentication**:
+  - Full LDAP/LDAPS support with configurable bind DN and search base
+  - User/group attribute mapping
+  - Encrypted bind password storage (AES-256-GCM)
+- **Build System**:
+  - Merged `build.sh` and `code_quality.sh` into unified `tools/build.sh`
+  - Added `--audit`, `--test`, `--all`, `--clean`, `--clean-all`, `--extra-scans` flags
+  - 8 quality checks: shellcheck, go vet, gosec, govulncheck, race detection, tests, oxlint, biome
+  - Grype supply chain scanning available via `--extra-scans`
+- **Security Fixes**:
+  - `rand.Read` failures now panic instead of silent empty return
+  - `NewSHA256Hash()` panics on crypto/rand failure; `GenerateSHA256Hash()` returns errors
+  - `IsEncrypted()` uses `enc:` prefix marker (not fragile heuristics)
+  - Session timeout capped at 30 days maximum
+  - Encryption failures now block database save with proper error propagation
+- **Code Quality**:
+  - Fixed all `go vet` mutex copy warnings across codebase
+  - Notifier interface now uses `*Service` pointers (OnSuccess/OnFailure)
+  - Service methods converted to pointer receivers (Hash, Downtime, Uptime, etc.)
+  - `AllInOrder()` returns `[]*Service` instead of copying values
+  - New `ServicePtrOrder` sort type replaces deprecated `ServiceOrder`
+  - Fixed IPv6 address format in SMTP diagnostics (`net.JoinHostPort`)
+  - Added explicit 30-second timeout to digest SMTP connections
+- **Bug Fixes**:
+  - Fixed `MigrationId` type mismatch causing database errors
+  - Fixed service chart rendering issues
+  - Removed deprecated Vue 2 frontend directory
+
 # 0.96.6 (07-25-2026, unreleased)
 - **Security Hardening**:
   - Added CSRF double-submit cookie protection with cryptographic tokens

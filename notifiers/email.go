@@ -90,7 +90,7 @@ type emailOutgoing struct {
 }
 
 // OnFailure will trigger failing service
-func (e *emailer) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (e *emailer) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	subscriber := e.Var2.String
 	subject := fmt.Sprintf("Service %s is Offline", s.Name)
 	tmpl := renderEmail(s, subscriber, f, emails.Failure)
@@ -104,7 +104,7 @@ func (e *emailer) OnFailure(s services.Service, f failures.Failure) (string, err
 }
 
 // OnSuccess will trigger successful service
-func (e *emailer) OnSuccess(s services.Service) (string, error) {
+func (e *emailer) OnSuccess(s *services.Service) (string, error) {
 	subscriber := e.Var2.String
 	subject := fmt.Sprintf("Service %s is Back Online", s.Name)
 	tmpl := renderEmail(s, subscriber, failures.Failure{}, emails.Success)
@@ -117,7 +117,7 @@ func (e *emailer) OnSuccess(s services.Service) (string, error) {
 	return tmpl, e.dialSend(email)
 }
 
-func renderEmail(s services.Service, subscriber string, f failures.Failure, emailData string) string {
+func renderEmail(s *services.Service, subscriber string, f failures.Failure, emailData string) string {
 	data := replacer{
 		Core:    *core.App,
 		Service: s,

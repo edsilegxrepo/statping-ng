@@ -26,12 +26,12 @@ type mockNotifier struct {
 	onFailureMsg   string
 }
 
-func (m *mockNotifier) OnSuccess(s Service) (string, error) {
+func (m *mockNotifier) OnSuccess(s *Service) (string, error) {
 	m.successCalls++
 	return m.onSuccessMsg, m.onSuccessError
 }
 
-func (m *mockNotifier) OnFailure(s Service, f failures.Failure) (string, error) {
+func (m *mockNotifier) OnFailure(s *Service, f failures.Failure) (string, error) {
 	m.failureCalls++
 	return m.onFailureMsg, m.onFailureError
 }
@@ -287,7 +287,7 @@ func TestSendSuccess(t *testing.T) {
 		service.prevOnline = false // Was offline
 		service.Online = true
 
-		sendSuccess(&service)
+		sendSuccess(service)
 
 		assert.Equal(t, 1, mock.successCalls, "OnSuccess should be called once")
 		assert.True(t, service.prevOnline, "prevOnline should be updated")
@@ -303,7 +303,7 @@ func TestSendSuccess(t *testing.T) {
 		service.prevOnline = false
 		service.Online = true
 
-		sendSuccess(&service)
+		sendSuccess(service)
 
 		assert.Equal(t, 0, mock.successCalls, "OnSuccess should not be called")
 	})
@@ -318,7 +318,7 @@ func TestSendSuccess(t *testing.T) {
 		service.prevOnline = true
 		service.Online = true
 
-		sendSuccess(&service)
+		sendSuccess(service)
 
 		assert.Equal(t, 0, mock.successCalls, "OnSuccess should not be called when already online")
 	})
@@ -332,7 +332,7 @@ func TestSendSuccess(t *testing.T) {
 		service.AllowNotifications = null.NewNullBool(true)
 		service.notifyAfterCount = 5
 
-		sendSuccess(&service)
+		sendSuccess(service)
 
 		assert.Equal(t, int64(0), service.notifyAfterCount, "notifyAfterCount should be reset")
 	})
@@ -351,7 +351,7 @@ func TestSendSuccess(t *testing.T) {
 		service.prevOnline = false
 		service.Online = true
 
-		sendSuccess(&service)
+		sendSuccess(service)
 
 		assert.Equal(t, 1, mock.successCalls, "OnSuccess should still be called")
 		// Error should be logged
@@ -377,7 +377,7 @@ func TestSendSuccess(t *testing.T) {
 		service.prevOnline = false
 		service.Online = true
 
-		sendSuccess(&service)
+		sendSuccess(service)
 
 		assert.Equal(t, 1, enabledMock.successCalls, "enabled notifier should be called")
 		assert.Equal(t, 0, disabledMock.successCalls, "disabled notifier should not be called")
@@ -402,7 +402,7 @@ func TestSendFailure(t *testing.T) {
 
 		failure := failures.Example()
 
-		sendFailure(&service, &failure)
+		sendFailure(service, &failure)
 
 		assert.Equal(t, 1, mock.failureCalls, "OnFailure should be called once")
 		assert.False(t, service.prevOnline, "prevOnline should be updated to false")
@@ -420,7 +420,7 @@ func TestSendFailure(t *testing.T) {
 
 		failure := failures.Example()
 
-		sendFailure(&service, &failure)
+		sendFailure(service, &failure)
 
 		assert.Equal(t, 0, mock.failureCalls, "OnFailure should not be called")
 	})
@@ -438,7 +438,7 @@ func TestSendFailure(t *testing.T) {
 
 		failure := failures.Example()
 
-		sendFailure(&service, &failure)
+		sendFailure(service, &failure)
 
 		assert.Equal(t, 0, mock.failureCalls, "OnFailure should not be called when already offline")
 	})
@@ -460,7 +460,7 @@ func TestSendFailure(t *testing.T) {
 
 		failure := failures.Example()
 
-		sendFailure(&service, &failure)
+		sendFailure(service, &failure)
 
 		assert.Equal(t, 1, mock.failureCalls, "OnFailure should be called with UpdateNotify enabled")
 	})
@@ -482,13 +482,13 @@ func TestSendFailure(t *testing.T) {
 		// First 3 failures should not trigger notification
 		for i := 0; i < 3; i++ {
 			service.prevOnline = true // Reset for test
-			sendFailure(&service, &failure)
+			sendFailure(service, &failure)
 			assert.Equal(t, 0, mock.failureCalls, "should not notify until threshold reached")
 		}
 
 		// Fourth failure should trigger notification
 		service.prevOnline = true
-		sendFailure(&service, &failure)
+		sendFailure(service, &failure)
 		assert.Equal(t, 1, mock.failureCalls, "should notify after threshold reached")
 	})
 
@@ -509,7 +509,7 @@ func TestSendFailure(t *testing.T) {
 
 		failure := failures.Example()
 
-		sendFailure(&service, &failure)
+		sendFailure(service, &failure)
 
 		assert.Equal(t, 1, mock.failureCalls, "OnFailure should still be called")
 		// Error should be logged
@@ -537,7 +537,7 @@ func TestSendFailure(t *testing.T) {
 
 		failure := failures.Example()
 
-		sendFailure(&service, &failure)
+		sendFailure(service, &failure)
 
 		assert.Equal(t, 1, enabledMock.failureCalls, "enabled notifier should be called")
 		assert.Equal(t, 0, disabledMock.failureCalls, "disabled notifier should not be called")
@@ -638,17 +638,17 @@ func TestNotificationLimits(t *testing.T) {
 		// First notification - should send
 		service.prevOnline = false
 		service.Online = true
-		sendSuccess(&service)
+		sendSuccess(service)
 		assert.Equal(t, 1, mock.successCalls)
 
 		// Second notification - should send (at limit)
 		service.prevOnline = false
-		sendSuccess(&service)
+		sendSuccess(service)
 		assert.Equal(t, 2, mock.successCalls)
 
 		// Third notification - should NOT send (over limit)
 		service.prevOnline = false
-		sendSuccess(&service)
+		sendSuccess(service)
 		assert.Equal(t, 2, mock.successCalls, "should not exceed limit")
 	})
 }

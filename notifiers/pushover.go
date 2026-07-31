@@ -114,14 +114,14 @@ func (t *pushover) sendMessage(message string) (string, error) {
 }
 
 // OnFailure will trigger failing service
-func (t *pushover) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (t *pushover) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	message := ReplaceVars(t.FailureData.String, s, f)
 	out, err := t.sendMessage(message)
 	return out, err
 }
 
 // OnSuccess will trigger successful service
-func (t *pushover) OnSuccess(s services.Service) (string, error) {
+func (t *pushover) OnSuccess(s *services.Service) (string, error) {
 	message := ReplaceVars(t.SuccessData.String, s, failures.Failure{})
 	out, err := t.sendMessage(message)
 	return out, err

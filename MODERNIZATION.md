@@ -12,11 +12,9 @@ This document details the comprehensive modernization, security hardening, and q
 4. [Cloud SDK Modernization (AWS SDK v2)](#4-cloud-sdk-modernization-aws-sdk-v2)
 5. [Security Hardening](#5-security-hardening)
 6. [Code Quality & Audit Remediation](#6-code-quality--audit-remediation)
-7. [Frontend Modernization](#7-frontend-modernization)
+7. [Frontend Modernization (Vue 3 + Vite)](#7-frontend-modernization-vue-3--vite)
 8. [Test Coverage & Quality](#8-test-coverage--quality)
 9. [Upgraded Module Manifest](#9-upgraded-module-manifest)
-10. [Commit History](#10-commit-history)
-11. [Vue 3 Migration Plan](#11-vue-3-migration-plan)
 
 ---
 
@@ -175,20 +173,37 @@ Purged unused functions and types across the `cmd`, `handlers`, `notifiers`, and
 
 ---
 
-## 7. Frontend Modernization
+## 7. Frontend Modernization (Vue 3 + Vite)
 
-### Vue.js & Dependencies
+The frontend was migrated from Vue 2 + Webpack to Vue 3 + Vite.
 
-- Upgraded Vue.js to 2.7.16 with Composition API support
-- Updated ApexCharts for improved visualization
-- Fixed chart reactivity and timezone alignment issues
+### Stack
+
+| Component | Technology |
+|-----------|------------|
+| Framework | Vue 3.5.x with Composition API |
+| Build Tool | Vite 6.x |
+| State Management | Pinia |
+| Router | Vue Router 4.x |
+| Charts | vue3-apexcharts |
+| Testing | Playwright + Vitest |
+
+### Migration Steps
+
+1. Created new Vite + Vue 3 project structure
+2. Migrated Vuex store to Pinia (modular stores)
+3. Converted Options API components to Composition API
+4. Updated vue-router to v4 with new guard syntax
+5. Replaced Cypress E2E tests with Playwright
+6. Removed webpack configuration and legacy dependencies
 
 ### UI/UX Improvements
 
-- Implemented responsive container-fluid layouts for widescreen displays
-- Added clickable service cards with proper router-link navigation
-- Enhanced chart components with dual Y-axis mixed charts
-- Improved service heatmap visualization with month separators and color scales
+- Responsive container-fluid layouts for widescreen displays
+- Clickable service cards with proper router-link navigation
+- Dual Y-axis mixed charts for latency/uptime visualization
+- Service heatmap with month separators and color scales
+- Modernized settings pages with tabbed navigation
 
 ---
 
@@ -234,7 +249,36 @@ Total test coverage improved from **~36% to 69.4%** with 17 of 21 packages at 80
 
 ---
 
-## 9. Upgraded Module Manifest
+## 9. Build System
+
+### Unified Build Script
+
+The build and quality audit tools were consolidated into `tools/build.sh`:
+
+```bash
+./tools/build.sh              # Quick build only
+./tools/build.sh --audit      # Code quality & security checks
+./tools/build.sh --test       # Run tests only
+./tools/build.sh --all        # Build + audit
+./tools/build.sh --clean      # Remove build artifacts and data
+./tools/build.sh --clean-all  # Full reset (includes node_modules)
+./tools/build.sh --extra-scans # Include slow scans (grype)
+```
+
+### Quality Checks (--audit)
+
+1. Shell script linting (shellcheck)
+2. Go compiler & linter (go vet)
+3. Go security analysis (gosec)
+4. Go vulnerability analysis (govulncheck)
+5. Go race condition detection
+6. Go unit & integration tests
+7. Frontend linting (oxlint)
+8. Frontend quality & formatting (biome)
+
+---
+
+## 10. Upgraded Module Manifest
 
 ### Core Infrastructure & Logic
 
@@ -284,353 +328,51 @@ Total test coverage improved from **~36% to 69.4%** with 17 of 21 packages at 80
 
 ---
 
-## 10. Commit History
+## Verification
 
-### Phase 1: Module Modernization
-- `b4fddfc4` - Modernization Phase1: Go module upgrades, CGO hardening, SQLite integration
+Run `./tools/build.sh --all` to verify:
 
-### Phase 2: GORM v2 & AWS SDK v2
-- `892118d0` - Modernization Phase2: GORM v2 migration, AWS SDK v2, code audit
-
-### Database & Performance
-- `3d61c0c2` - Initial database fixes and indexing optimization
-- `69787e8e` - Comprehensive database optimizations, scalability improvements, and logic fixes
-
-### Security Hardening
-- `7a6322a0` - Security hardening, Vue 2.7.16 upgrade, database index optimization (#0.96.0)
-- `84bb4f70` - Remove InsecureSkipVerify from email notifier
-- `99349a8c` - Add npm overrides for critical/high frontend vulnerabilities
-- `42b3f970` - Enterprise branding redesign, security hardening
-
-### Test Coverage Expansion
-- `d44f637a` - Test architecture overhaul, security hardening, comprehensive documentation (#0.96.6)
-- `a2ee8d38` - Improve test coverage across multiple packages
-- `396380f6` - Expand test coverage to 66% with isolation fixes
-- `bfd72689` - Comprehensive test coverage expansion across database, configs, notifications
-- `9e378a46` - Fix data race in Service.Running channel operations
-- `c8176cff` - Add per-chain test isolation with TestMain reset
-- `20fb7cf6` - Replace hardcoded IDs with dynamic lookups
-- `f8582371` - Add tests for errors, metrics, time, handlers auth/API (69.4% coverage)
-
-### Documentation
-- `96776c84` - Merge TEST_CHAINS.md into TESTING.md
-- `51305484` - Update TESTING.md with test chain isolation architecture
+- **Compilation**: Production binary builds successfully
+- **Dependency Audit**: Clean module graph via `go mod tidy && go mod verify`
+- **Test Suite**: All tests pass
+- **Code Quality**: All linters and security scanners pass
 
 ---
 
-## Final Verification
-
-- **Compilation**: Successfully produced a production binary using the GORM v2 and AWS v2 stacks
-- **Dependency Audit**: Verified a clean, synchronized graph via `go mod tidy` and `go mod verify`
-- **Test Suite**: All tests pass with `go test -p 1 ./...`
-- **Coverage**: 69.4% total coverage (17 of 21 packages at 80%+)
-- **Binary Status**: Production-ready, stripped, and hardened with Full RELRO
-
----
-
-## 11. Vue 3 Migration Plan
-
-The frontend is currently on Vue 2.7.16 (maintenance mode, EOL December 2023). This section outlines the migration strategy to Vue 3 with Vite.
-
-### 11.1 Current Frontend State
-
-**Codebase Size:**
-- 55 Vue single-file components
-- Single Vuex store (not modular)
-- Vue Router with route guards
-- Global mixin with 45+ utility methods
-- i18n internationalization
-
-**Current Dependencies:**
-| Package | Current Version |
-|---------|-----------------|
-| vue | 2.7.16 |
-| vue-router | 3.6.5 |
-| vuex | 3.6.2 |
-| vue-i18n | 8.28.2 |
-| vue-apexcharts | 1.6.2 |
-| vue-cookies | 1.8.4 |
-| vuedraggable | 2.24.3 |
-| vue-codemirror | 4.0.6 |
-| vue-clipboard2 | 0.3.1 |
-| vue-observe-visibility | 0.4.6 |
-| vue-flatpickr-component | 8.1.7 |
-| @fortawesome/vue-fontawesome | 0.1.10 |
-| axios | 1.18.1 |
-
-**Build System:** Webpack 4 with uglifyjs-webpack-plugin → terser-webpack-plugin
-
-### 11.2 Known Issues (Vue 2)
-
-**Cypress E2E Test Failures:**
-The Vue 2 app has state management issues when Cypress restores browser sessions:
-- Login.vue clears auth cookie on mount (breaks session restore)
-- Route guards re-check auth causing redirect loops
-- App.vue redirects to /setup when Vuex state is empty
-
-These issues make E2E testing unreliable. Vue 3 + Pinia will provide cleaner state management.
-
-**Runtime Bugs to Fix:**
-1. **Index.vue loading_text**: No return for final else case in computed property
-2. **Login.vue mounted()**: Clears cookie unconditionally, breaks session persistence
-
-### 11.3 Migration Strategy
-
-**Approach: Fresh Vite Setup + Incremental Component Migration**
-
-Rather than using @vue/compat (which adds complexity), we'll:
-1. Create a new Vite + Vue 3 project structure
-2. Migrate components incrementally, testing each
-3. Use Pinia from the start (not Vuex 4)
-
-| Phase | Duration | Description | Validation |
-|-------|----------|-------------|------------|
-| 1 | 2-4 hours | Vite + Vue 3 scaffold, copy static assets | App loads, shows blank page |
-| 2 | 4-6 hours | Pinia store, API layer, router | Can navigate routes |
-| 3 | 4-6 hours | Auth flow (Login, route guards) | Can login/logout |
-| 4 | 4-6 hours | Dashboard + Index pages | Dashboard renders with data |
-| 5 | 8-12 hours | Remaining pages (Settings, Service, Help) | All pages functional |
-| 6 | 4-6 hours | Complex components (charts, forms) | Charts render, forms submit |
-| 7 | 2-4 hours | Cypress E2E tests | All specs pass |
-| 8 | 2-4 hours | Cleanup, optimization | Production build works |
-
-**Total: 30-48 hours (4-6 days)**
-
-### 11.4 Dependency Migration Map
-
-| Vue 2 Package | Vue 3 Equivalent | Migration Notes |
-|---------------|------------------|-----------------|
-| `vue` 2.7.16 | `vue` 3.5.x | Core framework |
-| `vue-router` 3.6.5 | `vue-router` 4.x | New composition API |
-| `vuex` 3.6.2 | `pinia` 2.x | Simpler API, recommended |
-| `vue-i18n` 8.x | `vue-i18n` 9.x | Composition API support |
-| `vue-apexcharts` 1.6.2 | `vue3-apexcharts` 1.11.x | Simple import change |
-| `vue-cookies` 1.8.4 | `vue3-cookies` | Similar API |
-| `vuedraggable` 2.x | `vuedraggable` 4.x | Updated events API |
-| `vue-codemirror` 4.x | `vue-codemirror` 6.x | Breaking changes |
-| `vue-clipboard2` | `vue-clipboard3` | Composition API based |
-| `vue-observe-visibility` | `@vueuse/core` | useIntersectionObserver |
-
-### 11.5 Build System: Webpack to Vite
-
-**Target: Vite 6.x** for 10-100x faster HMR, native ESM, simpler configuration.
-
-```js
-// vite.config.js
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'path'
-
-export default defineConfig({
-  plugins: [vue()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "@/assets/scss/variables.scss";`,
-      },
-    },
-  },
-  server: {
-    port: 8888,
-    proxy: {
-      '/api': 'http://localhost:8080',
-      '/oauth': 'http://localhost:8080',
-    },
-  },
-  build: {
-    outDir: 'dist',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia', 'axios'],
-          charts: ['apexcharts', 'vue3-apexcharts'],
-        },
-      },
-    },
-  },
-})
-```
-
-### 11.6 Detailed Phase Instructions
-
-#### Phase 1: Vite + Vue 3 Scaffold (2-4 hours)
-
-```bash
-# Create new branch
-git checkout -b vue3-migration
-
-# Backup current frontend
-mv frontend frontend-vue2
-
-# Initialize Vite project
-npm create vite@latest frontend -- --template vue
-
-# Install core dependencies
-cd frontend
-npm install vue@3 vue-router@4 pinia axios @vueuse/core
-npm install vue-i18n@10 vue3-cookies sass
-npm install vue3-apexcharts apexcharts
-npm install @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/vue-fontawesome@3
-
-# Copy static assets from old frontend
-cp -r ../frontend-vue2/src/assets ./src/
-cp -r ../frontend-vue2/public/* ./public/
-cp ../frontend-vue2/src/languages ./src/
-```
-
-**Validation:** `npm run dev` starts, shows Vite welcome page
-
-#### Phase 2: Pinia Store + API Layer (4-6 hours)
-
-Create modular Pinia store:
-
-```
-src/stores/
-  core.js      - Core settings, setup status
-  services.js  - Services list and CRUD
-  groups.js    - Groups management
-  auth.js      - Authentication state
-  ui.js        - UI state (theme, language)
-```
-
-**Validation:** Store loads, getters work in Vue DevTools
-
-#### Phase 3: Auth Flow (4-6 hours)
-
-1. Migrate `src/API.js` - Remove Vue 2 specific code
-2. Create `src/pages/Login.vue` - NO cookie clearing on mount
-3. Update router guards - Use Pinia auth store
-4. Test session persistence
-
-**Validation:** Can login, session persists across page refresh, logout works
-
-#### Phase 4: Dashboard + Index (4-6 hours)
-
-1. `src/App.vue` - Composition API
-2. `src/pages/Index.vue` 
-3. `src/pages/Dashboard.vue`
-4. `src/components/Index/*`
-
-**Validation:** Dashboard renders with live service data
-
-#### Phase 5: Remaining Pages (8-12 hours)
-
-Migrate in order of dependency:
-1. Settings pages
-2. Service detail pages
-3. User management
-4. Help page
-
-#### Phase 6: Complex Components (4-6 hours)
-
-- Charts → vue3-apexcharts
-- Drag-drop → vue.draggable.next
-- Forms → native Vue 3
-
-#### Phase 7: Cypress E2E Tests (2-4 hours)
-
-Update test infrastructure for Vue 3.
-
-#### Phase 8: Cleanup + Production (2-4 hours)
-
-1. Remove `frontend-vue2/` backup
-2. Remove webpack config files
-3. Update `code_quality.sh` for Vite
-4. Update CI/CD workflows
-5. Remove obsolete root files (install.sh, snapcraft.yaml, etc.)
-6. Production build and test
-
-### 11.7 Code Migration Checklist
-
-**Global API Changes:**
-| Vue 2 | Vue 3 |
-|-------|-------|
-| `new Vue({...})` | `createApp({...})` |
-| `Vue.component()` | `app.component()` |
-| `Vue.use()` | `app.use()` |
-| `Vue.prototype.$x` | `app.config.globalProperties.$x` |
-| `this.$set()` | Direct assignment |
-
-**Template Changes:**
-| Vue 2 | Vue 3 |
-|-------|-------|
-| `.sync` modifier | `v-model:propName` |
-| `$listeners` | Merged into `$attrs` |
-| `.native` modifier | Use emits option |
-| `beforeDestroy` | `beforeUnmount` |
-| `destroyed` | `unmounted` |
-
-**High Priority Files:**
-- `src/main.js` - App initialization
-- `src/router/index.js` - Router setup
-- `src/store/index.js` - Store setup (Vuex to Pinia)
-- `src/API.js` - Global prototype access
-- `src/mixin.js` - Global mixin registration
-
-### 11.7 Testing Strategy
-
-**Critical Paths to Test:**
-- Dashboard loads with services
-- Service detail page with charts
-- Create/edit/delete service
-- Drag-drop service reordering
-- Settings page CRUD
-- User authentication
-- Theme switching
-- i18n language switching
-
-### 11.8 Cleanup: Files to Remove
-
-As part of the migration, remove obsolete files that are no longer relevant:
-
-**Root Directory:**
-| File | Reason |
-|------|--------|
-| `install.sh` | Legacy installer script, not used |
-| `snapcraft.yaml` | Snap package config, not maintained |
-| `docker-compose.yml` | Not used |
-| `Dockerfile` | Not used |
-| `.dockerignore` | Not used |
-| `.github/workflows/` | CI/CD not used - remove workflows, keep dependabot.yml |
-| `.vscode/` | Generic config, not needed |
-
-**dev/ Directory:**
-| File | Decision |
-|------|----------|
-| `dev/` | Remove entire directory - Docker-focused, API references outdated |
-
-**Frontend (after Vue 3 migration):**
-| File/Directory | Action |
-|----------------|--------|
-| `frontend/config/` | Remove - Vite replaces webpack config |
-| `frontend/public/base.gohtml` | Keep - backend template |
-| `frontend/node_modules/` | Delete and reinstall with new deps |
-
-**Keep:**
-- `code_quality.sh` - Useful audit script (update for Vite)
-- `statping_config.yml` - Example config
-
-### 11.9 Rollback Plan
-
-1. Create `vue3-migration` branch from main
-2. Tag working states: `vue3-phase1`, `vue3-phase2`, etc.
-3. If critical issues: `git checkout main && npm ci && npm run build`
-
-**Rollback Triggers:**
-- Critical runtime errors not fixable within 4 hours
-- Chart rendering completely broken
-- State management data loss
-
-### 11.10 Post-Migration Benefits
-
-1. **E2E Tests Work:** Pinia's simpler state management won't have Vue 2's session restore issues
-2. **Performance:** Vite's HMR is 10-100x faster than webpack
-3. **Modern Tooling:** Full TypeScript support, better IDE integration
-4. **Smaller Bundle:** Vue 3's tree-shaking produces smaller production builds
-5. **Future-Proof:** Active LTS support until at least 2027
-6. **Cleaner Codebase:** Removal of legacy files reduces maintenance burden
+## Appendix: Vue 3 Migration Milestones
+
+Reference for the Vue 2 → Vue 3 migration that was performed.
+
+### Key Changes
+
+| Before | After |
+|--------|-------|
+| Vue 2.7.16 | Vue 3.5.x |
+| Vuex 3.6.2 | Pinia 2.x |
+| vue-router 3.x | vue-router 4.x |
+| Webpack 4 | Vite 6.x |
+| vue-i18n 8.x | vue-i18n 10.x |
+
+### Milestones
+
+1. **Vite Scaffold** — Fresh `npm create vite@latest` with Vue 3 template
+2. **Pinia Store** — Modular stores (core, services, groups, auth, ui) replacing single Vuex store
+3. **Auth Flow** — Fixed session persistence bug (Login.vue no longer clears cookie on mount)
+4. **Component Migration** — 55 SFCs converted to Composition API
+5. **Chart Library** — vue-apexcharts → vue3-apexcharts
+6. **E2E Tests** — Cypress → Playwright + Vitest
+7. **Cleanup** — Removed webpack config, obsolete root files
+
+### Files Removed
+
+- `frontend/config/` — Webpack config (replaced by Vite)
+- `install.sh`, `snapcraft.yaml` — Legacy installers
+- `dev/` — Outdated Docker/API references
+- `.github/workflows/` — Unused CI (kept dependabot.yml)
+
+### Benefits Achieved
+
+- **10-100x faster HMR** via Vite
+- **E2E tests now reliable** (Pinia state management)
+- **Smaller production bundle** (Vue 3 tree-shaking)
+- **LTS support until 2027+**

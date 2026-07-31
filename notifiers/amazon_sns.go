@@ -89,7 +89,7 @@ func valToAttr(val interface{}) types.MessageAttributeValue {
 	}
 }
 
-func messageAttributesSNS(s services.Service, f failures.Failure) map[string]types.MessageAttributeValue {
+func messageAttributesSNS(s *services.Service, f failures.Failure) map[string]types.MessageAttributeValue {
 	attr := make(map[string]types.MessageAttributeValue)
 	attr["service_id"] = valToAttr(s.Id)
 	attr["online"] = valToAttr(s.Online)
@@ -104,7 +104,7 @@ func messageAttributesSNS(s services.Service, f failures.Failure) map[string]typ
 }
 
 // Send will send a HTTP Post to the amazonSNS API. It accepts type: string
-func (g *amazonSNS) sendMessage(msg string, s services.Service, f failures.Failure) (string, error) {
+func (g *amazonSNS) sendMessage(msg string, s *services.Service, f failures.Failure) (string, error) {
 	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion(g.Var1.String),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(g.ApiKey.String, g.ApiSecret.String, "")),
@@ -129,13 +129,13 @@ func (g *amazonSNS) sendMessage(msg string, s services.Service, f failures.Failu
 }
 
 // OnFailure will trigger failing service
-func (g *amazonSNS) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (g *amazonSNS) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	msg := ReplaceVars(g.FailureData.String, s, f)
 	return g.sendMessage(msg, s, f)
 }
 
 // OnSuccess will trigger successful service
-func (g *amazonSNS) OnSuccess(s services.Service) (string, error) {
+func (g *amazonSNS) OnSuccess(s *services.Service) (string, error) {
 	msg := ReplaceVars(g.SuccessData.String, s, failures.Failure{})
 	return g.sendMessage(msg, s, failures.Failure{})
 }

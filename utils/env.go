@@ -41,7 +41,7 @@ func InitEnvs() {
 	Params.SetDefault("MAX_LIFE_CONN", 5*time.Minute)
 	Params.SetDefault("SAMPLE_DATA", false)
 	Params.SetDefault("USE_CDN", false)
-	Params.SetDefault("ALLOW_REPORTS", false)
+	Params.SetDefault("ALLOW_REPORTS", true)
 	Params.SetDefault("POSTGRES_SSLMODE", "disable")
 	Params.SetDefault("NAME", "Platform Monitoring")
 	Params.SetDefault("DOMAIN", "http://localhost:8080")

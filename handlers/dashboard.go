@@ -166,7 +166,7 @@ func apiThemeRemoveHandler(w http.ResponseWriter, r *http.Request) {
 type ExportData struct {
 	Config          *configs.DbConfig            `json:"config,omitempty"`
 	Core            *core.Core                   `json:"core"`
-	Services        []services.Service           `json:"services"`
+	Services        []*services.Service          `json:"services"`
 	Messages        []*messages.Message          `json:"messages"`
 	Incidents       []*incidents.Incident        `json:"incidents"`
 	IncidentUpdates []*incidents.IncidentUpdate  `json:"incident_updates"`
@@ -332,8 +332,43 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	username := form.Get("username")
 	password := form.Get("password")
 
-	user, auth := users.AuthUser(username, password)
+	var user *users.User
+	var auth bool
+
+	// Try LDAP authentication first if enabled
+	if core.App.LdapEnabled.Bool {
+		ldapUser, err := processLDAPLogin(username, password)
+		if err != nil {
+			log.Warnln(fmt.Sprintf("LDAP auth error for user %v: %v", username, err))
+			// Check if it's a group membership error
+			if err.Error() == "user is not a member of the authorized group" {
+				returnJson(struct {
+					Error string `json:"error"`
+				}{"not authorized to access this application"}, w, r)
+				return
+			}
+		}
+		if ldapUser != nil {
+			user = ldapUser
+			auth = true
+		}
+	}
+
+	// Fallback to local authentication
+	if !auth {
+		user, auth = users.AuthUser(username, password)
+	}
+
 	if auth {
+		// Check if user is enabled
+		if !user.Enabled.Bool {
+			log.Infoln(fmt.Sprintf("User %v login rejected - account pending approval", user.Username))
+			returnJson(struct {
+				Error string `json:"error"`
+			}{"account pending approval - please contact an administrator"}, w, r)
+			return
+		}
+
 		log.Infoln(fmt.Sprintf("User %v logged in from IP %v", user.Username, r.RemoteAddr))
 		claim, token := setJwtToken(user, w, r)
 		resp := struct {

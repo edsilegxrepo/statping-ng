@@ -20,7 +20,7 @@ import (
 func getServiceByIndex(idx int) *services.Service {
 	svcs := services.AllInOrder()
 	if idx < len(svcs) {
-		return &svcs[idx]
+		return svcs[idx]
 	}
 	return nil
 }
@@ -28,9 +28,9 @@ func getServiceByIndex(idx int) *services.Service {
 // getPrivateService returns a private service, or nil if none exists
 func getPrivateService() *services.Service {
 	svcs := services.AllInOrder()
-	for i := range svcs {
-		if !svcs[i].Public.Bool {
-			return &svcs[i]
+	for _, s := range svcs {
+		if !s.Public.Bool {
+			return s
 		}
 	}
 	return nil
@@ -39,9 +39,9 @@ func getPrivateService() *services.Service {
 // getPublicService returns a public service, or nil if none exists
 func getPublicService() *services.Service {
 	svcs := services.AllInOrder()
-	for i := range svcs {
-		if svcs[i].Public.Bool {
-			return &svcs[i]
+	for _, s := range svcs {
+		if s.Public.Bool {
+			return s
 		}
 	}
 	return nil

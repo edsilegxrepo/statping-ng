@@ -76,14 +76,14 @@ func (s *mattermost) OnTest() (string, error) {
 }
 
 // OnFailure will trigger failing service
-func (s *mattermost) OnFailure(srv services.Service, f failures.Failure) (string, error) {
+func (s *mattermost) OnFailure(srv *services.Service, f failures.Failure) (string, error) {
 	msg := ReplaceVars(s.FailureData.String, srv, f)
 	out, err := s.sendMattermost(msg)
 	return out, err
 }
 
 // OnSuccess will trigger successful service
-func (s *mattermost) OnSuccess(srv services.Service) (string, error) {
+func (s *mattermost) OnSuccess(srv *services.Service) (string, error) {
 	msg := ReplaceVars(s.SuccessData.String, srv, failures.Failure{})
 	out, err := s.sendMattermost(msg)
 	return out, err

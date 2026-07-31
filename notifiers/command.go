@@ -56,14 +56,14 @@ func runCommand(cmd string) (string, string, error) {
 }
 
 // OnSuccess for commandLine will trigger successful service
-func (c *commandLine) OnSuccess(s services.Service) (string, error) {
+func (c *commandLine) OnSuccess(s *services.Service) (string, error) {
 	tmpl := ReplaceVars(c.SuccessData.String, s, failures.Failure{})
 	out, _, err := runCommand(tmpl)
 	return out, err
 }
 
 // OnFailure for commandLine will trigger failing service
-func (c *commandLine) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (c *commandLine) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	tmpl := ReplaceVars(c.FailureData.String, s, f)
 	out, _, err := runCommand(tmpl)
 	return out, err

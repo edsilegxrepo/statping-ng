@@ -50,7 +50,7 @@ var Mobile = &mobilePush{
 	},
 }
 
-func dataJson(s services.Service, f failures.Failure) map[string]interface{} {
+func dataJson(s *services.Service, f failures.Failure) map[string]interface{} {
 	serviceId := utils.ToString(s.Id)
 	online := "online"
 	if !s.Online {
@@ -68,7 +68,7 @@ func dataJson(s services.Service, f failures.Failure) map[string]interface{} {
 }
 
 // OnFailure will trigger failing service
-func (m *mobilePush) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (m *mobilePush) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	data := dataJson(s, f)
 	msg := &pushArray{
 		Message: fmt.Sprintf("%s is currently failing! Reason: %v", s.Name, f.Issue),
@@ -79,7 +79,7 @@ func (m *mobilePush) OnFailure(s services.Service, f failures.Failure) (string, 
 }
 
 // OnSuccess will trigger successful service
-func (m *mobilePush) OnSuccess(s services.Service) (string, error) {
+func (m *mobilePush) OnSuccess(s *services.Service) (string, error) {
 	data := dataJson(s, failures.Failure{})
 	msg := &pushArray{
 		Message:  fmt.Sprintf("%s is back online and was down for %s", s.Name, s.Downtime().Human()),

@@ -64,24 +64,20 @@
           </select>
         </div>
 
-        <div class="form-group row mt-3">
-          <label class="col-sm-10 col-form-label">{{ $t('send_reports') }}</label>
-          <div class="col-sm-2 float-right">
-            <span @click="coreData.allow_reports = !!coreData.allow_reports" class="switch" id="allow_report">
-              <input
-                v-model="coreData.allow_reports"
-                type="checkbox"
-                name="allow_report"
-                class="switch"
-                id="switch_allow_report"
-                :checked="coreData.allow_reports"
-              />
-              <label for="switch_allow_report"></label>
-            </span>
-          </div>
-          <div class="col-12">
-            <small>{{ $t('send_reports_desc') }}</small>
-          </div>
+        <div class="form-group mt-3">
+          <label>Session Timeout (minutes)</label>
+          <input
+            v-model.number="coreData.session_timeout"
+            type="number"
+            class="form-control"
+            min="5"
+            max="10080"
+            placeholder="720"
+            id="session_timeout"
+          />
+          <small class="form-text text-muted">
+            How long until users are logged out (default: 720 = 12 hours, max: 10080 = 7 days)
+          </small>
         </div>
       </div>
       <div class="card-footer">

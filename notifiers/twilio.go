@@ -98,13 +98,13 @@ func (t *twilio) sendMessage(message string) (string, error) {
 }
 
 // OnFailure will trigger failing service
-func (t *twilio) OnFailure(s services.Service, f failures.Failure) (string, error) {
+func (t *twilio) OnFailure(s *services.Service, f failures.Failure) (string, error) {
 	msg := ReplaceVars(t.FailureData.String, s, f)
 	return t.sendMessage(msg)
 }
 
 // OnSuccess will trigger successful service
-func (t *twilio) OnSuccess(s services.Service) (string, error) {
+func (t *twilio) OnSuccess(s *services.Service) (string, error) {
 	msg := ReplaceVars(t.SuccessData.String, s, failures.Failure{})
 	return t.sendMessage(msg)
 }

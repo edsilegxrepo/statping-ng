@@ -15,6 +15,7 @@ type User struct {
 	ApiKey    string        `gorm:"uniqueIndex;type:varchar(100);column:api_key" json:"api_key,omitempty" private:"true" scope:"admin"`
 	Scopes    string        `gorm:"column:scopes" json:"scopes,omitempty"`
 	Admin     null.NullBool `gorm:"column:administrator" json:"admin,omitempty"`
+	Enabled   null.NullBool `gorm:"column:enabled;default:true" json:"enabled,omitempty"`
 	CreatedAt time.Time     `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time     `gorm:"column:updated_at" json:"updated_at"`
 	Token     string        `gorm:"-" json:"token"`

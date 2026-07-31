@@ -928,7 +928,7 @@ func TestReplaceVarsEdgeCases(t *testing.T) {
 	setupTestEnvironment(t)
 
 	t.Run("ReplaceVars with nil service fields", func(t *testing.T) {
-		svc := services.Service{} // Zero-valued service
+		svc := &services.Service{} // Zero-valued service
 		fail := failures.Failure{}
 		result := ReplaceVars("Service: {{.Service.Name}}, Issue: {{.Failure.Issue}}", svc, fail)
 		assert.Contains(t, result, "Service: ")

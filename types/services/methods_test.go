@@ -30,7 +30,7 @@ func TestServiceDowntime(t *testing.T) {
 }
 
 func TestServiceOrderSort(t *testing.T) {
-	services := ServiceOrder{
+	services := ServicePtrOrder{
 		{Name: "Third", Order: 3},
 		{Name: "First", Order: 1},
 		{Name: "Second", Order: 2},
@@ -44,7 +44,7 @@ func TestServiceOrderSort(t *testing.T) {
 }
 
 func TestServiceOrderSwap(t *testing.T) {
-	services := ServiceOrder{
+	services := ServicePtrOrder{
 		{Name: "A", Order: 1},
 		{Name: "B", Order: 2},
 	}
@@ -55,7 +55,7 @@ func TestServiceOrderSwap(t *testing.T) {
 }
 
 func TestServiceOrderLen(t *testing.T) {
-	services := ServiceOrder{
+	services := ServicePtrOrder{
 		{Name: "A"},
 		{Name: "B"},
 		{Name: "C"},

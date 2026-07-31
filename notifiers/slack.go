@@ -2,7 +2,9 @@ package notifiers
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 )
 
 var _ notifier.Notifier = (*slack)(nil)
+var _ notifier.DigestNotifier = (*slack)(nil)
 
 const (
 	slackMethod = "slack"
@@ -76,14 +79,14 @@ func (s *slack) OnTest() (string, error) {
 }
 
 // OnFailure will trigger failing service
-func (s *slack) OnFailure(srv services.Service, f failures.Failure) (string, error) {
+func (s *slack) OnFailure(srv *services.Service, f failures.Failure) (string, error) {
 	msg := ReplaceVars(s.FailureData.String, srv, f)
 	out, err := s.sendSlack(msg)
 	return out, err
 }
 
 // OnSuccess will trigger successful service
-func (s *slack) OnSuccess(srv services.Service) (string, error) {
+func (s *slack) OnSuccess(srv *services.Service) (string, error) {
 	msg := ReplaceVars(s.SuccessData.String, srv, failures.Failure{})
 	out, err := s.sendSlack(msg)
 	return out, err
@@ -96,4 +99,127 @@ func (s *slack) OnSave() (string, error) {
 
 func (s *slack) Valid(values notifications.Values) error {
 	return nil
+}
+
+// OnDigest sends the daily digest to Slack
+func (s *slack) OnDigest(data notifier.DigestData) (string, error) {
+	// Build blocks for Slack Block Kit
+	blocks := []map[string]interface{}{
+		{
+			"type": "header",
+			"text": map[string]interface{}{
+				"type":  "plain_text",
+				"text":  fmt.Sprintf(":bar_chart: %s Daily Digest", data.AppName),
+				"emoji": true,
+			},
+		},
+		{
+			"type": "context",
+			"elements": []map[string]interface{}{
+				{
+					"type": "plain_text",
+					"text": data.Period,
+				},
+			},
+		},
+		{
+			"type": "divider",
+		},
+		{
+			"type": "section",
+			"fields": []map[string]interface{}{
+				{
+					"type": "mrkdwn",
+					"text": fmt.Sprintf("*Total Services*\n%d", data.TotalServices),
+				},
+				{
+					"type": "mrkdwn",
+					"text": fmt.Sprintf("*Healthy*\n:white_check_mark: %d", data.HealthyServices),
+				},
+				{
+					"type": "mrkdwn",
+					"text": fmt.Sprintf("*Currently Down*\n:x: %d", data.FailedServices),
+				},
+			},
+		},
+	}
+
+	// Add service issues if any
+	if data.HasFailures {
+		blocks = append(blocks, map[string]interface{}{
+			"type": "divider",
+		})
+		blocks = append(blocks, map[string]interface{}{
+			"type": "section",
+			"text": map[string]interface{}{
+				"type": "mrkdwn",
+				"text": "*Service Issues (Last 24h)*",
+			},
+		})
+
+		for _, svc := range data.ServiceSummary {
+			statusIcon := ":white_check_mark:"
+			if svc.Status == "Offline" {
+				statusIcon = ":x:"
+			}
+			blocks = append(blocks, map[string]interface{}{
+				"type": "section",
+				"text": map[string]interface{}{
+					"type": "mrkdwn",
+					"text": fmt.Sprintf("%s *%s* - %d failures", statusIcon, svc.Name, svc.FailureCount),
+				},
+			})
+		}
+	} else {
+		blocks = append(blocks, map[string]interface{}{
+			"type": "section",
+			"text": map[string]interface{}{
+				"type": "mrkdwn",
+				"text": ":tada: *All services healthy* - no issues in the last 24 hours!",
+			},
+		})
+	}
+
+	// Add app errors summary if any
+	if data.HasAppErrors {
+		blocks = append(blocks, map[string]interface{}{
+			"type": "divider",
+		})
+		blocks = append(blocks, map[string]interface{}{
+			"type": "section",
+			"text": map[string]interface{}{
+				"type": "mrkdwn",
+				"text": fmt.Sprintf(":warning: *%d application errors* in the last 24 hours", len(data.AppErrors)),
+			},
+		})
+	}
+
+	// Add action button
+	blocks = append(blocks, map[string]interface{}{
+		"type": "divider",
+	})
+	blocks = append(blocks, map[string]interface{}{
+		"type": "actions",
+		"elements": []map[string]interface{}{
+			{
+				"type": "button",
+				"text": map[string]interface{}{
+					"type": "plain_text",
+					"text": "Open Dashboard",
+				},
+				"url": data.Domain,
+			},
+		},
+	})
+
+	payload := map[string]interface{}{
+		"blocks": blocks,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	return s.sendSlack(string(jsonData))
 }
