@@ -19,16 +19,13 @@ import (
 )
 
 func assetsCli() error {
-	dir := utils.Directory
 	if err := utils.InitLogs(); err != nil {
 		return err
 	}
 	if err := source.Assets(); err != nil {
 		return err
 	}
-	if err := source.CreateAllAssets(dir); err != nil {
-		return err
-	}
+	fmt.Println("Assets initialized. Use the web UI to upload custom CSS.")
 	return nil
 }
 
@@ -133,16 +130,9 @@ func exportCli(args []string) error {
 	return nil
 }
 
+// sassCli is deprecated - SASS compilation has been removed
 func sassCli() error {
-	if err := utils.InitLogs(); err != nil {
-		return err
-	}
-	if err := source.Assets(); err != nil {
-		return err
-	}
-	if err := source.CompileSASS(); err != nil {
-		return err
-	}
+	fmt.Println("SASS compilation has been removed. Use custom CSS instead.")
 	return nil
 }
 

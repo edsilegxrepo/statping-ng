@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -73,18 +72,11 @@ func TestVersionCLI(t *testing.T) {
 
 func TestAssetsCLI(t *testing.T) {
 	cmd := rootCmd
-	b := bytes.NewBufferString("")
-	cmd.SetOut(b)
 	cmd.SetArgs([]string{"assets"})
 	err := cmd.Execute()
-	// Skip test if sass executable is not available (build-time dependency)
-	if err != nil && strings.Contains(err.Error(), "sass") {
-		t.Skip("sass executable not found in PATH - skipping assets CLI test")
-	}
 	require.Nil(t, err)
-	for _, f := range source.RequiredFiles {
-		assert.FileExists(t, utils.Directory+"/assets/"+f)
-	}
+	// After simplification, the assets command just initializes the source
+	// and prints a message. It no longer creates files automatically.
 }
 
 func TestUpdateCLI(t *testing.T) {

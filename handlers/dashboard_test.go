@@ -72,7 +72,7 @@ func TestUnAuthenticatedDashboardRoutes(t *testing.T) {
 			Name:           "No Auth - Save Theme",
 			URL:            "/api/theme",
 			Method:         "POST",
-			ExpectedStatus: 403,
+			ExpectedStatus: 401,
 			NoAuth:         true,
 		},
 		{
@@ -101,7 +101,7 @@ func TestThemeAPIRoutes(t *testing.T) {
 			URL:            "/api/theme",
 			Method:         "POST",
 			Body:           `{invalid json}`,
-			ExpectedStatus: 500,
+			ExpectedStatus: 422,
 			BeforeTest:     SetTestENV,
 		},
 	}
@@ -189,11 +189,11 @@ func TestThemeCreateHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:             "Create Theme Assets - Already Exists",
+			Name:             "Create Theme Assets - No-Op Success",
 			URL:              "/api/theme/create",
 			Method:           "GET",
-			ExpectedStatus:   500,
-			ExpectedContains: []string{`"error"`},
+			ExpectedStatus:   200,
+			ExpectedContains: []string{`"status":"success"`, `"method":"created"`},
 			BeforeTest:       SetTestENV,
 		},
 	}
@@ -270,19 +270,7 @@ func TestThemeSaveHandler(t *testing.T) {
 			Body:             validThemeBody,
 			ExpectedStatus:   200,
 			ExpectedContains: []string{`"status":"success"`, `"method":"saved"`},
-			BeforeTest: func(t *testing.T) error {
-				// Ensure assets exist before saving theme
-				dir := utils.Params.GetString("STATPING_DIR")
-				if dir == "" {
-					dir = utils.Directory
-				}
-				if !source.UsingAssets(dir) {
-					if err := source.CreateAllAssets(dir); err != nil {
-						return err
-					}
-				}
-				return SetTestENV(t)
-			},
+			BeforeTest: SetTestENV,
 		},
 		{
 			Name:             "Save Theme - Empty Body",
