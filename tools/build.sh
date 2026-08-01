@@ -1,27 +1,88 @@
 #!/bin/bash
+#=============================================================================
 # Statping-ng Build & Quality Audit Script
-# Usage: ./tools/build.sh [options]
-#   (no args)       Quick build only
-#   --audit         Run code quality & security checks
-#   --test          Run tests with full isolation (serial, no cache, pollution check)
-#   --all           Build + audit
-#   --clean         Remove build artifacts and data for fresh start
-#   --clean-all     Full reset (includes node_modules)
-#   --extra-scans   Include slow scans (grype supply chain)
+#=============================================================================
+#
+# A unified build, test, and audit tool for the Statping-ng monitoring system.
+# Supports both Windows (MSYS2/Cygwin) and Linux environments.
+#
+# USAGE:
+#   ./tools/build.sh [options]
+#
+# OPTIONS:
+#   (no args)              Quick build: frontend + Go binary
+#   --audit                Run full code quality & security audit (8 checks)
+#   --test                 Run Go tests with full isolation (serial, no cache)
+#   --all                  Build + audit combined
+#   --clean                Remove build artifacts (binaries, dist, test data)
+#   --clean-all            Full reset including node_modules
+#   --extra-scans          Include slow scans (grype supply chain analysis)
+#   --update-modules       Update all dependencies (Go + Node)
+#   --update-modules=go    Update Go modules only (go get -u, go mod tidy)
+#   --update-modules=node  Update Node modules only (npm update, npm audit fix)
+#   --help, -h             Show this help message
+#
+# EXAMPLES:
+#   ./tools/build.sh                      # Quick build
+#   ./tools/build.sh --all                # Build + full audit
+#   ./tools/build.sh --update-modules     # Update all deps, then review changes
+#   ./tools/build.sh --clean --all        # Clean slate rebuild with audit
+#
+# REQUIREMENTS:
+#   - Go 1.21+
+#   - Node.js 18+ with npm
+#   - Optional: gosec, govulncheck, shellcheck, oxlint, biome, grype
+#
+# OUTPUT:
+#   - Binary:   testfiles/statping[.exe]
+#   - Frontend: source/dist/
+#
+#=============================================================================
 set -e
 
+#-----------------------------------------------------------------------------
+# Terminal Colors
+#-----------------------------------------------------------------------------
 GREEN="\033[32m"
 CYAN="\033[36m"
 YELLOW="\033[33m"
 RESET="\033[0m"
 
-# Parse arguments
+#-----------------------------------------------------------------------------
+# Helper Functions
+#-----------------------------------------------------------------------------
+log_step() {
+  printf "\n%b[%s]%b %s\n" "$CYAN" "$1" "$RESET" "$2"
+}
+
+log_success() {
+  printf "%b✓%b %s\n" "$GREEN" "$RESET" "$1"
+}
+
+#-----------------------------------------------------------------------------
+# Platform Detection
+#-----------------------------------------------------------------------------
+IS_WINDOWS=false
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+  IS_WINDOWS=true
+fi
+
+# Set binary extension based on platform
+BIN_EXT=""
+if $IS_WINDOWS; then
+  BIN_EXT=".exe"
+fi
+
+#-----------------------------------------------------------------------------
+# Argument Parsing
+#-----------------------------------------------------------------------------
 DO_BUILD=true
 DO_AUDIT=false
 DO_TEST=false
 DO_EXTRA=false
 DO_CLEAN=false
 DO_CLEAN_ALL=false
+DO_UPDATE=""
 
 for arg in "$@"; do
   case $arg in
@@ -49,6 +110,18 @@ for arg in "$@"; do
     --extra-scans)
       DO_EXTRA=true
       ;;
+    --update-modules)
+      DO_BUILD=false
+      DO_UPDATE="both"
+      ;;
+    --update-modules=go)
+      DO_BUILD=false
+      DO_UPDATE="go"
+      ;;
+    --update-modules=node)
+      DO_BUILD=false
+      DO_UPDATE="node"
+      ;;
     --help | -h)
       echo "Usage: ./tools/build.sh [options]"
       echo "  (no args)       Quick build only"
@@ -58,6 +131,7 @@ for arg in "$@"; do
       echo "  --clean         Remove build artifacts and data for fresh start"
       echo "  --clean-all     Full reset (includes node_modules)"
       echo "  --extra-scans   Include slow scans (grype supply chain)"
+      echo "  --update-modules [=go|=node]  Update dependencies (both if no arg)"
       exit 0
       ;;
   esac
@@ -73,7 +147,7 @@ if $DO_CLEAN; then
   log_clean() { printf "  %b✓%b Removed %s\n" "$GREEN" "$RESET" "$1"; }
 
   # Clean testfiles/ (build outputs, test artifacts)
-  rm -f testfiles/statping.exe && log_clean "testfiles/statping.exe"
+  rm -f testfiles/statping{,.exe} && log_clean "testfiles/statping[.exe]"
   rm -f testfiles/statping.db && log_clean "testfiles/statping.db"
   rm -f testfiles/statping.secrets && log_clean "testfiles/statping.secrets"
   rm -f testfiles/config.yml && log_clean "testfiles/config.yml"
@@ -99,8 +173,39 @@ if $DO_CLEAN; then
   exit 0
 fi
 
-# Use MinGW GCC on Windows to avoid Cygwin compiler issues
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+#=============================================================================
+# UPDATE MODULES
+#=============================================================================
+if [[ -n "$DO_UPDATE" ]]; then
+  echo "=== Updating Dependencies ==="
+
+  if [[ "$DO_UPDATE" == "both" || "$DO_UPDATE" == "go" ]]; then
+    log_step "UPDATE" "Updating Go modules..."
+    go get -u ./...
+    go mod tidy
+    log_success "Go modules updated"
+  fi
+
+  if [[ "$DO_UPDATE" == "both" || "$DO_UPDATE" == "node" ]]; then
+    log_step "UPDATE" "Updating Node modules..."
+    cd frontend
+    npm outdated || true
+    npm update
+    npm audit fix || true
+    cd ..
+    log_success "Node modules updated"
+  fi
+
+  echo ""
+  echo "Update complete. Review changes with 'git diff go.mod go.sum frontend/package*.json'"
+  exit 0
+fi
+
+#-----------------------------------------------------------------------------
+# Windows Compiler Setup (MinGW)
+# Avoids Cygwin compiler issues with CGO
+#-----------------------------------------------------------------------------
+if $IS_WINDOWS; then
   MINGW_BIN=""
   MINGW_BIN="$(cygpath -u "$CC" 2> /dev/null | xargs dirname 2> /dev/null)" || MINGW_BIN='/d/dev/mingw64/bin'
   export PATH="$MINGW_BIN:$PATH"
@@ -110,14 +215,6 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   export CXX="${CC_PATH/gcc/g++}"
 fi
 
-log_step() {
-  printf "\n%b[%s]%b %s\n" "$CYAN" "$1" "$RESET" "$2"
-}
-
-log_success() {
-  printf "%b✓%b %s\n" "$GREEN" "$RESET" "$1"
-}
-
 #=============================================================================
 # BUILD
 #=============================================================================
@@ -126,8 +223,11 @@ if $DO_BUILD; then
 
   # Kill all running statping instances
   log_step "BUILD" "Stopping any running statping..."
-  taskkill //F //IM statping.exe 2> /dev/null || true
-  pkill -f statping 2> /dev/null || true
+  if $IS_WINDOWS; then
+    taskkill //F //IM statping.exe 2> /dev/null || true
+  else
+    pkill -f statping 2> /dev/null || true
+  fi
 
   # Build frontend
   log_step "BUILD" "Building frontend..."
@@ -158,9 +258,9 @@ if $DO_BUILD; then
   # Build Go binary to testfiles/
   log_step "BUILD" "Building Go binary..."
   mkdir -p testfiles
-  go build -o testfiles/statping.exe ./cmd
+  go build -o "testfiles/statping${BIN_EXT}" ./cmd
 
-  log_success "Build complete (binary: testfiles/statping.exe)"
+  log_success "Build complete (binary: testfiles/statping${BIN_EXT})"
 fi
 
 #=============================================================================
