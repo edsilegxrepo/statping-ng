@@ -8,15 +8,16 @@ import (
 
 // User is the main struct for Users
 type User struct {
-	Id        int64         `gorm:"primary_key;column:id" json:"id"`
-	Username  string        `gorm:"type:varchar(100);unique;column:username;" json:"username,omitempty"`
-	Password  string        `gorm:"column:password" json:"password,omitempty" private:"true" scope:"admin"`
-	Email     string        `gorm:"type:varchar(100);column:email" json:"email,omitempty" scope:"user,admin"`
-	ApiKey    string        `gorm:"uniqueIndex;type:varchar(100);column:api_key" json:"api_key,omitempty" private:"true" scope:"admin"`
-	Scopes    string        `gorm:"column:scopes" json:"scopes,omitempty"`
-	Admin     null.NullBool `gorm:"column:administrator" json:"admin,omitempty"`
-	Enabled   null.NullBool `gorm:"column:enabled;default:true" json:"enabled,omitempty"`
-	CreatedAt time.Time     `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt time.Time     `gorm:"column:updated_at" json:"updated_at"`
-	Token     string        `gorm:"-" json:"token"`
+	Id                 int64         `gorm:"primary_key;column:id" json:"id"`
+	Username           string        `gorm:"type:varchar(100);unique;column:username;" json:"username,omitempty"`
+	Password           string        `gorm:"column:password" json:"password,omitempty" private:"true" scope:"admin"`
+	Email              string        `gorm:"type:varchar(100);column:email" json:"email,omitempty" scope:"user,admin"`
+	ApiKey             string        `gorm:"uniqueIndex;type:varchar(100);column:api_key" json:"api_key,omitempty" private:"true" scope:"admin"`
+	Scopes             string        `gorm:"column:scopes" json:"scopes,omitempty"`
+	Admin              null.NullBool `gorm:"column:administrator" json:"admin,omitempty"`
+	Enabled            null.NullBool `gorm:"column:enabled;default:true" json:"enabled,omitempty"`
+	ForwardAuthManaged null.NullBool `gorm:"column:forward_auth_managed;default:false" json:"forward_auth_managed,omitempty"`
+	CreatedAt          time.Time     `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt          time.Time     `gorm:"column:updated_at" json:"updated_at"`
+	Token              string        `gorm:"-" json:"token"`
 }

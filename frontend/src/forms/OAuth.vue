@@ -372,6 +372,10 @@
           </div>
         </div>
 
+        <div v-if="forwardAuthError" class="alert alert-danger mt-3">
+          {{ forwardAuthError }}
+        </div>
+
         <button class="btn btn-secondary" @click.prevent="saveForwardAuth" :disabled="forwardAuthLoading">
           <font-awesome-icon v-if="forwardAuthLoading" icon="circle-notch" class="mr-2" spin /> Save Forward Auth Settings
         </button>
@@ -497,8 +501,61 @@ async function saveOAuth() {
   loading.value = false
 }
 
+const forwardAuthError = ref('')
+
+function validateForwardAuth() {
+  forwardAuthError.value = ''
+
+  if (forwardauth.enabled) {
+    // Trusted proxies required when enabled
+    if (!forwardauth.trusted_proxies.trim()) {
+      forwardAuthError.value = 'Trusted proxies are required when Forward Auth is enabled'
+      return false
+    }
+
+    // Validate CIDR format
+    const cidrs = forwardauth.trusted_proxies.split(';').map(s => s.trim()).filter(s => s)
+    const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$|^[0-9a-fA-F:]+(:\/\d{1,3})?$/
+    for (const cidr of cidrs) {
+      if (!cidrRegex.test(cidr)) {
+        forwardAuthError.value = `Invalid CIDR format: ${cidr}`
+        return false
+      }
+    }
+  }
+
+  // Validate logout URL format if provided
+  if (forwardauth.logout_url.trim()) {
+    if (!forwardauth.logout_url.startsWith('http://') && !forwardauth.logout_url.startsWith('https://')) {
+      forwardAuthError.value = 'Logout URL must start with http:// or https://'
+      return false
+    }
+  }
+
+  // Validate field lengths
+  if (forwardauth.trusted_proxies.length > 4096) {
+    forwardAuthError.value = 'Trusted proxies too long (max 4096 characters)'
+    return false
+  }
+  if (forwardauth.admin_groups.length > 1024) {
+    forwardAuthError.value = 'Admin groups too long (max 1024 characters)'
+    return false
+  }
+  if (forwardauth.logout_url.length > 2048) {
+    forwardAuthError.value = 'Logout URL too long (max 2048 characters)'
+    return false
+  }
+
+  return true
+}
+
 async function saveForwardAuth() {
+  if (!validateForwardAuth()) {
+    return
+  }
+
   forwardAuthLoading.value = true
+  forwardAuthError.value = ''
   try {
     await Api.forwardauth_save({
       forward_auth_enabled: forwardauth.enabled,
@@ -512,6 +569,7 @@ async function saveForwardAuth() {
     })
   } catch (e) {
     console.error('Failed to save forward auth settings:', e)
+    forwardAuthError.value = e.response?.data?.error || 'Failed to save settings'
   }
   forwardAuthLoading.value = false
 }

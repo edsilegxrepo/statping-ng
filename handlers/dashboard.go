@@ -23,6 +23,17 @@ import (
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	removeJwtToken(w, r)
+
+	// Check if forward auth logout URL is configured
+	logoutURL := ForwardAuthLogoutURL()
+	if logoutURL != "" {
+		out := make(map[string]string)
+		out["status"] = "success"
+		out["redirect"] = logoutURL
+		returnJson(out, w, r)
+		return
+	}
+
 	out := make(map[string]string)
 	out["status"] = "success"
 	returnJson(out, w, r)

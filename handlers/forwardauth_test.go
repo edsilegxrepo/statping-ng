@@ -14,6 +14,10 @@ import (
 )
 
 func TestForwardAuthExtract(t *testing.T) {
+	// Save and restore original core.App
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	// Setup core with forward auth enabled
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
@@ -131,6 +135,9 @@ func TestForwardAuthExtract(t *testing.T) {
 }
 
 func TestForwardAuthDisabled(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled: null.NewNullBool(false),
@@ -146,6 +153,9 @@ func TestForwardAuthDisabled(t *testing.T) {
 }
 
 func TestIsForwardAuthAdmin(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthAdminGroups: "admins;super-admins;wheel",
@@ -175,6 +185,9 @@ func TestIsForwardAuthAdmin(t *testing.T) {
 }
 
 func TestIsFromForwardAuthTrustedProxy(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthTrustedProxies: "10.0.0.0/8;192.168.1.0/24;172.16.0.1",
@@ -207,6 +220,9 @@ func TestIsFromForwardAuthTrustedProxy(t *testing.T) {
 }
 
 func TestForwardAuthNoTrustedProxies(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
@@ -309,6 +325,9 @@ func TestForwardAuthSaveHandlerInvalidCIDR(t *testing.T) {
 }
 
 func TestCustomHeaderNames(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
@@ -342,6 +361,9 @@ func TestCustomHeaderNames(t *testing.T) {
 // ============================================================================
 
 func TestForwardAuthIPv6TrustedProxies(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
@@ -374,6 +396,9 @@ func TestForwardAuthIPv6TrustedProxies(t *testing.T) {
 }
 
 func TestForwardAuthMixedIPv4IPv6(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
@@ -537,6 +562,10 @@ func TestForwardAuthUserProvisioning(t *testing.T) {
 // ============================================================================
 
 func TestForwardAuthEdgeCases(t *testing.T) {
+	// Save and restore original core.App
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
@@ -617,6 +646,10 @@ func TestForwardAuthEdgeCases(t *testing.T) {
 }
 
 func TestForwardAuthMalformedCIDRs(t *testing.T) {
+	// Save and restore original core.App
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	tests := []struct {
 		name   string
 		cidrs  string
@@ -775,6 +808,10 @@ func TestForwardAuthIntegrationWithScopeName(t *testing.T) {
 // ============================================================================
 
 func TestForwardAuthDefaultHeaderNames(t *testing.T) {
+	// Save and restore original core.App
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
@@ -805,6 +842,10 @@ func TestForwardAuthDefaultHeaderNames(t *testing.T) {
 }
 
 func TestForwardAuthPartialDefaultHeaders(t *testing.T) {
+	// Save and restore original core.App
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
@@ -837,7 +878,7 @@ func TestForwardAuthPartialDefaultHeaders(t *testing.T) {
 // ============================================================================
 
 func TestHasForwardAuth(t *testing.T) {
-	// Use shared test setup
+	// Use shared test setup - this initializes DB and core.App properly
 	ensureHandlerSetup(t)
 
 	// Save and restore original settings
@@ -857,12 +898,15 @@ func TestHasForwardAuth(t *testing.T) {
 	t.Run("returns user and true when valid", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		req.RemoteAddr = "127.0.0.1:12345"
-		req.Header.Set("Remote-User", "hasfahelper")
+		req.Header.Set("Remote-User", "hasfahelper2") // Use unique username
 
 		user, ok := hasForwardAuth(req)
-		assert.True(t, ok)
-		assert.NotNil(t, user)
-		assert.Equal(t, "hasfahelper", user.Username)
+		assert.True(t, ok, "hasForwardAuth should return true for valid request")
+		if !ok {
+			t.Skip("hasForwardAuth returned false, skipping assertions")
+		}
+		require.NotNil(t, user, "user should not be nil")
+		assert.Equal(t, "hasfahelper2", user.Username)
 	})
 
 	t.Run("returns nil and false when disabled", func(t *testing.T) {
@@ -887,4 +931,388 @@ func TestHasForwardAuth(t *testing.T) {
 		assert.False(t, ok)
 		assert.Nil(t, user)
 	})
+}
+
+// ============================================================================
+// Username Validation Tests
+// ============================================================================
+
+func TestIsValidUsername(t *testing.T) {
+	tests := []struct {
+		name     string
+		username string
+		want     bool
+	}{
+		{"valid simple", "john", true},
+		{"valid with numbers", "john123", true},
+		{"valid with underscore", "john_doe", true},
+		{"valid with hyphen", "john-doe", true},
+		{"valid with dot", "john.doe", true},
+		{"valid mixed", "John.Doe-123_test", true},
+		{"empty", "", false},
+		{"too long", strings.Repeat("a", 256), false},
+		{"max length", strings.Repeat("a", 255), true},
+		{"with space", "john doe", false},
+		{"with newline", "john\ndoe", false},
+		{"with carriage return", "john\rdoe", false},
+		{"with tab", "john\tdoe", false},
+		{"with null byte", "john\x00doe", false},
+		{"with unicode", "johñ", false}, // ñ
+		{"with emoji", "john😀", false},
+		{"with angle brackets", "john<script>", false},
+		{"with quotes", "john\"doe", false},
+		{"with semicolon", "john;doe", false},
+		{"sql injection attempt", "admin'--", false},
+		{"path traversal", "../etc/passwd", false},
+		{"only special chars", ".-_", true},
+		{"starts with dot", ".hidden", true},
+		{"starts with hyphen", "-flag", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidUsername(tt.username)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestIsValidEmail(t *testing.T) {
+	tests := []struct {
+		name  string
+		email string
+		want  bool
+	}{
+		{"valid simple", "user@example.com", true},
+		{"valid with plus", "user+tag@example.com", true},
+		{"valid with subdomain", "user@mail.example.com", true},
+		{"valid short tld", "user@example.co", true},
+		{"empty", "", false},
+		{"too long", strings.Repeat("a", 310) + "@example.com", false},
+		{"no @", "userexample.com", false},
+		{"no domain", "user@", false},
+		{"no local part", "@example.com", false},
+		{"double @", "user@@example.com", false},
+		{"with newline", "user\n@example.com", false},
+		{"with space", "user @example.com", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidEmail(tt.email)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestSanitizeDisplayName(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"normal name", "John Doe", "John Doe"},
+		{"with emoji", "John 😀 Doe", "John 😀 Doe"},
+		{"with control chars", "John\x00\x01Doe", "JohnDoe"},
+		{"with newline", "John\nDoe", "JohnDoe"},
+		{"with tab", "John\tDoe", "JohnDoe"},
+		{"too long", strings.Repeat("a", 300), strings.Repeat("a", 255)},
+		{"leading/trailing space", "  John Doe  ", "John Doe"},
+		{"del character", "John\x7fDoe", "JohnDoe"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sanitizeDisplayName(tt.input)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+// ============================================================================
+// CIDR Caching Tests
+// ============================================================================
+
+func TestTrustedNetworksCaching(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
+	// Reset cache state
+	trustedNetworksMu.Lock()
+	trustedNetworks = nil
+	trustedNetworksConfig = ""
+	trustedNetworksMu.Unlock()
+
+	core.App = &core.Core{
+		ForwardAuth: core.ForwardAuth{
+			ForwardAuthEnabled:        null.NewNullBool(true),
+			ForwardAuthHeaderUser:     "Remote-User",
+			ForwardAuthTrustedProxies: "10.0.0.0/8",
+		},
+	}
+
+	// First call should populate cache
+	req1 := httptest.NewRequest("GET", "/", nil)
+	req1.RemoteAddr = "10.1.2.3:12345"
+	req1.Header.Set("Remote-User", "user1")
+	result1 := isFromForwardAuthTrustedProxy(req1)
+	assert.True(t, result1)
+
+	// Check cache was populated
+	trustedNetworksMu.RLock()
+	cachedConfig := trustedNetworksConfig
+	cachedNetworksLen := len(trustedNetworks)
+	trustedNetworksMu.RUnlock()
+
+	assert.Equal(t, "10.0.0.0/8", cachedConfig)
+	assert.Equal(t, 1, cachedNetworksLen)
+
+	// Second call should use cache (same config)
+	req2 := httptest.NewRequest("GET", "/", nil)
+	req2.RemoteAddr = "10.5.6.7:12345"
+	req2.Header.Set("Remote-User", "user2")
+	result2 := isFromForwardAuthTrustedProxy(req2)
+	assert.True(t, result2)
+
+	// Change config - cache should be invalidated
+	core.App.ForwardAuthTrustedProxies = "192.168.0.0/16"
+	req3 := httptest.NewRequest("GET", "/", nil)
+	req3.RemoteAddr = "10.1.2.3:12345" // Now untrusted
+	req3.Header.Set("Remote-User", "user3")
+	result3 := isFromForwardAuthTrustedProxy(req3)
+	assert.False(t, result3)
+
+	trustedNetworksMu.RLock()
+	newCachedConfig := trustedNetworksConfig
+	trustedNetworksMu.RUnlock()
+	assert.Equal(t, "192.168.0.0/16", newCachedConfig)
+}
+
+// ============================================================================
+// IPv4-mapped IPv6 Tests
+// ============================================================================
+
+func TestIPv4MappedIPv6(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
+	core.App = &core.Core{
+		ForwardAuth: core.ForwardAuth{
+			ForwardAuthEnabled:        null.NewNullBool(true),
+			ForwardAuthHeaderUser:     "Remote-User",
+			ForwardAuthTrustedProxies: "10.0.0.0/8",
+		},
+	}
+
+	// IPv4-mapped IPv6 address should be normalized and match IPv4 CIDR
+	req := httptest.NewRequest("GET", "/", nil)
+	req.RemoteAddr = "[::ffff:10.1.2.3]:12345"
+	req.Header.Set("Remote-User", "ipv4mapped")
+
+	result := isFromForwardAuthTrustedProxy(req)
+	assert.True(t, result, "IPv4-mapped IPv6 address should match IPv4 CIDR")
+}
+
+// ============================================================================
+// Rate Limiting Tests
+// ============================================================================
+
+func TestUserCreationRateLimit(t *testing.T) {
+	// Clear rate limiter state
+	userCreationLimiterMu.Lock()
+	userCreationLimiter = make(map[string]*rateLimitEntry)
+	userCreationLimiterMu.Unlock()
+
+	ip := "192.168.1.100"
+
+	// First 10 should be allowed
+	for i := 0; i < 10; i++ {
+		result := checkUserCreationRateLimit(ip)
+		assert.True(t, result, "Request %d should be allowed", i+1)
+	}
+
+	// 11th should be blocked
+	result := checkUserCreationRateLimit(ip)
+	assert.False(t, result, "Request 11 should be blocked")
+
+	// Different IP should still be allowed
+	result2 := checkUserCreationRateLimit("192.168.1.101")
+	assert.True(t, result2, "Different IP should be allowed")
+}
+
+// ============================================================================
+// Input Length Validation Tests
+// ============================================================================
+
+func TestForwardAuthSaveHandlerLengthLimits(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	tests := []struct {
+		name        string
+		field       string
+		value       string
+		expectError bool
+		errorMsg    string
+	}{
+		{"trusted proxies over limit", "trusted_proxies", strings.Repeat("a", 4097), true, "too long"},
+		{"admin groups over limit", "admin_groups", strings.Repeat("a", 1025), true, "too long"},
+		{"logout url over limit", "logout_url", "https://" + strings.Repeat("a", 2050), true, "too long"},
+		{"header name over limit", "header_user", strings.Repeat("X", 129), true, "too long"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := `{"forward_auth_enabled": false`
+			switch tt.field {
+			case "trusted_proxies":
+				body += `, "forward_auth_trusted_proxies": "` + tt.value + `"`
+			case "admin_groups":
+				body += `, "forward_auth_admin_groups": "` + tt.value + `"`
+			case "logout_url":
+				body += `, "forward_auth_logout_url": "` + tt.value + `"`
+			case "header_user":
+				body += `, "forward_auth_header_user": "` + tt.value + `"`
+			}
+			body += `}`
+
+			req := httptest.NewRequest("POST", "/api/forwardauth", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+
+			// Call handler directly to avoid CSRF middleware
+			forwardAuthSaveHandler(rec, req)
+
+			if tt.expectError {
+				assert.Contains(t, rec.Body.String(), tt.errorMsg, "Should reject oversized %s", tt.field)
+			}
+		})
+	}
+}
+
+// ============================================================================
+// Logout URL Validation Tests
+// ============================================================================
+
+func TestForwardAuthLogoutURLValidation(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	tests := []struct {
+		name        string
+		url         string
+		expectError bool
+	}{
+		{"valid https", "https://auth.example.com/logout", false},
+		{"valid http", "http://auth.example.com/logout", false},
+		{"no scheme", "auth.example.com/logout", true},
+		{"javascript scheme", "javascript:alert(1)", true},
+		{"ftp scheme", "ftp://example.com/logout", true},
+		{"empty", "", false}, // Empty is allowed
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := `{"forward_auth_enabled": false, "forward_auth_logout_url": "` + tt.url + `"}`
+
+			req := httptest.NewRequest("POST", "/api/forwardauth", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+
+			// Call handler directly to avoid CSRF middleware
+			forwardAuthSaveHandler(rec, req)
+
+			if tt.expectError {
+				assert.Contains(t, rec.Body.String(), "http", "Should reject invalid URL: %s", tt.url)
+			} else {
+				assert.Equal(t, http.StatusOK, rec.Code, "Should accept valid URL: %s", tt.url)
+			}
+		})
+	}
+}
+
+// ============================================================================
+// Forward Auth Managed User Tests
+// ============================================================================
+
+func TestForwardAuthManagedUserProtection(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	// Save original settings
+	origForwardAuth := core.App.ForwardAuth
+	t.Cleanup(func() {
+		core.App.ForwardAuth = origForwardAuth
+	})
+
+	core.App.ForwardAuth = core.ForwardAuth{
+		ForwardAuthEnabled:        null.NewNullBool(true),
+		ForwardAuthHeaderUser:     "Remote-User",
+		ForwardAuthHeaderGroups:   "Remote-Groups",
+		ForwardAuthAdminGroups:    "admins",
+		ForwardAuthTrustedProxies: "127.0.0.1/32",
+	}
+
+	t.Run("forward auth managed user admin status can be changed", func(t *testing.T) {
+		// Create user via forward auth (will be marked as managed)
+		req1 := httptest.NewRequest("GET", "/", nil)
+		req1.RemoteAddr = "127.0.0.1:12345"
+		req1.Header.Set("Remote-User", "managed_user")
+		req1.Header.Set("Remote-Groups", "admins")
+
+		user1 := forwardAuthUser(req1)
+		require.NotNil(t, user1)
+		assert.True(t, user1.Admin.Bool)
+		assert.True(t, user1.ForwardAuthManaged.Bool)
+
+		// Login again without admin group - should be demoted
+		req2 := httptest.NewRequest("GET", "/", nil)
+		req2.RemoteAddr = "127.0.0.1:12345"
+		req2.Header.Set("Remote-User", "managed_user")
+		req2.Header.Set("Remote-Groups", "users")
+
+		user2 := forwardAuthUser(req2)
+		require.NotNil(t, user2)
+		assert.False(t, user2.Admin.Bool, "Managed user should be demoted")
+	})
+}
+
+// ============================================================================
+// Header Injection Prevention Tests
+// ============================================================================
+
+func TestHeaderInjectionPrevention(t *testing.T) {
+	origApp := core.App
+	t.Cleanup(func() { core.App = origApp })
+
+	core.App = &core.Core{
+		ForwardAuth: core.ForwardAuth{
+			ForwardAuthEnabled:        null.NewNullBool(true),
+			ForwardAuthHeaderUser:     "Remote-User",
+			ForwardAuthTrustedProxies: "127.0.0.1/32",
+		},
+	}
+
+	tests := []struct {
+		name     string
+		username string
+		wantNil  bool
+	}{
+		{"CRLF injection", "user\r\nX-Injected: true", true},
+		{"newline injection", "user\nX-Injected: true", true},
+		{"null byte injection", "user\x00admin", true},
+		{"normal user", "validuser", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/", nil)
+			req.RemoteAddr = "127.0.0.1:12345"
+			req.Header.Set("Remote-User", tt.username)
+
+			info := forwardAuthExtract(req)
+			if tt.wantNil {
+				assert.Nil(t, info, "Should reject malicious username")
+			} else {
+				assert.NotNil(t, info, "Should accept valid username")
+			}
+		})
+	}
 }

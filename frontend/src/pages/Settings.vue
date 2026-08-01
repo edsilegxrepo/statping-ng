@@ -367,8 +367,12 @@ function renewApiKeys() {
 }
 
 async function logout() {
+  let redirectUrl = null
   try {
-    await Api.logout()
+    const response = await Api.logout()
+    if (response.redirect) {
+      redirectUrl = response.redirect
+    }
   } catch (e) {
     console.error('Backend logout failed', e)
   }
@@ -378,6 +382,12 @@ async function logout() {
   store.setUser(false)
   store.setLoggedIn(false)
   cookies.remove('statping_auth')
-  await router.push('/logout')
+
+  // If forward auth logout URL is configured, redirect there
+  if (redirectUrl) {
+    window.location.href = redirectUrl
+  } else {
+    await router.push('/logout')
+  }
 }
 </script>
