@@ -297,6 +297,87 @@
       </div>
     </div>
 
+    <div class="card mb-3">
+      <div class="card-header">
+        <font-awesome-icon
+          @click="expanded.forwardauth = !expanded.forwardauth"
+          :icon="expanded.forwardauth ? 'minus' : 'plus'"
+          class="mr-2 pointer"
+        />
+        Forward Auth (Authelia, Authentik, etc.)
+        <span @click="forwardauth.enabled = !forwardauth.enabled" class="switch switch-sm switch-rd-gr float-right">
+          <input v-model="forwardauth.enabled" type="checkbox" id="switch-forwardauth" :checked="forwardauth.enabled" />
+          <label for="switch-forwardauth" class="mb-0"> </label>
+        </span>
+      </div>
+      <div class="card-body" :class="{ 'd-none': !expanded.forwardauth }">
+        <div class="alert alert-info mb-3">
+          <strong>Forward Auth</strong> enables authentication via reverse proxy headers. Your proxy (Traefik, NGINX, Caddy)
+          authenticates users through Authelia, Authentik, Keycloak, or similar, then passes identity headers to Statping.
+          <br /><br />
+          <strong>Supported providers:</strong> Authelia, Authentik, Keycloak Gatekeeper, OAuth2-proxy, Pomerium, or any
+          proxy that sets <code>Remote-User</code> / <code>X-Auth-*</code> headers.
+        </div>
+
+        <div class="form-group row">
+          <label for="fa_header_user" class="col-sm-4 col-form-label">User Header</label>
+          <div class="col-sm-8">
+            <input v-model="forwardauth.header_user" type="text" class="form-control" id="fa_header_user" placeholder="Remote-User" />
+            <small class="text-muted">Header containing the username</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="fa_header_email" class="col-sm-4 col-form-label">Email Header</label>
+          <div class="col-sm-8">
+            <input v-model="forwardauth.header_email" type="text" class="form-control" id="fa_header_email" placeholder="Remote-Email" />
+            <small class="text-muted">Header containing the user's email</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="fa_header_groups" class="col-sm-4 col-form-label">Groups Header</label>
+          <div class="col-sm-8">
+            <input v-model="forwardauth.header_groups" type="text" class="form-control" id="fa_header_groups" placeholder="Remote-Groups" />
+            <small class="text-muted">Header containing comma-separated group names</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="fa_header_name" class="col-sm-4 col-form-label">Display Name Header</label>
+          <div class="col-sm-8">
+            <input v-model="forwardauth.header_name" type="text" class="form-control" id="fa_header_name" placeholder="Remote-Name" />
+            <small class="text-muted">Header containing the user's display name</small>
+          </div>
+        </div>
+
+        <hr />
+
+        <div class="form-group row">
+          <label for="fa_admin_groups" class="col-sm-4 col-form-label">Admin Groups</label>
+          <div class="col-sm-8">
+            <input v-model="forwardauth.admin_groups" type="text" class="form-control" id="fa_admin_groups" placeholder="admins;statping-admins" />
+            <small class="text-muted">Semicolon-separated group names that grant admin access</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="fa_trusted_proxies" class="col-sm-4 col-form-label">Trusted Proxies</label>
+          <div class="col-sm-8">
+            <input v-model="forwardauth.trusted_proxies" type="text" class="form-control" id="fa_trusted_proxies" placeholder="10.0.0.0/8;172.16.0.0/12;192.168.0.0/16" required />
+            <small class="text-muted"><strong>Required.</strong> CIDR ranges (semicolon-separated) from which to accept auth headers. Headers from other IPs are ignored.</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="fa_logout_url" class="col-sm-4 col-form-label">Logout URL</label>
+          <div class="col-sm-8">
+            <input v-model="forwardauth.logout_url" type="text" class="form-control" id="fa_logout_url" placeholder="https://auth.example.com/logout" />
+            <small class="text-muted">Optional URL to redirect users on logout</small>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" @click.prevent="saveForwardAuth" :disabled="forwardAuthLoading">
+          <font-awesome-icon v-if="forwardAuthLoading" icon="circle-notch" class="mr-2" spin /> Save Forward Auth Settings
+        </button>
+      </div>
+    </div>
+
     <button class="btn btn-primary btn-block" @click.prevent="saveOAuth" type="submit" :disabled="loading">
       <font-awesome-icon v-if="loading" icon="circle-notch" class="mr-2" spin /> Save OAuth Settings
     </button>
@@ -318,6 +399,7 @@ const github_enabled = ref(false)
 const local_enabled = ref(false)
 const custom_enabled = ref(false)
 const loading = ref(false)
+const forwardAuthLoading = ref(false)
 
 const expanded = reactive({
   github: false,
@@ -325,6 +407,18 @@ const expanded = reactive({
   slack: false,
   custom: false,
   openid: false,
+  forwardauth: false,
+})
+
+const forwardauth = reactive({
+  enabled: false,
+  header_user: 'Remote-User',
+  header_email: 'Remote-Email',
+  header_groups: 'Remote-Groups',
+  header_name: 'Remote-Name',
+  admin_groups: '',
+  trusted_proxies: '',
+  logout_url: '',
 })
 
 const oauth = reactive({
@@ -357,6 +451,21 @@ onMounted(async () => {
   google_enabled.value = has('google')
   slack_enabled.value = has('slack')
   custom_enabled.value = has('custom')
+
+  // Load forward auth settings
+  try {
+    const faData = await Api.forwardauth()
+    forwardauth.enabled = faData.forward_auth_enabled || false
+    forwardauth.header_user = faData.forward_auth_header_user || 'Remote-User'
+    forwardauth.header_email = faData.forward_auth_header_email || 'Remote-Email'
+    forwardauth.header_groups = faData.forward_auth_header_groups || 'Remote-Groups'
+    forwardauth.header_name = faData.forward_auth_header_name || 'Remote-Name'
+    forwardauth.admin_groups = faData.forward_auth_admin_groups || ''
+    forwardauth.trusted_proxies = faData.forward_auth_trusted_proxies || ''
+    forwardauth.logout_url = faData.forward_auth_logout_url || ''
+  } catch (e) {
+    console.log('Forward auth settings not available')
+  }
 })
 
 function providers() {
@@ -386,6 +495,25 @@ async function saveOAuth() {
   const data = await Api.oauth()
   store.setOAuth(data)
   loading.value = false
+}
+
+async function saveForwardAuth() {
+  forwardAuthLoading.value = true
+  try {
+    await Api.forwardauth_save({
+      forward_auth_enabled: forwardauth.enabled,
+      forward_auth_header_user: forwardauth.header_user,
+      forward_auth_header_email: forwardauth.header_email,
+      forward_auth_header_groups: forwardauth.header_groups,
+      forward_auth_header_name: forwardauth.header_name,
+      forward_auth_admin_groups: forwardauth.admin_groups,
+      forward_auth_trusted_proxies: forwardauth.trusted_proxies,
+      forward_auth_logout_url: forwardauth.logout_url,
+    })
+  } catch (e) {
+    console.error('Failed to save forward auth settings:', e)
+  }
+  forwardAuthLoading.value = false
 }
 </script>
 

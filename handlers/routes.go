@@ -132,6 +132,10 @@ func Router() *mux.Router {
 	api.Handle("/api/logship", authenticated(apiLogShipSaveHandler, false)).Methods("POST")
 	api.Handle("/api/logship/test", authenticated(apiLogShipTestHandler, false)).Methods("POST")
 
+	// API Forward Auth Routes
+	api.Handle("/api/forwardauth", authenticated(forwardAuthSettingsHandler, false)).Methods("GET")
+	api.Handle("/api/forwardauth", authenticated(forwardAuthSaveHandler, false)).Methods("POST")
+
 	// API SCSS and ASSETS Routes
 	api.Handle("/api/theme", authenticated(apiThemeViewHandler, false)).Methods("GET")
 	api.Handle("/api/theme", authenticated(apiThemeSaveHandler, false)).Methods("POST")

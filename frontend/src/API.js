@@ -318,6 +318,14 @@ class Api {
     return axios.post('api/logship/test', data).then((response) => response.data)
   }
 
+  async forwardauth() {
+    return axios.get('api/forwardauth').then((response) => response.data)
+  }
+
+  async forwardauth_save(data) {
+    return axios.post('api/forwardauth', data).then((response) => response.data)
+  }
+
   async settings_export() {
     return axios.get('api/settings/export').then((response) => response.data)
   }

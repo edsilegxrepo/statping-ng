@@ -1,4 +1,12 @@
 # 0.97.2 (07-31-2026)
+- **New: Forward Auth (Authelia, Authentik, etc.)**:
+  - Enables authentication via reverse proxy headers from SSO providers
+  - Supports Authelia, Authentik, Keycloak Gatekeeper, OAuth2-proxy, Pomerium
+  - Configurable header names (default: `Remote-User`, `Remote-Email`, `Remote-Groups`, `Remote-Name`)
+  - Group-to-admin mapping with semicolon-separated admin groups
+  - Trusted proxy CIDR validation (required for security)
+  - Auto-provision users on first login, update admin status from groups
+  - UI configuration in Settings > Authentication
 - **Test Isolation: Eliminated Test Pollution**:
   - Added `TestMain()` functions with temp directories to all test packages
   - Tests now use `os.MkdirTemp()` instead of writing to repo root

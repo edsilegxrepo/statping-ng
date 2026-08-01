@@ -110,6 +110,10 @@ func IsFullAuthenticated(r *http.Request) bool {
 	if ok := hasAuthorizationHeader(r); ok {
 		return true
 	}
+	// Check forward auth (Authelia, Authentik, etc.)
+	if user, ok := hasForwardAuth(r); ok && user.Admin.Bool {
+		return true
+	}
 	claim, err := getJwtToken(r)
 	if err != nil {
 		return false
@@ -125,6 +129,13 @@ func ScopeName(r *http.Request) string {
 	}
 	if ok := hasAuthorizationHeader(r); ok {
 		return "admin"
+	}
+	// Check forward auth
+	if user, ok := hasForwardAuth(r); ok {
+		if user.Admin.Bool {
+			return "admin"
+		}
+		return "user"
 	}
 	claim, err := getJwtToken(r)
 	if err != nil {
@@ -154,6 +165,10 @@ func IsUser(r *http.Request) bool {
 		return true
 	}
 	if ok := hasAuthorizationHeader(r); ok {
+		return true
+	}
+	// Check forward auth
+	if _, ok := hasForwardAuth(r); ok {
 		return true
 	}
 	_, err := getJwtToken(r)

@@ -47,6 +47,7 @@ type Core struct {
 	OAuth       `json:"-"`
 	LDAP        `json:"-"`
 	LogShipping `json:"-"`
+	ForwardAuth `json:"-"`
 }
 
 type LDAP struct {
@@ -74,6 +75,19 @@ type LogShipping struct {
 	LogShipIndex      string        `gorm:"column:log_ship_index" json:"log_ship_index"`                     // Splunk index
 	LogShipSourcetype string        `gorm:"column:log_ship_sourcetype" json:"log_ship_sourcetype"`           // Splunk/Cribl sourcetype
 	LogShipLabels     string        `gorm:"column:log_ship_labels" json:"log_ship_labels"`                   // key=value,key2=value2
+}
+
+// ForwardAuth enables authentication via reverse proxy headers (Authelia, Authentik, etc.)
+// The proxy authenticates users (LDAP, OIDC, SAML, local) and passes identity via headers.
+type ForwardAuth struct {
+	ForwardAuthEnabled       null.NullBool `gorm:"column:forward_auth_enabled;default:false" json:"forward_auth_enabled"`
+	ForwardAuthHeaderUser    string        `gorm:"column:forward_auth_header_user;default:Remote-User" json:"forward_auth_header_user"`
+	ForwardAuthHeaderEmail   string        `gorm:"column:forward_auth_header_email;default:Remote-Email" json:"forward_auth_header_email"`
+	ForwardAuthHeaderGroups  string        `gorm:"column:forward_auth_header_groups;default:Remote-Groups" json:"forward_auth_header_groups"`
+	ForwardAuthHeaderName    string        `gorm:"column:forward_auth_header_name;default:Remote-Name" json:"forward_auth_header_name"`
+	ForwardAuthAdminGroups   string        `gorm:"column:forward_auth_admin_groups" json:"forward_auth_admin_groups"`     // Semicolon-separated
+	ForwardAuthTrustedProxies string       `gorm:"column:forward_auth_trusted_proxies" json:"forward_auth_trusted_proxies"` // CIDR ranges, semicolon-separated
+	ForwardAuthLogoutURL     string        `gorm:"column:forward_auth_logout_url" json:"forward_auth_logout_url"`
 }
 
 type OAuth struct {

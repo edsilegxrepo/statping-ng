@@ -63,3 +63,9 @@ func hasAuthorizationHeader(r *http.Request) bool {
 	}
 	return false
 }
+
+// hasForwardAuth checks for valid forward auth headers from a trusted proxy
+func hasForwardAuth(r *http.Request) (*users.User, bool) {
+	user := forwardAuthUser(r)
+	return user, user != nil
+}
