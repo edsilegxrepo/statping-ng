@@ -61,8 +61,8 @@ func RunHTTPServer() error {
 
 	ip := utils.Params.GetString("SERVER_IP")
 	host := fmt.Sprintf("%v:%v", ip, utils.Params.GetInt("SERVER_PORT"))
-	key := utils.FileExists(utils.Directory + "/server.key")
-	cert := utils.FileExists(utils.Directory + "/server.crt")
+	key := utils.FileExists(utils.DirPath("server.key"))
+	cert := utils.FileExists(utils.DirPath("server.crt"))
 
 	if key && cert {
 		log.Infoln("server.cert and server.key was found in root directory! Starting in SSL mode.")
@@ -215,7 +215,7 @@ func ExecuteResponse(w http.ResponseWriter, r *http.Request, file string, data i
 	asset := file
 	if source.UsingAssets(utils.Directory) {
 
-		asset = utils.Directory + "/assets/" + file
+		asset = utils.DirPath("assets", file)
 
 		if _, err := mainTemplate.ParseFiles(asset); err != nil {
 			log.Errorln(err)

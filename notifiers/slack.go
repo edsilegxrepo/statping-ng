@@ -16,8 +16,10 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
-var _ notifier.Notifier = (*slack)(nil)
-var _ notifier.DigestNotifier = (*slack)(nil)
+var (
+	_ notifier.Notifier       = (*slack)(nil)
+	_ notifier.DigestNotifier = (*slack)(nil)
+)
 
 const (
 	slackMethod = "slack"

@@ -66,8 +66,8 @@ func TestEncryptDecryptWithKey(t *testing.T) {
 
 func TestDecryptPlaintextPassthrough(t *testing.T) {
 	// Set up master key for this test
-	os.Setenv("STATPING_MASTER_KEY", testKeyHex)
-	defer os.Unsetenv("STATPING_MASTER_KEY")
+	_ = os.Setenv("STATPING_MASTER_KEY", testKeyHex)
+	defer func() { _ = os.Unsetenv("STATPING_MASTER_KEY") }()
 	ResetMasterKey()
 	require.NoError(t, InitMasterKey())
 	defer ZeroMasterKey()
@@ -126,8 +126,8 @@ func TestInitMasterKeyFromEnv(t *testing.T) {
 	// Clean state
 	ResetMasterKey()
 
-	os.Setenv("STATPING_MASTER_KEY", testKeyHex)
-	defer os.Unsetenv("STATPING_MASTER_KEY")
+	_ = os.Setenv("STATPING_MASTER_KEY", testKeyHex)
+	defer func() { _ = os.Unsetenv("STATPING_MASTER_KEY") }()
 
 	err := InitMasterKey()
 	require.NoError(t, err)
@@ -158,11 +158,11 @@ func TestInitMasterKeyFromFile(t *testing.T) {
 	// Create temp key file
 	tmpDir := t.TempDir()
 	keyFile := filepath.Join(tmpDir, "master.key")
-	err := os.WriteFile(keyFile, []byte(testKeyHex), 0400)
+	err := os.WriteFile(keyFile, []byte(testKeyHex), 0o400)
 	require.NoError(t, err)
 
-	os.Setenv("STATPING_MASTER_KEY_FILE", keyFile)
-	defer os.Unsetenv("STATPING_MASTER_KEY_FILE")
+	_ = os.Setenv("STATPING_MASTER_KEY_FILE", keyFile)
+	defer func() { _ = os.Unsetenv("STATPING_MASTER_KEY_FILE") }()
 
 	err = InitMasterKey()
 	require.NoError(t, err)
@@ -184,8 +184,8 @@ func TestInitMasterKeyNotFound(t *testing.T) {
 	ResetMasterKey()
 
 	// Ensure no key sources
-	os.Unsetenv("STATPING_MASTER_KEY")
-	os.Unsetenv("STATPING_MASTER_KEY_FILE")
+	_ = os.Unsetenv("STATPING_MASTER_KEY")
+	_ = os.Unsetenv("STATPING_MASTER_KEY_FILE")
 
 	// Save and restore Directory
 	oldDir := Directory
@@ -199,8 +199,8 @@ func TestInitMasterKeyNotFound(t *testing.T) {
 
 func TestEncryptDecryptRoundTrip(t *testing.T) {
 	// Set up master key
-	os.Setenv("STATPING_MASTER_KEY", testKeyHex)
-	defer os.Unsetenv("STATPING_MASTER_KEY")
+	_ = os.Setenv("STATPING_MASTER_KEY", testKeyHex)
+	defer func() { _ = os.Unsetenv("STATPING_MASTER_KEY") }()
 	ResetMasterKey()
 	require.NoError(t, InitMasterKey())
 	defer ZeroMasterKey()
@@ -233,4 +233,3 @@ func TestDifferentKeysCannotDecrypt(t *testing.T) {
 	_, err = DecryptWithKey(encrypted, key2)
 	assert.Error(t, err, "decryption with wrong key should fail")
 }
-

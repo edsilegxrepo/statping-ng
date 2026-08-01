@@ -53,7 +53,7 @@ func setupTestDB(t *testing.T) database.Database {
 
 func TestSetDB(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	assert.NotNil(t, DB())
 	assert.Equal(t, testDb, db)
@@ -61,7 +61,7 @@ func TestSetDB(t *testing.T) {
 
 func TestDB(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	result := DB()
 	assert.NotNil(t, result)
@@ -69,7 +69,7 @@ func TestDB(t *testing.T) {
 
 func TestFailure_Create(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	f := &Failure{
 		Issue:     "Connection timeout",
@@ -89,7 +89,7 @@ func TestFailure_Create(t *testing.T) {
 
 func TestFailure_Update(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	f := &Failure{
 		Issue:     "Original issue",
@@ -113,7 +113,7 @@ func TestFailure_Update(t *testing.T) {
 
 func TestFailure_Delete(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	f := &Failure{
 		Issue:     "To be deleted",
@@ -167,7 +167,7 @@ func TestFailure_AfterCreate(t *testing.T) {
 
 func TestFailurer_Db(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	failurer := Failurer{db: testDb.Model(&Failure{})}
 	assert.NotNil(t, failurer.Db())
@@ -175,7 +175,7 @@ func TestFailurer_Db(t *testing.T) {
 
 func TestFailurer_First(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create multiple failures
 	for i := 0; i < 3; i++ {
@@ -198,7 +198,7 @@ func TestFailurer_First(t *testing.T) {
 
 func TestFailurer_Last(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create multiple failures
 	for i := 0; i < 3; i++ {
@@ -221,7 +221,7 @@ func TestFailurer_Last(t *testing.T) {
 
 func TestFailurer_List(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create failures for different services
 	for i := 0; i < 5; i++ {
@@ -250,7 +250,7 @@ func TestFailurer_List(t *testing.T) {
 
 func TestFailurer_LastAmount(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create 5 failures
 	for i := 0; i < 5; i++ {
@@ -272,7 +272,7 @@ func TestFailurer_LastAmount(t *testing.T) {
 
 func TestFailurer_Since(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	now := time.Now()
 	// Create old failure
@@ -302,7 +302,7 @@ func TestFailurer_Since(t *testing.T) {
 
 func TestFailurer_Count(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create failures
 	for i := 0; i < 7; i++ {
@@ -322,7 +322,7 @@ func TestFailurer_Count(t *testing.T) {
 
 func TestFailurer_DeleteAll(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create failures for service 1
 	for i := 0; i < 5; i++ {
@@ -366,7 +366,7 @@ func TestFailurer_DeleteAll(t *testing.T) {
 
 func TestAllFailures(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create failures for a service
 	for i := 0; i < 4; i++ {
@@ -389,7 +389,7 @@ func TestAllFailures(t *testing.T) {
 
 func TestSince(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	now := time.Now()
 	// Create old failure
@@ -491,7 +491,7 @@ func TestExample(t *testing.T) {
 
 func TestSamples(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	err := Samples()
 	require.NoError(t, err)
@@ -509,7 +509,7 @@ func TestSamples(t *testing.T) {
 
 func TestFailurer_EmptyResults(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Test with non-existent service
 	failurer := Failurer{db: testDb.Model(&Failure{}).Where("service = ?", 999)}
@@ -529,7 +529,7 @@ func TestFailurer_EmptyResults(t *testing.T) {
 
 func TestFailure_AllFields(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	now := time.Now()
 	f := &Failure{
@@ -563,7 +563,7 @@ func TestFailure_AllFields(t *testing.T) {
 
 func TestFailurer_DeleteAll_Empty(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Try to delete from empty table
 	failurer := Failurer{db: testDb.Model(&Failure{}).Where("service = ?", 999)}
@@ -574,7 +574,7 @@ func TestFailurer_DeleteAll_Empty(t *testing.T) {
 
 func TestAllFailures_Checkin(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create failures for a checkin
 	for i := 0; i < 3; i++ {

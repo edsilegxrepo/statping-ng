@@ -27,7 +27,7 @@ func isSecureRequest(r *http.Request) bool {
 }
 
 func removeJwtToken(w http.ResponseWriter, r *http.Request) {
-	c := http.Cookie{
+	c := http.Cookie{ // #nosec G124 - HttpOnly, Secure, SameSite are set below
 		Name:     cookieName,
 		Value:    "deleted",
 		Expires:  time.Unix(0, 0),
@@ -69,7 +69,7 @@ func setJwtToken(user *users.User, w http.ResponseWriter, r *http.Request) (JwtC
 		log.Errorln("error setting token: ", err)
 	}
 	user.Token = tokenString
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 - HttpOnly, Secure, SameSite are set below
 		Name:     cookieName,
 		Value:    tokenString,
 		Expires:  expirationTime,

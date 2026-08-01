@@ -131,10 +131,10 @@ func TestGetClientIP(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name     string
-		headers  map[string]string
+		name       string
+		headers    map[string]string
 		remoteAddr string
-		expected string
+		expected   string
 	}{
 		{
 			name:       "X-Forwarded-For single IP from trusted proxy",

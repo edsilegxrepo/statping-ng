@@ -156,7 +156,7 @@ func TestCSRFMiddlewareUsesXForwardedHost(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/api/test", nil)
 	req.RemoteAddr = "192.0.2.1:12345" // From trusted proxy
-	req.Host = "127.0.0.1:8080" // Internal host
+	req.Host = "127.0.0.1:8080"        // Internal host
 	req.Header.Set("X-Forwarded-Host", "statping.example.com")
 	req.Header.Set("Origin", "https://statping.example.com")
 	rr := httptest.NewRecorder()

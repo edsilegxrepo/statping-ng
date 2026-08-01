@@ -18,7 +18,6 @@ type LogShipper struct {
 	shipType   string // "loki", "elasticsearch", "splunk", "cribl", "webhook"
 	endpoint   string
 	authToken  string
-	splunkHEC  string // Splunk HEC token (separate from authToken for clarity)
 	labels     map[string]string
 	batchSize  int
 	buffer     []logEntry
@@ -234,7 +233,7 @@ func (s *LogShipper) sendToLoki(entries []logEntry) error {
 	for i, e := range entries {
 		// Loki expects [timestamp_ns, log_line]
 		ts := fmt.Sprintf("%d", e.Timestamp.UnixNano())
-		line := e.Message
+		var line string
 		if len(e.Fields) > 0 {
 			fieldsJSON, _ := json.Marshal(e.Fields)
 			line = fmt.Sprintf("[%s] %s %s", e.Level, e.Message, string(fieldsJSON))
@@ -369,7 +368,7 @@ func (s *LogShipper) doSplunkRequest(url string, body []byte) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("splunk HEC failed: HTTP %d", resp.StatusCode)
@@ -459,7 +458,7 @@ func (s *LogShipper) doRequest(method, url string, body []byte) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("log shipping failed: HTTP %d", resp.StatusCode)

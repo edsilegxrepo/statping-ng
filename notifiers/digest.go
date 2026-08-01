@@ -202,8 +202,6 @@ func calculateNextDigestTime(now time.Time) time.Time {
 
 // digestData is a local type alias for template rendering
 type digestData = notifier.DigestData
-type serviceDigest = notifier.ServiceDigest
-type appError = notifier.AppError
 
 func sendDailyDigest() {
 	c := core.App
@@ -420,16 +418,16 @@ func SendTestDigest() error {
 
 // SMTPDiagResult contains SMTP diagnostic results
 type SMTPDiagResult struct {
-	Host           string `json:"host"`
-	Port           int    `json:"port"`
-	Connected      bool   `json:"connected"`
-	Banner         string `json:"banner,omitempty"`
-	TLSSupported   bool   `json:"tls_supported"`
-	TLSRequired    bool   `json:"tls_required"`
-	AuthSupported  bool   `json:"auth_supported"`
-	AuthMethods    string `json:"auth_methods,omitempty"`
-	AuthSuccess    bool   `json:"auth_success,omitempty"`
-	Error          string `json:"error,omitempty"`
+	Host            string   `json:"host"`
+	Port            int      `json:"port"`
+	Connected       bool     `json:"connected"`
+	Banner          string   `json:"banner,omitempty"`
+	TLSSupported    bool     `json:"tls_supported"`
+	TLSRequired     bool     `json:"tls_required"`
+	AuthSupported   bool     `json:"auth_supported"`
+	AuthMethods     string   `json:"auth_methods,omitempty"`
+	AuthSuccess     bool     `json:"auth_success,omitempty"`
+	Error           string   `json:"error,omitempty"`
 	Recommendations []string `json:"recommendations,omitempty"`
 }
 
@@ -463,12 +461,12 @@ func TestSMTPConnection() *SMTPDiagResult {
 		}
 		return result
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	result.Connected = true
 
 	// Set read deadline
-	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	_ = conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 
 	// Read server banner
 	reader := bufio.NewReader(conn)
@@ -489,19 +487,17 @@ func TestSMTPConnection() *SMTPDiagResult {
 	}
 
 	// Send EHLO to get capabilities
-	conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	fmt.Fprintf(conn, "EHLO localhost\r\n")
+	_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	_, _ = fmt.Fprintf(conn, "EHLO localhost\r\n")
 
 	// Read EHLO response (multi-line)
-	var capabilities []string
 	for {
-		conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+		_ = conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			break
 		}
 		line = strings.TrimSpace(line)
-		capabilities = append(capabilities, line)
 
 		// Check for TLS support
 		if strings.Contains(strings.ToUpper(line), "STARTTLS") {
@@ -555,7 +551,7 @@ func TestSMTPConnection() *SMTPDiagResult {
 	}
 
 	// Send QUIT
-	fmt.Fprintf(conn, "QUIT\r\n")
+	_, _ = fmt.Fprintf(conn, "QUIT\r\n")
 
 	return result
 }

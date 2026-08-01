@@ -162,9 +162,9 @@ func (rl *rateLimiter) resetTime(ip string) time.Time {
 // trustedProxies contains IP ranges that are trusted to set X-Forwarded-For
 // Set TRUSTED_PROXIES env var to comma-separated CIDR ranges (e.g., "10.0.0.0/8,192.168.0.0/16")
 var (
-	trustedProxyCIDRs     []*net.IPNet
-	trustedProxiesLoaded  bool
-	trustedProxiesLoadMu  sync.Mutex
+	trustedProxyCIDRs    []*net.IPNet
+	trustedProxiesLoaded bool
+	trustedProxiesLoadMu sync.Mutex
 )
 
 // loadTrustedProxies parses TRUSTED_PROXIES from environment (called lazily)

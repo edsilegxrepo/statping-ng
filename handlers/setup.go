@@ -92,16 +92,16 @@ func processSetupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := &core.Core{
-		Name:         project,
-		Description:  description,
-		ApiSecret:    utils.Params.GetString("API_SECRET"),
-		Domain:       domain,
-		Version:      core.App.Version,
-		Started:      utils.Now(),
-		CreatedAt:    utils.Now(),
-		Footer:       null.NewNullString(""),
-		Language:     confgs.Language,
-		MigrationId:  utils.Params.GetInt64("MIGRATION_ID"),
+		Name:        project,
+		Description: description,
+		ApiSecret:   utils.Params.GetString("API_SECRET"),
+		Domain:      domain,
+		Version:     core.App.Version,
+		Started:     utils.Now(),
+		CreatedAt:   utils.Now(),
+		Footer:      null.NewNullString(""),
+		Language:    confgs.Language,
+		MigrationId: utils.Params.GetInt64("MIGRATION_ID"),
 	}
 
 	log.Infoln("Creating new Core")

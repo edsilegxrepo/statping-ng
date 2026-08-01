@@ -270,7 +270,7 @@ func TestThemeSaveHandler(t *testing.T) {
 			Body:             validThemeBody,
 			ExpectedStatus:   200,
 			ExpectedContains: []string{`"status":"success"`, `"method":"saved"`},
-			BeforeTest: SetTestENV,
+			BeforeTest:       SetTestENV,
 		},
 		{
 			Name:             "Save Theme - Empty Body",

@@ -9,15 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupTestDB(t *testing.T) database.Database {
-	testDB, err := database.OpenTester()
-	require.NoError(t, err)
-	q := testDB.AutoMigrate(&Core{})
-	require.NoError(t, q.Error())
-	SetDB(testDB)
-	return testDB
-}
-
 func TestNew(t *testing.T) {
 	_ = utils.InitLogs()
 

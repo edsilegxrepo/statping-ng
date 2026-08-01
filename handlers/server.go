@@ -24,15 +24,16 @@ func startServer(host string) error {
 }
 
 func letsEncryptCert() (*tls.Config, error) {
-	if !utils.FolderExists(utils.Directory + "/certs") {
-		if err := utils.CreateDirectory(utils.Directory + "/certs"); err != nil {
+	certsDir := utils.DirPath("certs")
+	if !utils.FolderExists(certsDir) {
+		if err := utils.CreateDirectory(certsDir); err != nil {
 			return nil, err
 		}
 	}
 
 	cfg := simplecert.Default
 	cfg.Domains = strings.Split(utils.Params.GetString("LETSENCRYPT_HOST"), ",")
-	cfg.CacheDir = utils.Directory + "/certs"
+	cfg.CacheDir = certsDir
 	cfg.SSLEmail = utils.Params.GetString("LETSENCRYPT_EMAIL")
 	cfg.Local = utils.Params.GetBool("LETSENCRYPT_LOCAL")
 	cfg.WillRenewCertificate = func() {
@@ -116,8 +117,8 @@ func startSSLServer(ip string) error {
 		IdleTimeout:  timeout,
 	}
 
-	certFile := utils.Directory + "/server.crt"
-	keyFile := utils.Directory + "/server.key"
+	certFile := utils.DirPath("server.crt")
+	keyFile := utils.DirPath("server.key")
 
 	return srv.ListenAndServeTLS(certFile, keyFile)
 }

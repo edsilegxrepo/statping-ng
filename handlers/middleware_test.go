@@ -14,7 +14,7 @@ import (
 
 func TestGzipMiddleware(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
+		_, _ = w.Write([]byte("Hello, World!"))
 	})
 
 	t.Run("With gzip Accept-Encoding", func(t *testing.T) {
@@ -28,7 +28,7 @@ func TestGzipMiddleware(t *testing.T) {
 
 		reader, err := gzip.NewReader(rr.Body)
 		require.Nil(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		body, err := io.ReadAll(reader)
 		require.Nil(t, err)
@@ -56,5 +56,5 @@ func TestGzipResponseWriter(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 9, n)
-	gz.Close()
+	_ = gz.Close()
 }

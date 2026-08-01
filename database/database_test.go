@@ -618,7 +618,7 @@ func TestMigrationEdgeCases(t *testing.T) {
 		assert.False(t, db.HasTable(&TempModel{}))
 
 		// Drop again - should not error
-		err = db.DropTableIfExists(&TempModel{}).Error()
+		_ = db.DropTableIfExists(&TempModel{}).Error()
 		// SQLite may or may not error on dropping non-existent table
 	})
 
@@ -930,7 +930,7 @@ func TestRawSQLExecutionErrorHandling(t *testing.T) {
 
 		rows, err := db.Raw("SELECT name, value FROM test_models WHERE name LIKE ?", "rows_test%").Rows()
 		require.NoError(t, err)
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 
 		count := 0
 		for rows.Next() {
@@ -954,7 +954,7 @@ func TestRawSQLExecutionErrorHandling(t *testing.T) {
 
 		rows, err := db.Raw("SELECT * FROM test_models WHERE name = ?", "scanrows_test").Rows()
 		require.NoError(t, err)
-		defer rows.Close()
+		defer func() { _ = rows.Close() }()
 
 		for rows.Next() {
 			var model TestModel

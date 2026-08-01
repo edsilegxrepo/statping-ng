@@ -32,14 +32,14 @@ func TestForwardAuthExtract(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		headers       map[string]string
-		remoteAddr    string
-		wantUser      bool
-		wantUsername  string
-		wantEmail     string
-		wantGroups    []string
-		wantAdmin     bool
+		name         string
+		headers      map[string]string
+		remoteAddr   string
+		wantUser     bool
+		wantUsername string
+		wantEmail    string
+		wantGroups   []string
+		wantAdmin    bool
 	}{
 		{
 			name: "valid headers from trusted proxy",
@@ -651,9 +651,9 @@ func TestForwardAuthMalformedCIDRs(t *testing.T) {
 	t.Cleanup(func() { core.App = origApp })
 
 	tests := []struct {
-		name   string
-		cidrs  string
-		valid  bool
+		name  string
+		cidrs string
+		valid bool
 	}{
 		{"valid single CIDR", "10.0.0.0/8", true},
 		{"valid multiple CIDRs", "10.0.0.0/8;192.168.0.0/16", true},
@@ -849,10 +849,10 @@ func TestForwardAuthPartialDefaultHeaders(t *testing.T) {
 	core.App = &core.Core{
 		ForwardAuth: core.ForwardAuth{
 			ForwardAuthEnabled:        null.NewNullBool(true),
-			ForwardAuthHeaderUser:     "X-Custom-User", // Custom
-			ForwardAuthHeaderEmail:    "",              // Default
+			ForwardAuthHeaderUser:     "X-Custom-User",   // Custom
+			ForwardAuthHeaderEmail:    "",                // Default
 			ForwardAuthHeaderGroups:   "X-Custom-Groups", // Custom
-			ForwardAuthHeaderName:     "",              // Default
+			ForwardAuthHeaderName:     "",                // Default
 			ForwardAuthTrustedProxies: "127.0.0.1/32",
 		},
 	}

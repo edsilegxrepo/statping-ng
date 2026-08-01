@@ -54,15 +54,6 @@ func (m *mockNotifier) Valid(form notifications.Values) error {
 	return nil
 }
 
-func (m *mockNotifier) reset() {
-	m.successCalls = 0
-	m.failureCalls = 0
-	m.saveCalls = 0
-	m.testCalls = 0
-	m.Notification.LastSentCount = 0
-	m.Notification.Logs = nil
-}
-
 func newMockNotifier(method string, enabled bool) *mockNotifier {
 	return &mockNotifier{
 		Notification: &notifications.Notification{
@@ -147,7 +138,7 @@ func TestUpdateNotifiers(t *testing.T) {
 
 		// Add notifier to registry with different values
 		mock := newMockNotifier("test_update", false)
-		mock.Notification.Limits = 10
+		mock.Limits = 10
 		AddNotifier(mock)
 
 		// Run update
@@ -190,7 +181,7 @@ func TestUpdateNotifiers(t *testing.T) {
 			_ = db.Create(dbNotif).Error()
 
 			mock := newMockNotifier(method, false)
-			mock.Notification.Limits = 1
+			mock.Limits = 1
 			AddNotifier(mock)
 		}
 
@@ -625,8 +616,8 @@ func TestNotificationLimits(t *testing.T) {
 	t.Run("respects rate limit", func(t *testing.T) {
 		clearAllNotifiers()
 		mock := newMockNotifier("test_rate_limit", true)
-		mock.Notification.Limits = 2
-		mock.Notification.LastSentCount = 0
+		mock.Limits = 2
+		mock.LastSentCount = 0
 		AddNotifier(mock)
 
 		dbNotif := &notifications.Notification{Method: "test_rate_limit", Enabled: null.NewNullBool(true), Limits: 2}

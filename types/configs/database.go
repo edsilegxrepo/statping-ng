@@ -64,7 +64,7 @@ func createSamples(sm ...SamplerFunc) error {
 // Migrate function
 func (d *DbConfig) Update() error {
 	var err error
-	config, err := os.Create(utils.Directory + "/config.yml")
+	config, err := os.Create(utils.DirPath("config.yml"))
 	if err != nil {
 		return err
 	}

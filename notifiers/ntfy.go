@@ -110,7 +110,7 @@ func (n *ntfyNotifier) sendNtfy(title, message string, isFailure bool) error {
 
 	priority := priorityToInt(n.Var2.String)
 
-	tags := []string{"loudspeaker"}
+	var tags []string
 	if isFailure {
 		tags = []string{"rotating_light", "warning"}
 	} else {
@@ -147,7 +147,7 @@ func (n *ntfyNotifier) sendNtfy(title, message string, isFailure bool) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("ntfy returned status %d", resp.StatusCode)

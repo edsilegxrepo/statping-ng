@@ -14,7 +14,6 @@ import (
 var distFS embed.FS
 
 var (
-	log           = utils.Log.WithField("type", "source")
 	TmplBox       fs.FS // Embedded files from 'source/dist' directory
 	RequiredFiles = []string{
 		"robots.txt",

@@ -123,12 +123,12 @@ func TestOAuthLoginRoutes(t *testing.T) {
 
 	tests := []HTTPTest{
 		{
-			Name:           "OAuth GitHub Callback - Invalid State",
-			URL:            "/oauth/github?state=invalid&code=testcode",
-			Method:         "GET",
-			ExpectedStatus: 200,
+			Name:             "OAuth GitHub Callback - Invalid State",
+			URL:              "/oauth/github?state=invalid&code=testcode",
+			Method:           "GET",
+			ExpectedStatus:   200,
 			ExpectedContains: []string{"invalid or expired OAuth state"},
-			NoAuth:         true,
+			NoAuth:           true,
 		},
 	}
 
@@ -146,45 +146,45 @@ func TestValidateGithub(t *testing.T) {
 	defer func() { core.App.OAuth = originalOAuth }()
 
 	t.Run("no restrictions allows all", func(t *testing.T) {
-		core.App.OAuth.GithubUsers = ""
-		core.App.OAuth.GithubOrgs = ""
+		core.App.GithubUsers = ""
+		core.App.GithubOrgs = ""
 		user := githubUser{Login: "anyuser", Name: "Any User"}
 		assert.True(t, validateGithub(user, nil))
 	})
 
 	t.Run("allowed user passes", func(t *testing.T) {
-		core.App.OAuth.GithubUsers = "alloweduser,anotheruser"
-		core.App.OAuth.GithubOrgs = ""
+		core.App.GithubUsers = "alloweduser,anotheruser"
+		core.App.GithubOrgs = ""
 		user := githubUser{Login: "alloweduser", Name: "Allowed User"}
 		assert.True(t, validateGithub(user, nil))
 	})
 
 	t.Run("disallowed user fails", func(t *testing.T) {
-		core.App.OAuth.GithubUsers = "alloweduser"
-		core.App.OAuth.GithubOrgs = ""
+		core.App.GithubUsers = "alloweduser"
+		core.App.GithubOrgs = ""
 		user := githubUser{Login: "notallowed", Name: "Not Allowed"}
 		assert.False(t, validateGithub(user, nil))
 	})
 
 	t.Run("allowed org passes", func(t *testing.T) {
-		core.App.OAuth.GithubUsers = ""
-		core.App.OAuth.GithubOrgs = "myorg,otherorg"
+		core.App.GithubUsers = ""
+		core.App.GithubOrgs = "myorg,otherorg"
 		user := githubUser{Login: "someuser", Name: "Some User"}
 		orgs := []githubOrgs{{Login: "myorg"}}
 		assert.True(t, validateGithub(user, orgs))
 	})
 
 	t.Run("disallowed org fails", func(t *testing.T) {
-		core.App.OAuth.GithubUsers = ""
-		core.App.OAuth.GithubOrgs = "allowedorg"
+		core.App.GithubUsers = ""
+		core.App.GithubOrgs = "allowedorg"
 		user := githubUser{Login: "someuser", Name: "Some User"}
 		orgs := []githubOrgs{{Login: "differentorg"}}
 		assert.False(t, validateGithub(user, orgs))
 	})
 
 	t.Run("case insensitive user match", func(t *testing.T) {
-		core.App.OAuth.GithubUsers = "AllowedUser"
-		core.App.OAuth.GithubOrgs = ""
+		core.App.GithubUsers = "AllowedUser"
+		core.App.GithubOrgs = ""
 		user := githubUser{Login: "alloweduser", Name: "Allowed User"}
 		assert.True(t, validateGithub(user, nil))
 	})
@@ -195,31 +195,31 @@ func TestValidateGoogle(t *testing.T) {
 	defer func() { core.App.OAuth = originalOAuth }()
 
 	t.Run("no restrictions allows all", func(t *testing.T) {
-		core.App.OAuth.GoogleUsers = ""
+		core.App.GoogleUsers = ""
 		info := googleUserInfo{Email: "anyone@example.com", Name: "Anyone"}
 		assert.True(t, validateGoogle(info))
 	})
 
 	t.Run("allowed email passes", func(t *testing.T) {
-		core.App.OAuth.GoogleUsers = "allowed@example.com,other@example.com"
+		core.App.GoogleUsers = "allowed@example.com,other@example.com"
 		info := googleUserInfo{Email: "allowed@example.com", Name: "Allowed"}
 		assert.True(t, validateGoogle(info))
 	})
 
 	t.Run("allowed domain passes via Hd", func(t *testing.T) {
-		core.App.OAuth.GoogleUsers = "example.com"
+		core.App.GoogleUsers = "example.com"
 		info := googleUserInfo{Email: "user@example.com", Hd: "example.com"}
 		assert.True(t, validateGoogle(info))
 	})
 
 	t.Run("disallowed email fails", func(t *testing.T) {
-		core.App.OAuth.GoogleUsers = "allowed@example.com"
+		core.App.GoogleUsers = "allowed@example.com"
 		info := googleUserInfo{Email: "notallowed@example.com", Name: "Not Allowed"}
 		assert.False(t, validateGoogle(info))
 	})
 
 	t.Run("case insensitive email match", func(t *testing.T) {
-		core.App.OAuth.GoogleUsers = "Allowed@Example.com"
+		core.App.GoogleUsers = "Allowed@Example.com"
 		info := googleUserInfo{Email: "allowed@example.com", Name: "Allowed"}
 		assert.True(t, validateGoogle(info))
 	})
@@ -230,7 +230,7 @@ func TestValidateSlack(t *testing.T) {
 	defer func() { core.App.OAuth = originalOAuth }()
 
 	t.Run("no restrictions allows all", func(t *testing.T) {
-		core.App.OAuth.SlackUsers = ""
+		core.App.SlackUsers = ""
 		id := slackIdentity{Ok: true, User: struct {
 			Name  string `json:"name"`
 			ID    string `json:"id"`
@@ -240,7 +240,7 @@ func TestValidateSlack(t *testing.T) {
 	})
 
 	t.Run("allowed email passes", func(t *testing.T) {
-		core.App.OAuth.SlackUsers = "allowed@example.com"
+		core.App.SlackUsers = "allowed@example.com"
 		id := slackIdentity{Ok: true, User: struct {
 			Name  string `json:"name"`
 			ID    string `json:"id"`
@@ -250,7 +250,7 @@ func TestValidateSlack(t *testing.T) {
 	})
 
 	t.Run("allowed name passes", func(t *testing.T) {
-		core.App.OAuth.SlackUsers = "alloweduser"
+		core.App.SlackUsers = "alloweduser"
 		id := slackIdentity{Ok: true, User: struct {
 			Name  string `json:"name"`
 			ID    string `json:"id"`
@@ -260,7 +260,7 @@ func TestValidateSlack(t *testing.T) {
 	})
 
 	t.Run("disallowed user fails", func(t *testing.T) {
-		core.App.OAuth.SlackUsers = "alloweduser"
+		core.App.SlackUsers = "alloweduser"
 		id := slackIdentity{Ok: true, User: struct {
 			Name  string `json:"name"`
 			ID    string `json:"id"`

@@ -46,7 +46,6 @@ func Gzip(handler http.Handler) http.Handler {
 	})
 }
 
-
 // basicAuthHandler is a middleware to implement HTTP basic authentication using
 // AUTH_USERNAME and AUTH_PASSWORD environment variables
 func basicAuthHandler(next http.Handler) http.Handler {

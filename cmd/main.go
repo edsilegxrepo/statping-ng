@@ -44,6 +44,7 @@ func init() {
 	rootCmd.AddCommand(envCmd)
 	rootCmd.AddCommand(systemctlCmd)
 	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(resetAdminCmd)
 
 	parseFlags(rootCmd)
 }

@@ -98,7 +98,7 @@ func (b *GroupQuery) ToTimeValue() (*TimeVar, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var data []*TimeValue
 	for rows.Next() {
 		var timeframe string
@@ -258,10 +258,10 @@ func ParseQueriesForTable(r *http.Request, o isObject, whereTable string) (*Grou
 	if query.Order != "" {
 		// Whitelist allowed order columns to prevent SQL injection/information disclosure
 		allowedOrderColumns := map[string]bool{
-			"id":         true,
-			"id DESC":    true,
-			"id ASC":     true,
-			"created_at": true,
+			"id":              true,
+			"id DESC":         true,
+			"id ASC":          true,
+			"created_at":      true,
 			"created_at DESC": true,
 			"created_at ASC":  true,
 			"order_id":        true,

@@ -16,8 +16,10 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
-var _ notifier.Notifier = (*discord)(nil)
-var _ notifier.DigestNotifier = (*discord)(nil)
+var (
+	_ notifier.Notifier       = (*discord)(nil)
+	_ notifier.DigestNotifier = (*discord)(nil)
+)
 
 type discord struct {
 	*notifications.Notification

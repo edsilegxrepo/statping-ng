@@ -18,12 +18,12 @@ func TestIndexRoutes(t *testing.T) {
 			NoAuth:         true,
 		},
 		{
-			Name:           "Health Check Handler",
-			URL:            "/health",
-			Method:         "GET",
-			ExpectedStatus: 200,
+			Name:             "Health Check Handler",
+			URL:              "/health",
+			Method:           "GET",
+			ExpectedStatus:   200,
 			ExpectedContains: []string{"online", "services", "setup"},
-			NoAuth:         true,
+			NoAuth:           true,
 		},
 	}
 

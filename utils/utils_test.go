@@ -390,7 +390,7 @@ func TestOpenFileComprehensive(t *testing.T) {
 	t.Run("read existing file", func(t *testing.T) {
 		testFile := tmpDir + "/test_read.txt"
 		content := "test content for reading"
-		err := os.WriteFile(testFile, []byte(content), 0644)
+		err := os.WriteFile(testFile, []byte(content), 0o644)
 		require.NoError(t, err)
 
 		result, err := OpenFile(testFile)
@@ -400,7 +400,7 @@ func TestOpenFileComprehensive(t *testing.T) {
 
 	t.Run("read empty file", func(t *testing.T) {
 		testFile := tmpDir + "/empty.txt"
-		err := os.WriteFile(testFile, []byte(""), 0644)
+		err := os.WriteFile(testFile, []byte(""), 0o644)
 		require.NoError(t, err)
 
 		result, err := OpenFile(testFile)
@@ -417,7 +417,7 @@ func TestOpenFileComprehensive(t *testing.T) {
 	t.Run("read file with unicode content", func(t *testing.T) {
 		testFile := tmpDir + "/unicode.txt"
 		content := "Hello, 世界! 🌍 Ümlauts"
-		err := os.WriteFile(testFile, []byte(content), 0644)
+		err := os.WriteFile(testFile, []byte(content), 0o644)
 		require.NoError(t, err)
 
 		result, err := OpenFile(testFile)
@@ -428,7 +428,7 @@ func TestOpenFileComprehensive(t *testing.T) {
 	t.Run("read binary-like content", func(t *testing.T) {
 		testFile := tmpDir + "/binary.txt"
 		content := []byte{0x00, 0x01, 0x02, 0xFF, 0xFE}
-		err := os.WriteFile(testFile, content, 0644)
+		err := os.WriteFile(testFile, content, 0o644)
 		require.NoError(t, err)
 
 		result, err := OpenFile(testFile)
@@ -447,7 +447,7 @@ func TestFileExistsComprehensive(t *testing.T) {
 
 	t.Run("existing file returns true", func(t *testing.T) {
 		testFile := tmpDir + "/exists.txt"
-		err := os.WriteFile(testFile, []byte("content"), 0644)
+		err := os.WriteFile(testFile, []byte("content"), 0o644)
 		require.NoError(t, err)
 
 		assert.True(t, FileExists(testFile))
@@ -504,7 +504,7 @@ func TestFolderExists(t *testing.T) {
 
 	t.Run("file returns false", func(t *testing.T) {
 		testFile := tmpDir + "/file.txt"
-		err := os.WriteFile(testFile, []byte("content"), 0644)
+		err := os.WriteFile(testFile, []byte("content"), 0o644)
 		require.NoError(t, err)
 
 		assert.False(t, FolderExists(testFile))
@@ -523,7 +523,7 @@ func TestCreateAndDeleteDirectory(t *testing.T) {
 
 	t.Run("create existing directory returns nil", func(t *testing.T) {
 		existingDir := tmpDir + "/existing"
-		err := os.Mkdir(existingDir, 0750)
+		err := os.Mkdir(existingDir, 0o750)
 		require.NoError(t, err)
 
 		// Creating again should not error
@@ -533,7 +533,7 @@ func TestCreateAndDeleteDirectory(t *testing.T) {
 
 	t.Run("delete directory", func(t *testing.T) {
 		delDir := tmpDir + "/to_delete"
-		err := os.Mkdir(delDir, 0750)
+		err := os.Mkdir(delDir, 0o750)
 		require.NoError(t, err)
 
 		err = DeleteDirectory(delDir)
@@ -565,7 +565,7 @@ func TestSaveFileComprehensive(t *testing.T) {
 
 	t.Run("overwrite existing file", func(t *testing.T) {
 		testFile := tmpDir + "/overwrite.txt"
-		err := os.WriteFile(testFile, []byte("old content"), 0644)
+		err := os.WriteFile(testFile, []byte("old content"), 0o644)
 		require.NoError(t, err)
 
 		newContent := []byte("new content")
@@ -1013,7 +1013,7 @@ func TestDirWritable(t *testing.T) {
 	t.Run("file path returns error", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		tmpFile := tmpDir + "/testfile.txt"
-		err := os.WriteFile(tmpFile, []byte("test"), 0644)
+		err := os.WriteFile(tmpFile, []byte("test"), 0o644)
 		require.NoError(t, err)
 
 		_, err = DirWritable(tmpFile)

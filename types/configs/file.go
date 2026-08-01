@@ -42,7 +42,7 @@ func findDbFile(configs *DbConfig) (string, error) {
 	if configs != nil && configs.DbData != "" {
 		dbFilename = configs.DbData
 	}
-	location := baseDir + "/" + dbFilename
+	location := filepath.Join(baseDir, dbFilename)
 
 	// If no config provided, try to find existing db file
 	if configs == nil {

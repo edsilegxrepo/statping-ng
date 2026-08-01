@@ -223,8 +223,8 @@ func mockSMTPServer(port int) (net.Listener, error) {
 }
 
 func handleSMTPConnection(conn net.Conn) {
-	defer conn.Close()
-	conn.Write([]byte("220 mock.smtp.server ESMTP\r\n"))
+	defer func() { _ = conn.Close() }()
+	_, _ = conn.Write([]byte("220 mock.smtp.server ESMTP\r\n"))
 
 	buf := make([]byte, 1024)
 	for {
@@ -234,13 +234,13 @@ func handleSMTPConnection(conn net.Conn) {
 		}
 		line := string(buf[:n])
 		if strings.HasPrefix(line, "EHLO") || strings.HasPrefix(line, "HELO") {
-			conn.Write([]byte("250-mock.smtp.server Hello\r\n"))
-			conn.Write([]byte("250 OK\r\n"))
+			_, _ = conn.Write([]byte("250-mock.smtp.server Hello\r\n"))
+			_, _ = conn.Write([]byte("250 OK\r\n"))
 		} else if strings.HasPrefix(line, "QUIT") {
-			conn.Write([]byte("221 Bye\r\n"))
+			_, _ = conn.Write([]byte("221 Bye\r\n"))
 			return
 		} else {
-			conn.Write([]byte("250 OK\r\n"))
+			_, _ = conn.Write([]byte("250 OK\r\n"))
 		}
 	}
 }
@@ -250,7 +250,7 @@ func TestCheckSmtp(t *testing.T) {
 	if err != nil {
 		t.Skipf("Could not start mock SMTP server: %v", err)
 	}
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	t.Run("SMTP check succeeds on mock server", func(t *testing.T) {
 		s := &Service{
@@ -308,8 +308,8 @@ func mockIMAPServer(port int) (net.Listener, error) {
 }
 
 func handleIMAPConnection(conn net.Conn) {
-	defer conn.Close()
-	conn.Write([]byte("* OK IMAP4rev1 Service Ready\r\n"))
+	defer func() { _ = conn.Close() }()
+	_, _ = conn.Write([]byte("* OK IMAP4rev1 Service Ready\r\n"))
 
 	buf := make([]byte, 1024)
 	for {
@@ -327,16 +327,16 @@ func handleIMAPConnection(conn net.Conn) {
 
 		switch cmd {
 		case "CAPABILITY":
-			conn.Write([]byte("* CAPABILITY IMAP4rev1 AUTH=PLAIN\r\n"))
-			conn.Write([]byte(tag + " OK CAPABILITY completed\r\n"))
+			_, _ = conn.Write([]byte("* CAPABILITY IMAP4rev1 AUTH=PLAIN\r\n"))
+			_, _ = conn.Write([]byte(tag + " OK CAPABILITY completed\r\n"))
 		case "LOGIN":
-			conn.Write([]byte(tag + " OK LOGIN completed\r\n"))
+			_, _ = conn.Write([]byte(tag + " OK LOGIN completed\r\n"))
 		case "LOGOUT":
-			conn.Write([]byte("* BYE IMAP4rev1 Server logging out\r\n"))
-			conn.Write([]byte(tag + " OK LOGOUT completed\r\n"))
+			_, _ = conn.Write([]byte("* BYE IMAP4rev1 Server logging out\r\n"))
+			_, _ = conn.Write([]byte(tag + " OK LOGOUT completed\r\n"))
 			return
 		default:
-			conn.Write([]byte(tag + " OK\r\n"))
+			_, _ = conn.Write([]byte(tag + " OK\r\n"))
 		}
 	}
 }
@@ -346,7 +346,7 @@ func TestCheckImap(t *testing.T) {
 	if err != nil {
 		t.Skipf("Could not start mock IMAP server: %v", err)
 	}
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	t.Run("IMAP check with invalid domain", func(t *testing.T) {
 		s := &Service{

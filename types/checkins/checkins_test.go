@@ -39,7 +39,7 @@ func setupTestDB(t *testing.T) database.Database {
 
 func TestCheckin_CRUD(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("Create", func(t *testing.T) {
 		checkin := &Checkin{
@@ -139,7 +139,7 @@ func TestCheckin_CRUD(t *testing.T) {
 
 func TestCheckinHit_CRUD(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create a checkin to associate hits with
 	checkin := &Checkin{
@@ -203,7 +203,7 @@ func TestCheckinHit_CRUD(t *testing.T) {
 
 func TestCheckin_Hits(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	checkin := &Checkin{
 		ServiceId: 1,
@@ -265,7 +265,7 @@ func TestCheckin_Hits(t *testing.T) {
 
 func TestCheckinHitters(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	checkin := &Checkin{
 		ServiceId: 1,
@@ -358,7 +358,7 @@ func TestCheckinHitters(t *testing.T) {
 
 func TestCheckin_Methods(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("Period", func(t *testing.T) {
 		checkin := &Checkin{
@@ -449,7 +449,7 @@ func TestCheckin_Methods(t *testing.T) {
 
 func TestCheckin_Failures(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	checkin := &Checkin{
 		ServiceId: 1,
@@ -490,7 +490,7 @@ func TestCheckin_Failures(t *testing.T) {
 
 func TestSamples(t *testing.T) {
 	testDb := setupTestDB(t)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	err := Samples()
 	require.NoError(t, err)

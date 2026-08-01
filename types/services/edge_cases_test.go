@@ -65,7 +65,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 
 		server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		}))
 		server.TLS = &tls.Config{Certificates: []tls.Certificate{cert}}
 		server.StartTLS()
@@ -99,7 +99,7 @@ func TestTLSCertificateValidation(t *testing.T) {
 
 		server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		}))
 		server.TLS = &tls.Config{Certificates: []tls.Certificate{cert}}
 		server.StartTLS()
@@ -316,7 +316,7 @@ func TestRedirectLoops(t *testing.T) {
 			redirectCount++
 			if redirectCount > maxRedirects {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("final"))
+				_, _ = w.Write([]byte("final"))
 				return
 			}
 			http.Redirect(w, r, r.URL.String(), http.StatusFound)
@@ -440,7 +440,7 @@ func TestConnectionTimeout(t *testing.T) {
 			// Write slowly
 			for i := 0; i < 10; i++ {
 				time.Sleep(500 * time.Millisecond)
-				w.Write([]byte("chunk"))
+				_, _ = w.Write([]byte("chunk"))
 				w.(http.Flusher).Flush()
 			}
 		}))
@@ -480,7 +480,7 @@ func TestLargeResponseBody(t *testing.T) {
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write(largeBody)
+			_, _ = w.Write(largeBody)
 		}))
 		defer server.Close()
 
@@ -508,7 +508,7 @@ func TestLargeResponseBody(t *testing.T) {
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write(largeBody)
+			_, _ = w.Write(largeBody)
 		}))
 		defer server.Close()
 
@@ -560,7 +560,7 @@ func TestLargeResponseBody(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/octet-stream")
 			w.WriteHeader(http.StatusOK)
-			w.Write(binaryData)
+			_, _ = w.Write(binaryData)
 		}))
 		defer server.Close()
 
@@ -586,7 +586,7 @@ func TestLargeResponseBody(t *testing.T) {
 			// Send 100 chunks of 1KB each
 			for i := 0; i < 100; i++ {
 				chunk := bytes.Repeat([]byte("X"), 1024)
-				w.Write(chunk)
+				_, _ = w.Write(chunk)
 				flusher.Flush()
 			}
 		}))
@@ -617,7 +617,7 @@ func TestInvalidHTTPResponses(t *testing.T) {
 	t.Run("Server closes connection immediately", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		go func() {
 			conn, err := listener.Accept()
@@ -625,7 +625,7 @@ func TestInvalidHTTPResponses(t *testing.T) {
 				return
 			}
 			// Close immediately without sending anything
-			conn.Close()
+			_ = conn.Close()
 		}()
 
 		port := listener.Addr().(*net.TCPAddr).Port
@@ -649,19 +649,19 @@ func TestInvalidHTTPResponses(t *testing.T) {
 	t.Run("Server sends garbage instead of HTTP", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		go func() {
 			conn, err := listener.Accept()
 			if err != nil {
 				return
 			}
-			defer conn.Close()
+			defer func() { _ = conn.Close() }()
 			// Read the request
 			buf := make([]byte, 1024)
-			conn.Read(buf)
+			_, _ = conn.Read(buf)
 			// Send garbage
-			conn.Write([]byte("THIS IS NOT HTTP\r\nGARBAGE DATA"))
+			_, _ = conn.Write([]byte("THIS IS NOT HTTP\r\nGARBAGE DATA"))
 		}()
 
 		addr := listener.Addr().String()
@@ -682,19 +682,19 @@ func TestInvalidHTTPResponses(t *testing.T) {
 	t.Run("Server sends partial HTTP response", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		go func() {
 			conn, err := listener.Accept()
 			if err != nil {
 				return
 			}
-			defer conn.Close()
+			defer func() { _ = conn.Close() }()
 			// Read the request
 			buf := make([]byte, 1024)
-			conn.Read(buf)
+			_, _ = conn.Read(buf)
 			// Send partial HTTP response (missing body)
-			conn.Write([]byte("HTTP/1.1 200 OK\r\nContent-Length: 1000\r\n\r\n"))
+			_, _ = conn.Write([]byte("HTTP/1.1 200 OK\r\nContent-Length: 1000\r\n\r\n"))
 			// Close without sending full body
 		}()
 
@@ -717,18 +717,18 @@ func TestInvalidHTTPResponses(t *testing.T) {
 	t.Run("Malformed status line", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		go func() {
 			conn, err := listener.Accept()
 			if err != nil {
 				return
 			}
-			defer conn.Close()
+			defer func() { _ = conn.Close() }()
 			buf := make([]byte, 1024)
-			conn.Read(buf)
+			_, _ = conn.Read(buf)
 			// Malformed status line
-			conn.Write([]byte("HTTP/9.9 9999 TOTALLY BROKEN\r\n\r\n"))
+			_, _ = conn.Write([]byte("HTTP/9.9 9999 TOTALLY BROKEN\r\n\r\n"))
 		}()
 
 		addr := listener.Addr().String()
@@ -752,7 +752,7 @@ func TestInvalidHTTPResponses(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("X-Long-Header", longValue)
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		}))
 		defer server.Close()
 
@@ -783,7 +783,7 @@ func TestIPv6AddressHandling(t *testing.T) {
 		if err != nil {
 			t.Skip("IPv6 not available on this system")
 		}
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -792,7 +792,7 @@ func TestIPv6AddressHandling(t *testing.T) {
 			if err != nil {
 				return
 			}
-			defer conn.Close()
+			defer func() { _ = conn.Close() }()
 			time.Sleep(100 * time.Millisecond)
 		}()
 
@@ -837,16 +837,16 @@ func TestIPv6AddressHandling(t *testing.T) {
 		if err != nil {
 			t.Skip("IPv6 not available")
 		}
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		server := &http.Server{
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("IPv6 OK"))
+				_, _ = w.Write([]byte("IPv6 OK"))
 			}),
 		}
-		go server.Serve(listener)
-		defer server.Close()
+		go func() { _ = server.Serve(listener) }()
+		defer func() { _ = server.Close() }()
 
 		addr := listener.Addr().(*net.TCPAddr)
 		// Proper IPv6 URL format: http://[::1]:port
@@ -913,7 +913,7 @@ func TestURLEdgeCases(t *testing.T) {
 	t.Run("URL with special characters", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(r.URL.Path))
+			_, _ = w.Write([]byte(r.URL.Path))
 		}))
 		defer server.Close()
 
@@ -1005,7 +1005,7 @@ func TestConnectionStates(t *testing.T) {
 	t.Run("Server accepts but never responds", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		go func() {
 			conn, err := listener.Accept()
@@ -1013,7 +1013,7 @@ func TestConnectionStates(t *testing.T) {
 				return
 			}
 			// Accept connection, read data, but never respond
-			io.Copy(io.Discard, conn)
+			_, _ = io.Copy(io.Discard, conn)
 		}()
 
 		addr := listener.Addr().String()
@@ -1054,7 +1054,7 @@ func TestConnectionStates(t *testing.T) {
 	t.Run("Half-closed connection", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		go func() {
 			conn, err := listener.Accept()
@@ -1063,14 +1063,14 @@ func TestConnectionStates(t *testing.T) {
 			}
 			// Read request
 			buf := make([]byte, 4096)
-			conn.Read(buf)
+			_, _ = conn.Read(buf)
 			// Close write side only (half-close)
 			if tcpConn, ok := conn.(*net.TCPConn); ok {
-				tcpConn.CloseWrite()
+				_ = tcpConn.CloseWrite()
 			}
 			// Keep read side open briefly
 			time.Sleep(100 * time.Millisecond)
-			conn.Close()
+			_ = conn.Close()
 		}()
 
 		addr := listener.Addr().String()

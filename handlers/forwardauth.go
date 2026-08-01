@@ -23,12 +23,12 @@ const (
 	DefaultForwardAuthHeaderName   = "Remote-Name"
 
 	// Limits
-	MaxUsernameLength     = 255
-	MaxEmailLength        = 320
-	MaxTrustedProxiesLen  = 4096
-	MaxAdminGroupsLen     = 1024
-	MaxLogoutURLLen       = 2048
-	MaxHeaderNameLen      = 128
+	MaxUsernameLength    = 255
+	MaxEmailLength       = 320
+	MaxTrustedProxiesLen = 4096
+	MaxAdminGroupsLen    = 1024
+	MaxLogoutURLLen      = 2048
+	MaxHeaderNameLen     = 128
 
 	// Rate limiting for user creation
 	userCreationWindow    = time.Minute
@@ -40,8 +40,8 @@ var (
 	userProvisionMu sync.Mutex
 
 	// Cached parsed CIDR networks (updated when config changes)
-	trustedNetworksMu sync.RWMutex
-	trustedNetworks   []*net.IPNet
+	trustedNetworksMu     sync.RWMutex
+	trustedNetworks       []*net.IPNet
 	trustedNetworksConfig string // The config string that was parsed
 
 	// Rate limiter for user creation per IP
@@ -56,7 +56,7 @@ var (
 )
 
 type rateLimitEntry struct {
-	count    int
+	count       int
 	windowStart time.Time
 }
 
@@ -206,10 +206,10 @@ func forwardAuthUser(r *http.Request) *users.User {
 			email = info.Username + "@forward-auth.local"
 		}
 		user = &users.User{
-			Username:          info.Username,
-			Email:             email,
-			Password:          utils.HashPassword(utils.RandomString(32)),
-			Admin:             null.NewNullBool(info.IsAdmin),
+			Username:           info.Username,
+			Email:              email,
+			Password:           utils.HashPassword(utils.RandomString(32)),
+			Admin:              null.NewNullBool(info.IsAdmin),
 			ForwardAuthManaged: null.NewNullBool(true), // Mark as forward auth managed
 		}
 		if err := user.Create(); err != nil {
@@ -524,16 +524,7 @@ func forwardAuthSaveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Infof("Forward auth settings updated (enabled=%v)", req.Enabled)
-	returnJson(ForwardAuthSettingsResponse{
-		Enabled:        req.Enabled,
-		HeaderUser:     req.HeaderUser,
-		HeaderEmail:    req.HeaderEmail,
-		HeaderGroups:   req.HeaderGroups,
-		HeaderName:     req.HeaderName,
-		AdminGroups:    req.AdminGroups,
-		TrustedProxies: req.TrustedProxies,
-		LogoutURL:      req.LogoutURL,
-	}, w, r)
+	returnJson(ForwardAuthSettingsResponse(req), w, r)
 }
 
 // ForwardAuthLogoutURL returns the configured logout URL for forward auth.

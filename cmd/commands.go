@@ -121,10 +121,16 @@ var envCmd = &cobra.Command{
 	},
 }
 
+var resetForce bool
+
 var resetCmd = &cobra.Command{
 	Use:     "reset",
 	Example: "statping reset",
-	Short:   "Start a fresh copy of Statping",
+	Short:   "Start a fresh copy of Statping (DESTRUCTIVE)",
+	Long: `Reset Statping to a fresh state by deleting assets, logs, and config.
+The database is backed up to statping.db.backup.
+
+This is a DESTRUCTIVE operation - use with caution.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := resetCli(); err != nil {
 			return err
@@ -164,9 +170,42 @@ var importCmd = &cobra.Command{
 	},
 }
 
+var (
+	resetAdminUsername string
+	resetAdminPassword string
+	resetAdminEmail    string
+)
+
+var resetAdminCmd = &cobra.Command{
+	Use:   "reset-admin",
+	Short: "Reset admin user password (emergency recovery)",
+	Long: `Reset the password for an admin user. Requires master key to be configured.
+
+This command connects to the database and updates the specified user's password.
+Use this when you've lost access to the admin account.
+
+Examples:
+  statping reset-admin --password YourNewPassword
+  statping reset-admin --user otheradmin --password YourNewPassword
+  statping reset-admin --user admin --password NewPass --email new@example.com`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := resetAdminCli(); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
 func init() {
 	initCmd.Flags().StringVar(&initKeyFile, "key-file", "", "path to write generated master key")
 	initCmd.Flags().BoolVar(&initForce, "force", false, "overwrite existing key file (DANGER)")
+
+	resetCmd.Flags().BoolVarP(&resetForce, "force", "f", false, "skip confirmation prompt (DANGER)")
+
+	resetAdminCmd.Flags().StringVar(&resetAdminUsername, "user", "admin", "username to reset")
+	resetAdminCmd.Flags().StringVar(&resetAdminPassword, "password", "", "new password (required)")
+	resetAdminCmd.Flags().StringVar(&resetAdminEmail, "email", "", "update email address (optional)")
+	_ = resetAdminCmd.MarkFlagRequired("password")
 }
 
 func Execute() {

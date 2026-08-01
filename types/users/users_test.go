@@ -121,7 +121,7 @@ func TestDatabaseFunctions(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("SetDB", func(t *testing.T) {
 		// Verify SetDB was successful by performing an operation
@@ -256,7 +256,7 @@ func TestValidation(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("ValidateEmptyUsername", func(t *testing.T) {
 		user := &User{
@@ -376,7 +376,7 @@ func TestPasswordHashing(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("PasswordIsHashedOnCreate", func(t *testing.T) {
 		user := &User{
@@ -414,7 +414,7 @@ func TestAPIKeyGeneration(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("APIKeyGeneratedOnCreate", func(t *testing.T) {
 		user := &User{
@@ -472,7 +472,7 @@ func TestAuthUserFunction(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	// Create a test user first
 	user := &User{
@@ -577,7 +577,7 @@ func TestAdminUserOperations(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("CreateAdminUser", func(t *testing.T) {
 		admin := &User{
@@ -647,7 +647,7 @@ func TestGormHooks(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("AfterFindHook", func(t *testing.T) {
 		user := &User{
@@ -707,7 +707,7 @@ func TestEdgeCases(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("CreateUserWithSpecialCharactersInUsername", func(t *testing.T) {
 		user := &User{
@@ -750,7 +750,7 @@ func TestEdgeCases(t *testing.T) {
 		// Delete all users
 		users := All()
 		for _, u := range users {
-			u.Delete()
+			_ = u.Delete()
 		}
 
 		allUsers := All()
@@ -769,7 +769,7 @@ func TestSamplesFunction(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("SamplesCreatesUsers", func(t *testing.T) {
 		passwords, err := Samples()
@@ -811,7 +811,7 @@ func TestTimestamps(t *testing.T) {
 	require.Nil(t, err)
 	testDb.CreateTable(&User{})
 	SetDB(testDb)
-	defer testDb.Close()
+	defer func() { _ = testDb.Close() }()
 
 	t.Run("CreatedAtIsSet", func(t *testing.T) {
 		user := &User{

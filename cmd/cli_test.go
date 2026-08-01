@@ -32,12 +32,6 @@ func executeCommand(root *cobra.Command, args ...string) (output string, err err
 	return buf.String(), err
 }
 
-// resetRootCmd resets rootCmd to a clean state for testing
-func resetRootCmd() {
-	// Reset the args to nil to clear any previous test's args
-	rootCmd.SetArgs(nil)
-}
-
 func TestStatpingDirectory(t *testing.T) {
 	dir = utils.Params.GetString("STATPING_DIR")
 	require.NotEmpty(t, dir)
@@ -178,7 +172,7 @@ func TestVersionOutput(t *testing.T) {
 
 func TestEnvOutput(t *testing.T) {
 	_ = os.Setenv("TEST_VAR", "test_value")
-	defer os.Unsetenv("TEST_VAR")
+	defer func() { _ = os.Unsetenv("TEST_VAR") }()
 
 	cmd := rootCmd
 	cmd.SetArgs([]string{"env"})
@@ -189,9 +183,9 @@ func TestEnvOutput(t *testing.T) {
 // TestFlagParsing tests CLI flag parsing for all persistent flags
 func TestFlagParsing(t *testing.T) {
 	tests := []struct {
-		name     string
-		args     []string
-		checkFn  func(t *testing.T)
+		name    string
+		args    []string
+		checkFn func(t *testing.T)
 	}{
 		{
 			name: "port flag with short form",
@@ -430,7 +424,7 @@ func TestEnvironmentVariableHandling(t *testing.T) {
 
 	t.Run("custom env var is accessible in env command", func(t *testing.T) {
 		_ = os.Setenv("CUSTOM_TEST_VAR", "custom_value_123")
-		defer os.Unsetenv("CUSTOM_TEST_VAR")
+		defer func() { _ = os.Unsetenv("CUSTOM_TEST_VAR") }()
 
 		_, err := executeCommand(rootCmd, "env")
 		require.Nil(t, err)
@@ -438,7 +432,7 @@ func TestEnvironmentVariableHandling(t *testing.T) {
 
 	t.Run("API_SECRET can be set", func(t *testing.T) {
 		_ = os.Setenv("API_SECRET", "test_secret_key")
-		defer os.Unsetenv("API_SECRET")
+		defer func() { _ = os.Unsetenv("API_SECRET") }()
 
 		_, err := executeCommand(rootCmd, "env")
 		require.Nil(t, err)
@@ -449,9 +443,9 @@ func TestEnvironmentVariableHandling(t *testing.T) {
 		_ = os.Setenv("PORT", "9999")
 		defer func() {
 			if originalPort != "" {
-				os.Setenv("PORT", originalPort)
+				_ = os.Setenv("PORT", originalPort)
 			} else {
-				os.Unsetenv("PORT")
+				_ = os.Unsetenv("PORT")
 			}
 		}()
 

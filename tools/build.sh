@@ -49,7 +49,7 @@ for arg in "$@"; do
     --extra-scans)
       DO_EXTRA=true
       ;;
-    --help|-h)
+    --help | -h)
       echo "Usage: ./tools/build.sh [options]"
       echo "  (no args)       Quick build only"
       echo "  --audit         Run code quality & security checks"
@@ -81,8 +81,8 @@ if $DO_CLEAN; then
   rm -rf testfiles/assets/ && log_clean "testfiles/assets/"
 
   # Clean legacy locations (repo root)
-  rm -f statping.exe statping.db statping.secrets config.yml 2>/dev/null
-  rm -rf logs/ assets/ 2>/dev/null
+  rm -f statping.exe statping.db statping.secrets config.yml 2> /dev/null
+  rm -rf logs/ assets/ 2> /dev/null
   rm -rf frontend/dist/ && log_clean "frontend/dist/"
   rm -rf source/dist/assets/ && log_clean "source/dist/assets/"
   rm -f source/dist/index.html && log_clean "source/dist/index.html"
@@ -102,10 +102,10 @@ fi
 # Use MinGW GCC on Windows to avoid Cygwin compiler issues
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   MINGW_BIN=""
-  MINGW_BIN="$(cygpath -u "$CC" 2>/dev/null | xargs dirname 2>/dev/null)" || MINGW_BIN='/d/dev/mingw64/bin'
+  MINGW_BIN="$(cygpath -u "$CC" 2> /dev/null | xargs dirname 2> /dev/null)" || MINGW_BIN='/d/dev/mingw64/bin'
   export PATH="$MINGW_BIN:$PATH"
   CC_PATH=""
-  CC_PATH="$(cygpath -u "$CC" 2>/dev/null)" || CC_PATH="$MINGW_BIN/gcc.exe"
+  CC_PATH="$(cygpath -u "$CC" 2> /dev/null)" || CC_PATH="$MINGW_BIN/gcc.exe"
   export CC="$CC_PATH"
   export CXX="${CC_PATH/gcc/g++}"
 fi
@@ -126,8 +126,8 @@ if $DO_BUILD; then
 
   # Kill all running statping instances
   log_step "BUILD" "Stopping any running statping..."
-  taskkill //F //IM statping.exe 2>/dev/null || true
-  pkill -f statping 2>/dev/null || true
+  taskkill //F //IM statping.exe 2> /dev/null || true
+  pkill -f statping 2> /dev/null || true
 
   # Build frontend
   log_step "BUILD" "Building frontend..."
@@ -144,7 +144,7 @@ if $DO_BUILD; then
   # Update base.gohtml with correct asset hashes
   INDEX_JS=$(basename source/dist/assets/index-*.js)
   INDEX_CSS=$(basename source/dist/assets/index-*.css)
-  VENDOR_JS=$(basename source/dist/assets/vendor-*.js 2>/dev/null || echo "")
+  VENDOR_JS=$(basename source/dist/assets/vendor-*.js 2> /dev/null || echo "")
 
   sed -i "s|assets/index-[^\"]*\.js|assets/${INDEX_JS}|g" source/dist/base.gohtml
   sed -i "s|assets/index-[^\"]*\.css|assets/${INDEX_CSS}|g" source/dist/base.gohtml
@@ -170,13 +170,13 @@ if $DO_TEST; then
   log_step "TEST" "Running tests with full isolation..."
 
   # Clean any stale test artifacts from repo root
-  rm -f statping.db statping.log config.yml statping_config.yml 2>/dev/null || true
+  rm -f statping.db statping.log config.yml statping_config.yml 2> /dev/null || true
 
   # Run tests: serial packages (-p=1), no cache (-count=1), extended timeout
   go test ./... -p=1 -count=1 -timeout=600s
 
   # Verify no pollution
-  if ls statping.db statping.log config.yml statping_config.yml 2>/dev/null; then
+  if ls statping.db statping.log config.yml statping_config.yml 2> /dev/null; then
     printf "%bWARNING:%b Test pollution detected - files written to repo root\n" "$YELLOW" "$RESET"
     exit 1
   fi
@@ -280,8 +280,8 @@ fi
 if $DO_BUILD || $DO_AUDIT; then
   echo ""
   printf "%bRelease Info:%b\n" "$YELLOW" "$RESET"
-  printf "  Version: %s\n" "$(cat version.txt 2>/dev/null || git describe --tags 2>/dev/null || echo 'dev')"
-  printf "  Commit:  %s\n" "$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+  printf "  Version: %s\n" "$(cat version.txt 2> /dev/null || git describe --tags 2> /dev/null || echo 'dev')"
+  printf "  Commit:  %s\n" "$(git rev-parse --short HEAD 2> /dev/null || echo 'unknown')"
   printf "  Go:      %s\n" "$(go version | awk '{print $3}')"
   echo ""
 fi

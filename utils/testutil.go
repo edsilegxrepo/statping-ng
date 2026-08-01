@@ -38,7 +38,7 @@ func TestFilesDir() string {
 			}
 		}
 		// Ensure directory exists
-		_ = os.MkdirAll(testFilesDir, 0750)
+		_ = os.MkdirAll(testFilesDir, 0o750)
 	})
 	return testFilesDir
 }

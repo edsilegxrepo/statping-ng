@@ -12,11 +12,12 @@ type yamlFile struct {
 
 // LoadServicesYaml will attempt to load the 'services.yml' file for Service Auto Creation on startup.
 func LoadServicesYaml() (*yamlFile, error) {
-	if !utils.FileExists(utils.Directory + "/services.yml") {
+	servicesFile := utils.DirPath("services.yml")
+	if !utils.FileExists(servicesFile) {
 		return nil, nil
 	}
 
-	f, err := utils.OpenFile(utils.Directory + "/services.yml")
+	f, err := utils.OpenFile(servicesFile)
 	if err != nil {
 		return nil, err
 	}

@@ -12,32 +12,32 @@ var log = utils.Log.WithField("type", "notifier")
 
 // Notification contains all the fields for a Statping Notifier.
 type Notification struct {
-	Id          int64           `gorm:"primary_key;column:id" json:"id"`
-	Method      string          `gorm:"column:method" json:"method"`
-	Host        null.NullString `gorm:"column:host" json:"host,omitempty"`
-	Port        null.NullInt64  `gorm:"column:port" json:"port,omitempty"`
-	Username    null.NullString `gorm:"column:username" json:"username,omitempty"`
-	Password    null.NullString `gorm:"column:password" json:"password,omitempty"`
-	Var1        null.NullString `gorm:"column:var1" json:"var1,omitempty"`
-	Var2        null.NullString `gorm:"column:var2" json:"var2,omitempty"`
-	ApiKey      null.NullString `gorm:"column:api_key" json:"api_key,omitempty"`
-	ApiSecret   null.NullString `gorm:"column:api_secret" json:"api_secret,omitempty"`
+	Id            int64           `gorm:"primary_key;column:id" json:"id"`
+	Method        string          `gorm:"column:method" json:"method"`
+	Host          null.NullString `gorm:"column:host" json:"host,omitempty"`
+	Port          null.NullInt64  `gorm:"column:port" json:"port,omitempty"`
+	Username      null.NullString `gorm:"column:username" json:"username,omitempty"`
+	Password      null.NullString `gorm:"column:password" json:"password,omitempty"`
+	Var1          null.NullString `gorm:"column:var1" json:"var1,omitempty"`
+	Var2          null.NullString `gorm:"column:var2" json:"var2,omitempty"`
+	ApiKey        null.NullString `gorm:"column:api_key" json:"api_key,omitempty"`
+	ApiSecret     null.NullString `gorm:"column:api_secret" json:"api_secret,omitempty"`
 	Enabled       null.NullBool   `gorm:"column:enabled;type:boolean;default:false" json:"enabled,omitempty"`
 	ReceiveDigest null.NullBool   `gorm:"column:receive_digest;type:boolean;default:false" json:"receive_digest,omitempty"`
 	Limits        int             `gorm:"not null;column:limits" json:"limits"`
-	Removable   bool            `gorm:"column:removable" json:"removable"`
-	SuccessData null.NullString `gorm:"type:text;column:success_data" json:"success_data,omitempty"`
-	FailureData null.NullString `gorm:"type:text;column:failure_data" json:"failure_data,omitempty"`
-	DataType    string          `gorm:"-" json:"data_type,omitempty"`
-	RequestInfo string          `gorm:"-" json:"request_info,omitempty"`
-	CreatedAt   time.Time       `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt   time.Time       `gorm:"column:updated_at" json:"updated_at"`
-	Title       string          `gorm:"-" json:"title"`
-	Description string          `gorm:"-" json:"description"`
-	Author      string          `gorm:"-" json:"author"`
-	AuthorUrl   string          `gorm:"-" json:"author_url"`
-	Icon        string          `gorm:"-" json:"icon"`
-	Delay       time.Duration   `gorm:"-" json:"delay,string"`
+	Removable     bool            `gorm:"column:removable" json:"removable"`
+	SuccessData   null.NullString `gorm:"type:text;column:success_data" json:"success_data,omitempty"`
+	FailureData   null.NullString `gorm:"type:text;column:failure_data" json:"failure_data,omitempty"`
+	DataType      string          `gorm:"-" json:"data_type,omitempty"`
+	RequestInfo   string          `gorm:"-" json:"request_info,omitempty"`
+	CreatedAt     time.Time       `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt     time.Time       `gorm:"column:updated_at" json:"updated_at"`
+	Title         string          `gorm:"-" json:"title"`
+	Description   string          `gorm:"-" json:"description"`
+	Author        string          `gorm:"-" json:"author"`
+	AuthorUrl     string          `gorm:"-" json:"author_url"`
+	Icon          string          `gorm:"-" json:"icon"`
+	Delay         time.Duration   `gorm:"-" json:"delay,string"`
 
 	Form          []NotificationForm `gorm:"-" json:"form"`
 	LastSent      time.Time          `gorm:"-" json:"-"`

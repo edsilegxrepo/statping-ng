@@ -125,5 +125,4 @@ func TestTelegramNotifierMock(t *testing.T) {
 		err := testTelegram.Valid(notifications.Values{})
 		assert.Nil(t, err)
 	})
-
 }

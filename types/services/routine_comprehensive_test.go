@@ -1,7 +1,6 @@
 package services
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -44,14 +43,14 @@ func TestCheckService_Dispatcher(t *testing.T) {
 	t.Run("dispatches to CheckTcp for tcp type", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
 		go func() {
 			conn, _ := listener.Accept()
 			if conn != nil {
-				conn.Close()
+				_ = conn.Close()
 			}
 		}()
 
@@ -87,7 +86,7 @@ func TestCheckService_Dispatcher(t *testing.T) {
 		if err != nil {
 			t.Skip("Could not start mock SMTP server")
 		}
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -142,10 +141,10 @@ func mockSMTPServerWithAuth(port int) (net.Listener, error) {
 }
 
 func handleSMTPWithAuth(conn net.Conn) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Send greeting
-	conn.Write([]byte("220 mock.smtp.server ESMTP ready\r\n"))
+	_, _ = conn.Write([]byte("220 mock.smtp.server ESMTP ready\r\n"))
 
 	buf := make([]byte, 4096)
 	for {
@@ -158,21 +157,21 @@ func handleSMTPWithAuth(conn net.Conn) {
 
 		switch {
 		case strings.HasPrefix(line, "EHLO"), strings.HasPrefix(line, "HELO"):
-			conn.Write([]byte("250-mock.smtp.server Hello\r\n"))
-			conn.Write([]byte("250-AUTH PLAIN LOGIN\r\n"))
-			conn.Write([]byte("250 OK\r\n"))
+			_, _ = conn.Write([]byte("250-mock.smtp.server Hello\r\n"))
+			_, _ = conn.Write([]byte("250-AUTH PLAIN LOGIN\r\n"))
+			_, _ = conn.Write([]byte("250 OK\r\n"))
 		case strings.HasPrefix(line, "AUTH PLAIN"):
 			// Accept any auth
-			conn.Write([]byte("235 2.7.0 Authentication successful\r\n"))
+			_, _ = conn.Write([]byte("235 2.7.0 Authentication successful\r\n"))
 		case strings.HasPrefix(line, "AUTH LOGIN"):
-			conn.Write([]byte("334 VXNlcm5hbWU6\r\n")) // Base64 for "Username:"
+			_, _ = conn.Write([]byte("334 VXNlcm5hbWU6\r\n")) // Base64 for "Username:"
 		case strings.HasPrefix(line, "QUIT"):
-			conn.Write([]byte("221 Bye\r\n"))
+			_, _ = conn.Write([]byte("221 Bye\r\n"))
 			return
 		case strings.HasPrefix(line, "STARTTLS"):
-			conn.Write([]byte("220 Ready to start TLS\r\n"))
+			_, _ = conn.Write([]byte("220 Ready to start TLS\r\n"))
 		default:
-			conn.Write([]byte("250 OK\r\n"))
+			_, _ = conn.Write([]byte("250 OK\r\n"))
 		}
 	}
 }
@@ -181,7 +180,7 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 	t.Run("successful connection on port 25 without auth", func(t *testing.T) {
 		listener, err := mockSMTPServerWithAuth(0)
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -207,7 +206,7 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 		// Start mock server on port 2525
 		listener, err := mockSMTPServerWithAuth(0)
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -229,7 +228,7 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 	t.Run("requires credentials on non-25 ports", func(t *testing.T) {
 		listener, err := mockSMTPServerWithAuth(0)
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -255,7 +254,7 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 	t.Run("SMTP with credentials from headers", func(t *testing.T) {
 		listener, err := mockSMTPServerWithAuth(0)
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -318,7 +317,7 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 	t.Run("SMTP parses multiple headers correctly", func(t *testing.T) {
 		listener, err := mockSMTPServerWithAuth(0)
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -339,7 +338,7 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 	t.Run("SMTP handles malformed header gracefully", func(t *testing.T) {
 		listener, err := mockSMTPServerWithAuth(0)
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -377,8 +376,8 @@ func TestCheckCmd_Comprehensive(t *testing.T) {
 			}
 		} else {
 			cmdConfig = CmdConfig{
-				Cmd:  "pwd",
-				Dir:  tempDir,
+				Cmd: "pwd",
+				Dir: tempDir,
 			}
 		}
 		configJSON, _ := json.Marshal(cmdConfig)
@@ -1059,71 +1058,6 @@ func TestMakeCmdEnv_Comprehensive(t *testing.T) {
 		assert.Len(t, result, 3)
 	})
 }
-
-// =============================================================================
-// TLS Mock Server for SMTP Tests
-// =============================================================================
-
-func mockTLSSMTPServer(port int) (net.Listener, error) {
-	cert, err := tls.X509KeyPair([]byte(testCert), []byte(testKey))
-	if err != nil {
-		return nil, err
-	}
-
-	config := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		MinVersion:   tls.VersionTLS12,
-	}
-
-	addr := "127.0.0.1:" + strconv.Itoa(port)
-	listener, err := tls.Listen("tcp", addr, config)
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				return
-			}
-			go handleSMTPWithAuth(conn)
-		}
-	}()
-
-	return listener, nil
-}
-
-// Test certificate and key for TLS testing
-const testCert = `-----BEGIN CERTIFICATE-----
-MIICEzCCAXygAwIBAgIQMIMChMLGrR+QvmQvpwAU6zANBgkqhkiG9w0BAQsFAMDAs
-LEwJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQHDA1TYW4g
-RnJhbmNpc2NvMQ0wCwYDVQQKDARUZXN0MQ0wCwYDVQQLDARUZXN0MRIwEAYDVQQD
-DAlsb2NhbGhvc3QwHhcNMjQwMTAxMDAwMDAwWhcNMjUwMTAxMDAwMDAwWjAsMQsw
-CQYDVQQGEwJVUzENMAsGA1UECgwEVGVzdDEOMAwGA1UEAwwFdGVzdDEwgZ8wDQYJ
-KoZIhvcNAQEBBQADgY0AMIGJAoGBALu4KxoU2yVU9I6mJ2SdQ2h5L7mFfMVZyLfn
-hXsL5xEaVRzPc9T9p5c0hn4Sn3cWTbRJ8k5R9j+5D0+4FQ3YMZQYX7j+YZaCL+0G
-F8/5uH+R3H4N8Q3I2Q/N5/3V0W7X+Q1U5g/5M3E2Q/N5/3V0W7X+Q1U5g/5M3E2Q
-/N5/3V0W7XAgMBAAEwDQYJKoZIhvcNAQELBQADgYEAi+R7bYjdVFdj7r5G0l8q5V
-TA2i3L5k3k4u3WV+4T7Jj9y8D7F3E2D7g5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3
-E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3
-E5F7H8k3E5F7H8k3E5F7H8=
------END CERTIFICATE-----`
-
-const testKey = `-----BEGIN RSA PRIVATE KEY-----
-MIICXQIBAAJBALu4KxoU2yVU9I6mJ2SdQ2h5L7mFfMVZyLfnhXsL5xEaVRzPc9T9
-p5c0hn4Sn3cWTbRJ8k5R9j+5D0+4FQ3YMZQYX7j+YZaCL+0GF8/5uH+R3H4N8Q3I
-2Q/N5/3V0W7X+Q1U5g/5M3E2Q/N5/3V0W7X+Q1U5g/5M3E2Q/N5/3V0W7XAgMBAA
-ECgYEAi+R7bYjdVFdj7r5G0l8q5VTA2i3L5k3k4u3WV+4T7Jj9y8D7F3E2D7g5F7
-H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7
-H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3E5F7H8k3ECQQ
-DL9g5bVCVWMQ0vL6/VZNA2tR5tQ5Q0vL6/VZNA2tR5tQ5Q0vL6/VZNA2tR5tQ5Q0
-vL6/VZNA2tR5tQ5Q0vL6/AkEA5VFXQ5Q0vL6/VZNA2tR5tQ5Q0vL6/VZNA2tR5tQ5
-Q0vL6/VZNA2tR5tQ5Q0vL6/VZNA2tR5tQ5Q0vL6/VZNA2wJBAMv2DltUJVYxDS8v
-r9VU0Da1Hm1DlDS8vr9VU0Da1Hm1DlDS8vr9VU0Da1Hm1DlDS8vr9VU0Da1Hm1Dl
-DS8vr8CQQDlUVdDlDS8vr9VU0Da1Hm1DlDS8vr9VU0Da1Hm1DlDS8vr9VU0Da1Hm
-1DlDS8vr9VU0Da1Hm1DlDS8vr9VU0Da
------END RSA PRIVATE KEY-----`
 
 // =============================================================================
 // Edge Cases and Error Handling

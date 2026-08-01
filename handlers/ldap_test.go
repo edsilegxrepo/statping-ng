@@ -196,10 +196,10 @@ func TestApiLdapTestHandlerConnectionFailure(t *testing.T) {
 
 func TestIsUserInGroup(t *testing.T) {
 	tests := []struct {
-		name      string
-		memberOf  []string
-		groupDN   string
-		expected  bool
+		name     string
+		memberOf []string
+		groupDN  string
+		expected bool
 	}{
 		{
 			name:     "empty group DN allows all",

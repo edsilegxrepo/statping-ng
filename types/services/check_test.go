@@ -26,7 +26,7 @@ func TestCheckHTTP(t *testing.T) {
 	t.Run("Successful HTTP check", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		}))
 		defer server.Close()
 
@@ -88,7 +88,7 @@ func TestCheckHTTP(t *testing.T) {
 
 	t.Run("HTTP with expected body regex", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{"status": "healthy", "version": "1.0.0"}`))
+			_, _ = w.Write([]byte(`{"status": "healthy", "version": "1.0.0"}`))
 		}))
 		defer server.Close()
 
@@ -109,7 +109,7 @@ func TestCheckHTTP(t *testing.T) {
 
 	t.Run("HTTP body regex no match fails", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{"status": "unhealthy"}`))
+			_, _ = w.Write([]byte(`{"status": "unhealthy"}`))
 		}))
 		defer server.Close()
 
@@ -218,7 +218,7 @@ func TestCheckTCP(t *testing.T) {
 	t.Run("Successful TCP check", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		require.NoError(t, err)
-		defer listener.Close()
+		defer func() { _ = listener.Close() }()
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -227,7 +227,7 @@ func TestCheckTCP(t *testing.T) {
 			if err != nil {
 				return
 			}
-			defer conn.Close()
+			defer func() { _ = conn.Close() }()
 		}()
 
 		s := &Service{
@@ -511,7 +511,7 @@ func TestHTTPRedirects(t *testing.T) {
 	t.Run("Follow redirects", func(t *testing.T) {
 		finalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("final destination"))
+			_, _ = w.Write([]byte("final destination"))
 		}))
 		defer finalServer.Close()
 

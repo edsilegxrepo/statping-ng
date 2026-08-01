@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -23,6 +24,12 @@ import (
 
 // Directory returns the current path or the STATPING_DIR environment variable
 var Directory string
+
+// DirPath returns a path under the Statping directory using OS-native separators.
+func DirPath(subpath ...string) string {
+	parts := append([]string{Directory}, subpath...)
+	return filepath.Join(parts...)
+}
 
 var (
 	transports  = make(map[string]*http.Transport)

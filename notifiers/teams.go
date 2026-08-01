@@ -52,8 +52,8 @@ var Teams = &teams{
 
 // TeamsAdaptiveCard represents a Microsoft Teams Adaptive Card
 type TeamsAdaptiveCard struct {
-	Type        string                 `json:"type"`
-	Attachments []TeamsCardAttachment  `json:"attachments"`
+	Type        string                `json:"type"`
+	Attachments []TeamsCardAttachment `json:"attachments"`
 }
 
 type TeamsCardAttachment struct {
@@ -248,9 +248,9 @@ func (t *teams) OnDigest(data notifier.DigestData) (string, error) {
 			"style":  "heading",
 		},
 		{
-			"type": "TextBlock",
-			"text": data.Period,
-			"size": "Small",
+			"type":     "TextBlock",
+			"text":     data.Period,
+			"size":     "Small",
 			"isSubtle": true,
 		},
 		{
@@ -264,9 +264,9 @@ func (t *teams) OnDigest(data notifier.DigestData) (string, error) {
 	// Add service issues if any
 	if len(serviceFacts) > 0 {
 		body = append(body, map[string]interface{}{
-			"type":   "TextBlock",
-			"text":   "**Service Issues (Last 24h)**",
-			"weight": "Bolder",
+			"type":      "TextBlock",
+			"text":      "**Service Issues (Last 24h)**",
+			"weight":    "Bolder",
 			"separator": true,
 		})
 		body = append(body, map[string]interface{}{

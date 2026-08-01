@@ -162,7 +162,7 @@ func TestEmailWithMockSMTPServer(t *testing.T) {
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.Nil(t, err)
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	addr := listener.Addr().(*net.TCPAddr)
 	var receivedData strings.Builder
@@ -176,26 +176,26 @@ func TestEmailWithMockSMTPServer(t *testing.T) {
 			serverDone <- true
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
-		conn.Write([]byte("220 mock.smtp.server ESMTP\r\n"))
+		_, _ = conn.Write([]byte("220 mock.smtp.server ESMTP\r\n"))
 		scanner := bufio.NewScanner(conn)
 		for scanner.Scan() {
 			line := scanner.Text()
 			receivedData.WriteString(line + "\n")
 			if strings.HasPrefix(line, "EHLO") || strings.HasPrefix(line, "HELO") {
-				conn.Write([]byte("250-mock.smtp.server Hello\r\n"))
-				conn.Write([]byte("250 OK\r\n"))
+				_, _ = conn.Write([]byte("250-mock.smtp.server Hello\r\n"))
+				_, _ = conn.Write([]byte("250 OK\r\n"))
 			} else if strings.HasPrefix(line, "MAIL FROM:") {
-				conn.Write([]byte("250 OK\r\n"))
+				_, _ = conn.Write([]byte("250 OK\r\n"))
 			} else if strings.HasPrefix(line, "RCPT TO:") {
-				conn.Write([]byte("250 OK\r\n"))
+				_, _ = conn.Write([]byte("250 OK\r\n"))
 			} else if strings.HasPrefix(line, "DATA") {
-				conn.Write([]byte("354 Start mail input\r\n"))
+				_, _ = conn.Write([]byte("354 Start mail input\r\n"))
 			} else if line == "." {
-				conn.Write([]byte("250 OK\r\n"))
+				_, _ = conn.Write([]byte("250 OK\r\n"))
 			} else if strings.HasPrefix(line, "QUIT") {
-				conn.Write([]byte("221 Bye\r\n"))
+				_, _ = conn.Write([]byte("221 Bye\r\n"))
 				break
 			}
 		}

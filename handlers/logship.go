@@ -228,7 +228,7 @@ func sendTestRequest(url, token string, payload interface{}, isSplunk bool) erro
 	if err != nil {
 		return fmt.Errorf("connection failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("server returned HTTP %d", resp.StatusCode)

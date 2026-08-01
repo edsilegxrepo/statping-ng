@@ -34,6 +34,6 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	// Cleanup
-	testDb.Close()
+	_ = testDb.Close()
 	os.Exit(code)
 }

@@ -48,7 +48,7 @@ allow_reports: true
 letsencrypt_enable: false
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -73,7 +73,7 @@ port: 5432
 postgres_ssl: require
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -98,7 +98,7 @@ database: statping_db
 port: 3306
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -122,7 +122,7 @@ letsencrypt_host: status.example.com
 letsencrypt_email: admin@example.com
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -141,15 +141,15 @@ func TestLoadConfigs_EnvOverridesYAML(t *testing.T) {
 	setTestDir(t, tmpDir)
 
 	// Set environment variables
-	os.Setenv("DB_CONN", "sqlite")
-	defer os.Unsetenv("DB_CONN")
+	_ = os.Setenv("DB_CONN", "sqlite")
+	defer func() { _ = os.Unsetenv("DB_CONN") }()
 
 	yamlContent := `connection: postgres
 host: dbserver
 database: prod_db
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -163,7 +163,7 @@ func TestLoadConfigs_SqliteEnvVariants(t *testing.T) {
 	setTestDir(t, tmpDir)
 
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(""), 0644)
+	err := os.WriteFile(configPath, []byte(""), 0o644)
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -176,8 +176,8 @@ func TestLoadConfigs_SqliteEnvVariants(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.envValue, func(t *testing.T) {
-			os.Setenv("DB_CONN", tc.envValue)
-			defer os.Unsetenv("DB_CONN")
+			_ = os.Setenv("DB_CONN", tc.envValue)
+			defer func() { _ = os.Unsetenv("DB_CONN") }()
 
 			cfg, _ := LoadConfigs(configPath)
 			assert.Equal(t, tc.expectedConn, cfg.DbConn)
@@ -222,14 +222,14 @@ func TestLoadConfigs_EmptyConnection_SetupMode(t *testing.T) {
 	setTestDir(t, tmpDir)
 
 	// Clear any existing DB_CONN env var
-	os.Unsetenv("DB_CONN")
+	_ = os.Unsetenv("DB_CONN")
 	utils.Params.Set("DB_CONN", "")
 
 	yamlContent := `host: localhost
 database: test.db
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -502,7 +502,7 @@ invalid yaml content here
   - this is wrong
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(malformedYAML), 0644)
+	err := os.WriteFile(configPath, []byte(malformedYAML), 0o644)
 	require.NoError(t, err)
 
 	_, err = LoadConfigs(configPath)
@@ -512,11 +512,11 @@ invalid yaml content here
 func TestLoadConfigs_EmptyFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	setTestDir(t, tmpDir)
-	os.Unsetenv("DB_CONN")
+	_ = os.Unsetenv("DB_CONN")
 	utils.Params.Set("DB_CONN", "")
 
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(""), 0644)
+	err := os.WriteFile(configPath, []byte(""), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -547,7 +547,7 @@ database: ""
 port: 0
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -570,9 +570,9 @@ func TestLoadConfigs_NonWritableDirectory(t *testing.T) {
 
 	// Create a subdirectory and make it non-writable
 	nonWritableDir := filepath.Join(tmpDir, "readonly")
-	err := os.Mkdir(nonWritableDir, 0555)
+	err := os.Mkdir(nonWritableDir, 0o555)
 	require.NoError(t, err)
-	defer os.Chmod(nonWritableDir, 0755)
+	defer func() { _ = os.Chmod(nonWritableDir, 0o755) }()
 
 	setTestDir(t, nonWritableDir)
 	configPath := filepath.Join(nonWritableDir, "config.yml")
@@ -593,7 +593,7 @@ unknown_field: some_value
 another_unknown: 12345
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	cfg, err := LoadConfigs(configPath)
@@ -750,7 +750,7 @@ func TestDbConfig_ToYAML_AllFields(t *testing.T) {
 		LetsEncryptEnable: true,
 		LetsEncryptHost:   "status.example.com",
 		LetsEncryptEmail:  "admin@example.com",
-		AdminLock:          true,
+		AdminLock:         true,
 		BasePath:          "/status",
 	}
 
@@ -1199,7 +1199,7 @@ func TestInitModels(t *testing.T) {
 	tmpDir := t.TempDir()
 	db, err := database.OpenTester(tmpDir)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Should not panic
 	InitModels(db)
@@ -1216,7 +1216,7 @@ func TestCreateAdminUser_WithEnvVars(t *testing.T) {
 	// Set up fresh database
 	db, err := database.OpenTester(tmpDir)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Initialize all models with this DB
 	InitModels(db)
@@ -1253,7 +1253,7 @@ func TestCreateAdminUser_DefaultValues(t *testing.T) {
 	// Set up fresh database
 	db, err := database.OpenTester(tmpDir)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Initialize all models with this DB
 	InitModels(db)

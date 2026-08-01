@@ -15,6 +15,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/configs"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/services"
+	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
 )
 
@@ -66,19 +67,19 @@ func generateAndWriteKey(keyFile string) error {
 	// Ensure parent directory exists
 	dir := filepath.Dir(keyFile)
 	if !utils.FolderExists(dir) {
-		if err := os.MkdirAll(dir, 0700); err != nil {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
 
 	// Write key to file
-	if err := os.WriteFile(keyFile, []byte(keyHex), 0400); err != nil {
+	if err := os.WriteFile(keyFile, []byte(keyHex), 0o400); err != nil {
 		return fmt.Errorf("failed to write key file: %w", err)
 	}
 	fmt.Printf("✓ Written to %s\n", keyFile)
 
 	// Set permissions (Unix only, Windows ignores)
-	if err := os.Chmod(keyFile, 0400); err != nil {
+	if err := os.Chmod(keyFile, 0o400); err != nil {
 		fmt.Printf("Warning: could not set permissions to 0400: %v\n", err)
 	} else {
 		fmt.Println("✓ Permissions set to 0400")
@@ -203,9 +204,56 @@ func exportCli(args []string) error {
 	return nil
 }
 
+func backupSettingsBeforeReset(dir string) error {
+	config, err := configs.LoadConfigs(configFile)
+	if err != nil {
+		return err
+	}
+	if err = configs.ConnectConfigs(config, false); err != nil {
+		return err
+	}
+	if _, err := services.SelectAllServices(false); err != nil {
+		return err
+	}
+	data, err := handlers.ExportSettings()
+	if err != nil {
+		return err
+	}
+
+	filename := filepath.Join(dir, "statping-backup-"+time.Now().Format("2006-01-02-150405")+".json")
+	if err = utils.SaveFile(filename, data.JSON()); err != nil {
+		return err
+	}
+	fmt.Printf("✓ Settings backed up to: %s\n", filename)
+	fmt.Println("  (excludes historical hits/failures - use 'statping import' to restore)")
+	return nil
+}
+
 func resetCli() error {
 	d := utils.Directory
-	fmt.Println("Statping directory: ", d)
+	fmt.Println("=== STATPING RESET ===")
+	fmt.Println("Directory:", d)
+	fmt.Println("\nThis will DELETE:")
+	fmt.Println("  - assets/ folder")
+	fmt.Println("  - logs/ folder")
+	fmt.Println("  - config.yml")
+	fmt.Println("  - statping.db (backed up to statping.db.backup)")
+	fmt.Println("\n*** THIS ACTION IS DESTRUCTIVE ***")
+
+	if !resetForce && !ask("Are you sure you want to reset Statping?") {
+		fmt.Println("Aborted.")
+		return nil
+	}
+
+	// Export settings to JSON backup (excludes large historical data)
+	if err := backupSettingsBeforeReset(d); err != nil {
+		fmt.Printf("Warning: could not create settings backup: %v\n", err)
+		if !resetForce && !ask("Continue without backup?") {
+			fmt.Println("Aborted.")
+			return nil
+		}
+	}
+
 	assets := d + "/assets"
 	if utils.FolderExists(assets) {
 		fmt.Printf("Deleting %s folder.\n", assets)
@@ -400,6 +448,63 @@ func ask(format string) bool {
 	text, _ := reader.ReadString('\n')
 	text = strings.ReplaceAll(text, "\n", "")
 	return strings.ToLower(text) == "y"
+}
+
+func resetAdminCli() error {
+	if resetAdminPassword == "" {
+		return errors.New("--password is required")
+	}
+	if len(resetAdminPassword) < 8 {
+		return errors.New("password must be at least 8 characters")
+	}
+
+	fmt.Println("=== ADMIN PASSWORD RESET ===")
+	fmt.Printf("Target user: %s\n", resetAdminUsername)
+
+	if err := utils.InitLogs(); err != nil {
+		return err
+	}
+	if err := source.Assets(); err != nil {
+		return err
+	}
+
+	config, err := configs.LoadConfigs(configFile)
+	if err != nil {
+		return errors.Wrap(err, "config.yml not found - run 'statping' first to set up")
+	}
+	if err = configs.ConnectConfigs(config, false); err != nil {
+		return errors.Wrap(err, "failed to connect to database")
+	}
+
+	user, err := users.FindByUsername(resetAdminUsername)
+	if err != nil {
+		return errors.Wrapf(err, "user '%s' not found", resetAdminUsername)
+	}
+
+	if !user.Admin.Bool {
+		return errors.Errorf("user '%s' is not an admin", resetAdminUsername)
+	}
+
+	user.Password = utils.HashPassword(resetAdminPassword)
+	if resetAdminEmail != "" {
+		user.Email = resetAdminEmail
+	}
+
+	if err := user.Update(); err != nil {
+		return errors.Wrap(err, "failed to update user")
+	}
+
+	fmt.Println("✓ Password updated successfully")
+	if resetAdminEmail != "" {
+		fmt.Printf("✓ Email updated to: %s\n", resetAdminEmail)
+	}
+	fmt.Println("\n*** SECURITY WARNING ***")
+	fmt.Println("This action has been logged. Change the password again via the UI")
+	fmt.Println("as soon as possible if this was an emergency recovery.")
+
+	log.Warnf("ADMIN PASSWORD RESET via CLI for user: %s", resetAdminUsername)
+
+	return nil
 }
 
 // runOnce will initialize the Statping application and check each service 1 time, will not run HTTP server

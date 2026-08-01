@@ -217,7 +217,7 @@ func RenderEmail(content string, data interface{}) (string, error) {
 	var finalBuf bytes.Buffer
 	if err := baseTmpl.Execute(&finalBuf, baseData{
 		Title:   title,
-		Content: template.HTML(contentBuf.String()),
+		Content: template.HTML(contentBuf.String()), // #nosec G203 - content is from pre-defined templates, already escaped
 	}); err != nil {
 		return "", err
 	}

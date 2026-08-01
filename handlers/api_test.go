@@ -27,10 +27,9 @@ import (
 )
 
 var (
-	dir             string
-	setupOnce       sync.Once
-	setupErr        error
-	testSetupMutex  sync.Mutex
+	setupOnce      sync.Once
+	setupErr       error
+	testSetupMutex sync.Mutex
 )
 
 func init() {
@@ -427,7 +426,6 @@ func RunHTTPTest(test HTTPTest, t *testing.T) (string, *testing.T, error) {
 	}
 	return stringBody, t, logTest(t, err)
 }
-
 
 func Request(test HTTPTest) (*httptest.ResponseRecorder, error) {
 	return RequestWithAuth(test, !test.NoAuth)

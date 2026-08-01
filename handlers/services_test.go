@@ -16,37 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// getServiceByIndex returns the service at the given index (0-based) from ordered list
-func getServiceByIndex(idx int) *services.Service {
-	svcs := services.AllInOrder()
-	if idx < len(svcs) {
-		return svcs[idx]
-	}
-	return nil
-}
-
-// getPrivateService returns a private service, or nil if none exists
-func getPrivateService() *services.Service {
-	svcs := services.AllInOrder()
-	for _, s := range svcs {
-		if !s.Public.Bool {
-			return s
-		}
-	}
-	return nil
-}
-
-// getPublicService returns a public service, or nil if none exists
-func getPublicService() *services.Service {
-	svcs := services.AllInOrder()
-	for _, s := range svcs {
-		if s.Public.Bool {
-			return s
-		}
-	}
-	return nil
-}
-
 func TestUnAuthenticatedServicesRoutes(t *testing.T) {
 	ensureHandlerSetup(t)
 	tests := []HTTPTest{

@@ -75,27 +75,27 @@ func connectLDAP(host string, port int, skipVerify bool, startTLS bool) (*ldap.C
 
 	if requiresImplicitTLS {
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: skipVerify,
+			InsecureSkipVerify: skipVerify, // #nosec G402 - user-configurable for self-signed certs
 			ServerName:         host,
 			MinVersion:         tls.VersionTLS12,
 		}
-		return ldap.DialTLS("tcp", address, tlsConfig)
+		return ldap.DialURL("ldaps://"+address, ldap.DialWithTLSConfig(tlsConfig))
 	}
 
 	// Plain connection with optional StartTLS upgrade
-	conn, err := ldap.Dial("tcp", address)
+	conn, err := ldap.DialURL("ldap://" + address)
 	if err != nil {
 		return nil, err
 	}
 
 	if startTLS {
 		tlsConfig := &tls.Config{
-			InsecureSkipVerify: skipVerify,
+			InsecureSkipVerify: skipVerify, // #nosec G402 - user-configurable for self-signed certs
 			ServerName:         host,
 			MinVersion:         tls.VersionTLS12,
 		}
 		if err := conn.StartTLS(tlsConfig); err != nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil, fmt.Errorf("StartTLS failed: %w", err)
 		}
 	} else {
@@ -144,7 +144,7 @@ func authenticateLDAP(username, password string) (*LDAPAuthResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to LDAP server: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Bind with service account (password already decrypted by AfterFind hook)
 	if c.LdapBindDN != "" {
@@ -154,7 +154,7 @@ func authenticateLDAP(username, password string) (*LDAPAuthResult, error) {
 	}
 
 	// Search for user
-	filter := strings.Replace(c.LdapUserFilter, "%s", ldap.EscapeFilter(username), -1)
+	filter := strings.ReplaceAll(c.LdapUserFilter, "%s", ldap.EscapeFilter(username))
 	searchReq := ldap.NewSearchRequest(
 		c.LdapBaseDN,
 		ldap.ScopeWholeSubtree,
@@ -242,19 +242,19 @@ func apiLdapTemplatesHandler(w http.ResponseWriter, r *http.Request) {
 func apiLdapSettingsHandler(w http.ResponseWriter, r *http.Request) {
 	c := core.App
 	settings := map[string]interface{}{
-		"ldap_enabled":                 c.LdapEnabled.Bool,
-		"ldap_host":                    c.LdapHost,
-		"ldap_port":                    c.LdapPort,
-		"ldap_start_tls":               c.LdapStartTLS.Bool,
-		"ldap_skip_verify":             c.LdapSkipVerify.Bool,
-		"ldap_bind_dn":                 c.LdapBindDN,
-		"ldap_base_dn":                 c.LdapBaseDN,
-		"ldap_user_filter":             c.LdapUserFilter,
-		"ldap_username_attr":           c.LdapUsernameAttr,
-		"ldap_email_attr":              c.LdapEmailAttr,
+		"ldap_enabled":                  c.LdapEnabled.Bool,
+		"ldap_host":                     c.LdapHost,
+		"ldap_port":                     c.LdapPort,
+		"ldap_start_tls":                c.LdapStartTLS.Bool,
+		"ldap_skip_verify":              c.LdapSkipVerify.Bool,
+		"ldap_bind_dn":                  c.LdapBindDN,
+		"ldap_base_dn":                  c.LdapBaseDN,
+		"ldap_user_filter":              c.LdapUserFilter,
+		"ldap_username_attr":            c.LdapUsernameAttr,
+		"ldap_email_attr":               c.LdapEmailAttr,
 		"ldap_authorized_group_enabled": c.LdapAuthorizedGroupEnabled.Bool,
-		"ldap_authorized_group":        c.LdapAuthorizedGroup,
-		"ldap_template":                c.LdapTemplate,
+		"ldap_authorized_group":         c.LdapAuthorizedGroup,
+		"ldap_template":                 c.LdapTemplate,
 	}
 	returnJson(settings, w, r)
 }
@@ -309,7 +309,7 @@ func apiLdapTestHandler(w http.ResponseWriter, r *http.Request) {
 		}, w, r)
 		return
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Test bind with service account
 	if req.BindDN != "" {
