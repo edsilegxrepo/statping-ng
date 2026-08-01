@@ -4,7 +4,6 @@
 #   (no args)       Quick build only
 #   --audit         Run code quality & security checks
 #   --test          Run tests with full isolation (serial, no cache, pollution check)
-#   --test-only     Run tests only (same as --test, nothing else)
 #   --all           Build + audit
 #   --clean         Remove build artifacts and data for fresh start
 #   --clean-all     Full reset (includes node_modules)
@@ -20,7 +19,6 @@ RESET="\033[0m"
 DO_BUILD=true
 DO_AUDIT=false
 DO_TEST=false
-DO_TEST_ONLY=false
 DO_EXTRA=false
 DO_CLEAN=false
 DO_CLEAN_ALL=false
@@ -34,10 +32,6 @@ for arg in "$@"; do
     --test)
       DO_BUILD=false
       DO_TEST=true
-      ;;
-    --test-only)
-      DO_BUILD=false
-      DO_TEST_ONLY=true
       ;;
     --all)
       DO_BUILD=true
@@ -60,7 +54,6 @@ for arg in "$@"; do
       echo "  (no args)       Quick build only"
       echo "  --audit         Run code quality & security checks"
       echo "  --test          Run tests with full isolation (serial, no cache, pollution check)"
-      echo "  --test-only     Run tests only (same as --test, nothing else)"
       echo "  --all           Build + audit"
       echo "  --clean         Remove build artifacts and data for fresh start"
       echo "  --clean-all     Full reset (includes node_modules)"
@@ -174,27 +167,6 @@ fi
 # TEST (full isolation)
 #=============================================================================
 if $DO_TEST; then
-  log_step "TEST" "Running tests with full isolation..."
-
-  # Clean any stale test artifacts from repo root
-  rm -f statping.db statping.log config.yml statping_config.yml 2>/dev/null || true
-
-  # Run tests: serial packages (-p=1), no cache (-count=1), extended timeout
-  go test ./... -p=1 -count=1 -timeout=600s
-
-  # Verify no pollution
-  if ls statping.db statping.log config.yml statping_config.yml 2>/dev/null; then
-    printf "%bWARNING:%b Test pollution detected - files written to repo root\n" "$YELLOW" "$RESET"
-    exit 1
-  fi
-
-  log_success "All tests passed"
-fi
-
-#=============================================================================
-# TEST ONLY (same as --test, explicit naming)
-#=============================================================================
-if $DO_TEST_ONLY; then
   log_step "TEST" "Running tests with full isolation..."
 
   # Clean any stale test artifacts from repo root
