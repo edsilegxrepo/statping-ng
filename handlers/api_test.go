@@ -147,7 +147,7 @@ func TestSetupRoutes(t *testing.T) {
 
 func TestMainApiRoutes(t *testing.T) {
 	ensureHandlerSetup(t)
-	date := utils.Now().Format("2006-01")
+	date := time.Now().Format("2006-01")
 	tests := []HTTPTest{
 		{
 			Name:             "Statping Details",

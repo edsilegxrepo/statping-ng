@@ -21,7 +21,9 @@ func TestMain(m *testing.M) {
 
 	// Set the directory for all tests
 	utils.Directory = tmpDir
+	utils.InitEnvs()
 	utils.Params.Set("STATPING_DIR", tmpDir)
+	_ = utils.InitLogs()
 
 	// Run all tests
 	code := m.Run()

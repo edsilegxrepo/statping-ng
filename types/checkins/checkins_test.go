@@ -1,6 +1,7 @@
 package checkins
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -12,8 +13,19 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	tmpDir, err := os.MkdirTemp("", "statping-checkins-test")
+	if err != nil {
+		os.Exit(1)
+	}
+	utils.Directory = tmpDir
+	utils.InitEnvs()
+	utils.Params.Set("STATPING_DIR", tmpDir)
 	_ = utils.InitLogs()
-	m.Run()
+
+	code := m.Run()
+
+	_ = os.RemoveAll(tmpDir)
+	os.Exit(code)
 }
 
 func setupTestDB(t *testing.T) database.Database {

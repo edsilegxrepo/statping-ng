@@ -1,4 +1,9 @@
 # 0.97.2 (07-31-2026)
+- **Test Isolation: Eliminated Test Pollution**:
+  - Added `TestMain()` functions with temp directories to all test packages
+  - Tests now use `os.MkdirTemp()` instead of writing to repo root
+  - Fixed timezone bug in handlers logs test (UTC vs local time mismatch)
+  - Packages with proper TestMain: handlers, database, utils, notifiers, types/checkins, types/failures, types/hits, types/configs, types/core, types/messages, types/notifications
 - **Security: Critical Code Review Fixes**:
   - **Symlink Bypass (CRITICAL)**: Command notifier now resolves symlinks with `filepath.EvalSymlinks()` before validating trusted script directory
   - **DNS Rebinding (CRITICAL)**: Added `ValidateAndResolveURL()` and `SafeHTTPClient()` to pin DNS resolution and prevent SSRF bypass attacks
