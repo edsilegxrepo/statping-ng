@@ -2,11 +2,8 @@ package utils
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -21,9 +18,6 @@ import (
 
 // Encrypted value prefix for libsecsecrets format
 const encryptedPrefixV1 = "v1:gcm:"
-
-// Legacy prefix for backward compatibility
-const encryptedPrefixLegacy = "enc:"
 
 var (
 	// ErrMasterKeyNotInitialized is returned when encryption is attempted without a master key
@@ -145,7 +139,7 @@ func Decrypt(ciphertext string) (string, error) {
 	}
 
 	// Plaintext passthrough (no prefix)
-	if !strings.HasPrefix(ciphertext, encryptedPrefixV1) && !strings.HasPrefix(ciphertext, encryptedPrefixLegacy) {
+	if !strings.HasPrefix(ciphertext, encryptedPrefixV1) {
 		return ciphertext, nil
 	}
 
@@ -167,12 +161,6 @@ func Decrypt(ciphertext string) (string, error) {
 			return "", fmt.Errorf("decryption failed: %w", err)
 		}
 		return plaintext, nil
-	}
-
-	// Handle enc: prefix (legacy format - uses SHA256 of master key hex for compatibility)
-	if strings.HasPrefix(ciphertext, encryptedPrefixLegacy) {
-		keyHex := fmt.Sprintf("%x", key)
-		return decryptLegacyWithKey(ciphertext, keyHex)
 	}
 
 	return ciphertext, nil
@@ -221,49 +209,8 @@ func DecryptWithKey(ciphertext string, keyHex string) (string, error) {
 		return plaintext, nil
 	}
 
-	// Legacy enc: format
-	if strings.HasPrefix(ciphertext, encryptedPrefixLegacy) {
-		return decryptLegacyWithKey(ciphertext, keyHex)
-	}
-
 	// No prefix - return as-is
 	return ciphertext, nil
-}
-
-// decryptLegacyWithKey decrypts legacy enc: format using the old method
-func decryptLegacyWithKey(ciphertext, keyString string) (string, error) {
-	// Strip the encrypted prefix
-	ciphertext = strings.TrimPrefix(ciphertext, encryptedPrefixLegacy)
-
-	data, err := base64.StdEncoding.DecodeString(ciphertext)
-	if err != nil {
-		return "", err
-	}
-
-	keyHash := sha256.Sum256([]byte(keyString))
-	block, err := aes.NewCipher(keyHash[:])
-	if err != nil {
-		return "", err
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", err
-	}
-
-	if len(data) < gcm.NonceSize() {
-		return "", fmt.Errorf("ciphertext too short")
-	}
-
-	nonce := data[:gcm.NonceSize()]
-	ciphertextBytes := data[gcm.NonceSize():]
-
-	plaintext, err := gcm.Open(nil, nonce, ciphertextBytes, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return string(plaintext), nil
 }
 
 // parseKeyHex parses a 64-char hex key or 32-byte raw key into bytes
@@ -272,9 +219,9 @@ func parseKeyHex(keyHex string) ([]byte, error) {
 	return libsecsecrets.ResolveKey(ctx, keyHex, "", "")
 }
 
-// IsEncrypted checks if a string is encrypted (has v1:gcm: or enc: prefix)
+// IsEncrypted checks if a string is encrypted (has v1:gcm: prefix)
 func IsEncrypted(s string) bool {
-	return strings.HasPrefix(s, encryptedPrefixV1) || strings.HasPrefix(s, encryptedPrefixLegacy)
+	return strings.HasPrefix(s, encryptedPrefixV1)
 }
 
 // HashPassword returns the bcrypt hash of a password string

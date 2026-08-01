@@ -53,8 +53,8 @@ func csrfMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Neither Origin nor Referer present
-		// Allow if using API authentication (Bearer token or API key) - these are not vulnerable to CSRF
-		if hasAuthorizationHeader(r) || hasAPIQuery(r) {
+		// Allow if using API authentication (Bearer token) - not vulnerable to CSRF
+		if hasAuthorizationHeader(r) {
 			next.ServeHTTP(w, r)
 			return
 		}

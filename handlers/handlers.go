@@ -84,12 +84,6 @@ func RunHTTPServer() error {
 
 // IsReadAuthenticated will allow Read Only authentication for some routes
 func IsReadAuthenticated(r *http.Request) bool {
-	if ok := hasSetupEnv(); ok {
-		return true
-	}
-	if ok := hasAPIQuery(r); ok {
-		return true
-	}
 	if ok := hasAuthorizationHeader(r); ok {
 		return true
 	}
@@ -99,12 +93,6 @@ func IsReadAuthenticated(r *http.Request) bool {
 
 // IsFullAuthenticated returns true if the HTTP request is authenticated as administrator.
 func IsFullAuthenticated(r *http.Request) bool {
-	if ok := hasSetupEnv(); ok {
-		return true
-	}
-	if ok := hasAPIQuery(r); ok {
-		return true
-	}
 	if ok := hasAuthorizationHeader(r); ok {
 		return true
 	}
@@ -122,9 +110,6 @@ func IsFullAuthenticated(r *http.Request) bool {
 // ScopeName will show private JSON fields in the API.
 // It will return "admin" if request has valid admin authentication.
 func ScopeName(r *http.Request) string {
-	if ok := hasAPIQuery(r); ok {
-		return "admin"
-	}
 	if ok := hasAuthorizationHeader(r); ok {
 		return "admin"
 	}
@@ -156,12 +141,6 @@ func IsAdmin(r *http.Request) bool {
 
 // IsUser returns true if the user is registered or request is authenticated with API Key or token
 func IsUser(r *http.Request) bool {
-	if ok := hasSetupEnv(); ok {
-		return true
-	}
-	if ok := hasAPIQuery(r); ok {
-		return true
-	}
 	if ok := hasAuthorizationHeader(r); ok {
 		return true
 	}
