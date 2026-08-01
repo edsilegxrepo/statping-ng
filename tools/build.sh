@@ -3,7 +3,7 @@
 # Usage: ./tools/build.sh [options]
 #   (no args)       Quick build only
 #   --audit         Run code quality & security checks
-#   --test          Run tests only (no build)
+#   --test          Run tests with full isolation (serial, no cache, pollution check)
 #   --all           Build + audit
 #   --clean         Remove build artifacts and data for fresh start
 #   --clean-all     Full reset (includes node_modules)
@@ -53,7 +53,7 @@ for arg in "$@"; do
       echo "Usage: ./tools/build.sh [options]"
       echo "  (no args)       Quick build only"
       echo "  --audit         Run code quality & security checks"
-      echo "  --test          Run tests only (no build)"
+      echo "  --test          Run tests with full isolation (serial, no cache, pollution check)"
       echo "  --all           Build + audit"
       echo "  --clean         Remove build artifacts and data for fresh start"
       echo "  --clean-all     Full reset (includes node_modules)"
@@ -164,11 +164,23 @@ if $DO_BUILD; then
 fi
 
 #=============================================================================
-# TEST ONLY
+# TEST (full isolation)
 #=============================================================================
 if $DO_TEST; then
-  log_step "TEST" "Running Go tests..."
-  go test -p=1 ./...
+  log_step "TEST" "Running tests with full isolation..."
+
+  # Clean any stale test artifacts from repo root
+  rm -f statping.db statping.log config.yml statping_config.yml 2>/dev/null || true
+
+  # Run tests: serial packages (-p=1), no cache (-count=1), extended timeout
+  go test ./... -p=1 -count=1 -timeout=600s
+
+  # Verify no pollution
+  if ls statping.db statping.log config.yml statping_config.yml 2>/dev/null; then
+    printf "%bWARNING:%b Test pollution detected - files written to repo root\n" "$YELLOW" "$RESET"
+    exit 1
+  fi
+
   log_success "All tests passed"
 fi
 
