@@ -4,10 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/foomo/simplecert"
-	"github.com/foomo/tlsconfig"
 	"github.com/statping-ng/statping-ng/utils"
 )
 
@@ -23,79 +20,7 @@ func startServer(host string) error {
 	return httpServer.ListenAndServe()
 }
 
-func letsEncryptCert() (*tls.Config, error) {
-	certsDir := utils.DirPath("certs")
-	if !utils.FolderExists(certsDir) {
-		if err := utils.CreateDirectory(certsDir); err != nil {
-			return nil, err
-		}
-	}
-
-	cfg := simplecert.Default
-	cfg.Domains = strings.Split(utils.Params.GetString("LETSENCRYPT_HOST"), ",")
-	cfg.CacheDir = certsDir
-	cfg.SSLEmail = utils.Params.GetString("LETSENCRYPT_EMAIL")
-	cfg.Local = utils.Params.GetBool("LETSENCRYPT_LOCAL")
-	cfg.WillRenewCertificate = func() {
-		log.Infoln("LetsEncrypt renewing SSL Certificate for: ", utils.Params.GetString("LETSENCRYPT_HOST"))
-	}
-	cfg.DidRenewCertificate = func() {
-		log.Infoln("LetsEncrypt renewed SSL Certificate for: ", utils.Params.GetString("LETSENCRYPT_HOST"))
-		StopHTTPServer(nil)
-		if err := RunHTTPServer(); err != nil {
-			log.Errorln(err)
-		}
-	}
-	cfg.FailedToRenewCertificate = func(err error) {
-		log.Errorln(err)
-	}
-	certReloader, err := simplecert.Init(cfg, func() {
-		StopHTTPServer(nil)
-	})
-	if err != nil {
-		log.Fatal("simplecert init failed: ", err)
-		return nil, err
-	}
-
-	tlsconf := tlsconfig.NewServerTLSConfig(tlsconfig.TLSModeServerStrict)
-	tlsconf.GetCertificate = certReloader.GetCertificateFunc()
-
-	return tlsconf, nil
-}
-
-func startLetsEncryptServer(ip string) error {
-	log.Infoln("Starting LetEncrypt redirect server on port 80")
-	redirectSrv := &http.Server{
-		Addr:         ":80",
-		Handler:      http.HandlerFunc(simplecert.Redirect),
-		WriteTimeout: timeout,
-		ReadTimeout:  timeout,
-		IdleTimeout:  timeout,
-	}
-	go func() {
-		if err := redirectSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error(err)
-		}
-	}()
-
-	cfg, err := letsEncryptCert()
-	if err != nil {
-		return err
-	}
-
-	srv := &http.Server{
-		Addr:         fmt.Sprintf("%v:%v", ip, 443),
-		Handler:      router,
-		TLSConfig:    cfg,
-		WriteTimeout: timeout,
-		ReadTimeout:  timeout,
-		IdleTimeout:  timeout,
-	}
-
-	return srv.ListenAndServeTLS("", "")
-}
-
-func startSSLServer(ip string) error {
+func startSSLServer(ip string, port int) error {
 	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
@@ -108,7 +33,7 @@ func startSSLServer(ip string) error {
 		},
 	}
 	srv := &http.Server{
-		Addr:         fmt.Sprintf("%v:%v", ip, 443),
+		Addr:         fmt.Sprintf("%v:%v", ip, port),
 		Handler:      router,
 		TLSConfig:    cfg,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),

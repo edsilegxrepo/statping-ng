@@ -27,9 +27,6 @@ func Save() error {
 		SqlFile:            p.GetString("SQL_FILE"),
 		Language:           p.GetString("LANGUAGE"),
 		AllowReports:       p.GetBool("ALLOW_REPORTS"),
-		LetsEncryptEnable:  p.GetBool("LETSENCRYPT_ENABLE"),
-		LetsEncryptHost:    p.GetString("LETSENCRYPT_HOST"),
-		LetsEncryptEmail:   p.GetString("LETSENCRYPT_EMAIL"),
 		ApiSecret:          p.GetString("API_SECRET"),
 		SampleData:         p.GetBool("SAMPLE_DATA"),
 		MaxOpenConnections: p.GetInt("MAX_OPEN_CONN"),
@@ -94,15 +91,6 @@ func LoadConfigs(cfgFile string) (*DbConfig, error) {
 	if db.AllowReports {
 		p.Set("ALLOW_REPORTS", true)
 	}
-	if db.LetsEncryptEmail != "" {
-		p.Set("LETSENCRYPT_EMAIL", db.LetsEncryptEmail)
-	}
-	if db.LetsEncryptHost != "" {
-		p.Set("LETSENCRYPT_HOST", db.LetsEncryptHost)
-	}
-	if db.LetsEncryptEnable {
-		p.Set("LETSENCRYPT_ENABLE", db.LetsEncryptEnable)
-	}
 
 	configs := &DbConfig{
 		DbConn:            p.GetString("DB_CONN"),
@@ -119,12 +107,9 @@ func LoadConfigs(cfgFile string) (*DbConfig, error) {
 		Password:          p.GetString("ADMIN_PASSWORD"),
 		Location:          utils.Directory,
 		SqlFile:           p.GetString("SQL_FILE"),
-		Language:          p.GetString("LANGUAGE"),
-		AllowReports:      p.GetBool("ALLOW_REPORTS"),
-		LetsEncryptEnable: p.GetBool("LETSENCRYPT_ENABLE"),
-		LetsEncryptHost:   p.GetString("LETSENCRYPT_HOST"),
-		LetsEncryptEmail:  p.GetString("LETSENCRYPT_EMAIL"),
-		ApiSecret:         p.GetString("API_SECRET"),
+		Language:     p.GetString("LANGUAGE"),
+		AllowReports: p.GetBool("ALLOW_REPORTS"),
+		ApiSecret:    p.GetString("API_SECRET"),
 		SampleData:        p.GetBool("SAMPLE_DATA"),
 	}
 	log.WithFields(utils.ToFields(configs)).Debugln("read config file: " + cfgFile)

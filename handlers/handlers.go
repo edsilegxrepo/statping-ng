@@ -60,13 +60,14 @@ func RunHTTPServer() error {
 	}
 
 	ip := utils.Params.GetString("SERVER_IP")
-	host := fmt.Sprintf("%v:%v", ip, utils.Params.GetInt("SERVER_PORT"))
+	port := utils.Params.GetInt("SERVER_PORT")
+	host := fmt.Sprintf("%v:%v", ip, port)
 	key := utils.FileExists(utils.DirPath("server.key"))
 	cert := utils.FileExists(utils.DirPath("server.crt"))
 
 	if key && cert {
 		log.Infoln("server.cert and server.key was found in root directory! Starting in SSL mode.")
-		log.Infoln(fmt.Sprintf("Statping Secure HTTPS Server running on https://%v:%v", ip, 443))
+		log.Infof("Statping Secure HTTPS Server running on https://%v:%v%v", ip, port, basePath)
 		usingSSL = true
 	} else {
 		log.Infoln("Statping HTTP Server running on http://" + host + basePath)
@@ -75,13 +76,10 @@ func RunHTTPServer() error {
 	router = Router()
 	resetCookies()
 
-	if utils.Params.GetBool("LETSENCRYPT_ENABLE") {
-		return startLetsEncryptServer(ip)
-	} else if usingSSL {
-		return startSSLServer(ip)
-	} else {
-		return startServer(host)
+	if usingSSL {
+		return startSSLServer(ip, port)
 	}
+	return startServer(host)
 }
 
 // IsReadAuthenticated will allow Read Only authentication for some routes

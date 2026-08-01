@@ -22,12 +22,9 @@ type DbConfig struct {
 	Password          string `yaml:"-" json:"-"`
 	Email             string `yaml:"-" json:"-"`
 	Error             error  `yaml:"-" json:"-"`
-	Location          string `yaml:"location,omitempty" json:"-"`
-	SqlFile           string `yaml:"sqlfile,omitempty" json:"-"`
-	LetsEncryptHost   string `yaml:"letsencrypt_host,omitempty" json:"letsencrypt_host"`
-	LetsEncryptEmail  string `yaml:"letsencrypt_email,omitempty" json:"letsencrypt_email"`
-	LetsEncryptEnable bool   `yaml:"letsencrypt_enable,omitempty" json:"letsencrypt_enable"`
-	LocalIP           string `yaml:"-" json:"-"`
+	Location string `yaml:"location,omitempty" json:"-"`
+	SqlFile  string `yaml:"sqlfile,omitempty" json:"-"`
+	LocalIP  string `yaml:"-" json:"-"`
 
 	DisableHTTP bool   `yaml:"disable_http" json:"disable_http"`
 	AdminLock   bool   `yaml:"admin_lock" json:"admin_lock"`
