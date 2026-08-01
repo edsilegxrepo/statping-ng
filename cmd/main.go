@@ -54,8 +54,10 @@ func exit(err error) {
 	os.Exit(1)
 }
 
-// Close will gracefully stop the database connection, and log file
+// Close will gracefully stop all services, HTTP server, database connection, and log file
 func Close() {
+	services.StopAll()
+	handlers.StopHTTPServer(nil)
 	utils.StopLogShipper()
 	utils.CloseLogs()
 	confgs.Close()
@@ -123,14 +125,15 @@ func start() {
 	}
 
 	<-stopped
-	Close()
 }
 
 // sigterm will attempt to close the database connections gracefully
 func sigterm() {
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
+	log.Infoln("Received shutdown signal")
+	Close()
 	stopped <- true
 }
 
