@@ -9,6 +9,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/users"
+	"github.com/statping-ng/statping-ng/utils"
 )
 
 // ForwardAuthInfo contains user information extracted from forward auth headers
@@ -95,9 +96,15 @@ func forwardAuthUser(r *http.Request) *users.User {
 	user, err := users.FindByUsername(info.Username)
 	if err != nil {
 		// Auto-provision new user from forward auth
+		// Generate a random password - user authenticates via proxy, not locally
+		email := info.Email
+		if email == "" {
+			email = info.Username + "@forward-auth.local"
+		}
 		user = &users.User{
 			Username: info.Username,
-			Email:    info.Email,
+			Email:    email,
+			Password: utils.HashPassword(utils.RandomString(32)),
 			Admin:    null.NewNullBool(info.IsAdmin),
 		}
 		if err := user.Create(); err != nil {
