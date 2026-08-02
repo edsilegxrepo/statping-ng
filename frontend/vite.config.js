@@ -44,17 +44,18 @@ function goTemplatePlugin() {
 
       const cssLinks = cssMatch.map(m => m.replace(/href="\//, 'href="')).join('\n    ')
       const preloadLinks = preloadMatch.map(m => m.replace(/href="\//, 'href="')).join('\n    ')
-      const jsScripts = jsMatch.map(m => m.replace(/src="\//, 'src="')).join('\n')
+      const jsScripts = jsMatch.map(m => m.replace(/src="\//, 'src="')).join('\n    ')
 
       let baseGohtml = fs.readFileSync(basePath, 'utf-8')
-      baseGohtml = baseGohtml.replace(
-        /(<link rel="modulepreload"[^>]*>[\s\S]*?)?<link rel="stylesheet" crossorigin href="assets\/index-[^"]+\.css">/,
-        `${preloadLinks}\n    ${cssLinks}`
-      )
-      baseGohtml = baseGohtml.replace(
-        /<script type="module" crossorigin src="assets\/index-[^"]+\.js"><\/script>/,
-        jsScripts
-      )
+
+      // Remove old asset tags (handles various formats from different Vite versions)
+      baseGohtml = baseGohtml.replace(/<script type="module"[^>]*src="assets\/[^"]+\.js"[^>]*><\/script>\s*/g, '')
+      baseGohtml = baseGohtml.replace(/<link rel="modulepreload"[^>]*href="assets\/[^"]+\.js"[^>]*>\s*/g, '')
+      baseGohtml = baseGohtml.replace(/<link rel="stylesheet"[^>]*href="assets\/[^"]+\.css"[^>]*>\s*/g, '')
+
+      // Insert new asset tags before </head>
+      const assetTags = `    ${jsScripts}\n    ${preloadLinks}\n    ${cssLinks}\n`
+      baseGohtml = baseGohtml.replace(/(\s*)<\/head>/, `\n${assetTags}$1</head>`)
 
       fs.writeFileSync(basePath, baseGohtml)
       console.log('Updated base.gohtml with Vite asset references')
@@ -94,8 +95,12 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia', 'axios'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('vue') || id.includes('pinia') || id.includes('axios')) {
+              return 'vendor'
+            }
+          }
         },
       },
     },
