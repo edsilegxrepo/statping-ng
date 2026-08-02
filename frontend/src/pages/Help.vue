@@ -1,4 +1,6 @@
 <template>
+  <div>
+    <TopNav />
     <div class="col-12 mt-4">
         <div class="row mb-5">
             <div class="col-12 text-center">
@@ -119,13 +121,141 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Understanding Response Times -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary-soft p-3 rounded mr-3">
+                                <font-awesome-icon icon="stopwatch" class="text-primary" size="2x"/>
+                            </div>
+                            <h4 class="mb-0 font-weight-bold">Response Times</h4>
+                        </div>
+                        <p class="text-muted small">How to interpret latency values:</p>
+                        <table class="table table-sm small mb-0">
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-success text-white">&lt; 100ms</span></td>
+                                    <td>Excellent - Fast response</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-primary text-white">100-300ms</span></td>
+                                    <td>Good - Normal for most services</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">300-500ms</span></td>
+                                    <td>Acceptable - May indicate load</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-danger text-white">&gt; 500ms</span></td>
+                                    <td>Slow - Investigate if persistent</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-muted small mt-3 mb-0"><strong>Note:</strong> Expected latency varies by service type. Database queries may be faster than external API calls.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Uptime SLA Reference -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary-soft p-3 rounded mr-3">
+                                <font-awesome-icon icon="percentage" class="text-primary" size="2x"/>
+                            </div>
+                            <h4 class="mb-0 font-weight-bold">Uptime SLA Reference</h4>
+                        </div>
+                        <p class="text-muted small">What uptime percentages mean in practice:</p>
+                        <table class="table table-sm small mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Uptime</th>
+                                    <th>Downtime/Month</th>
+                                    <th>Downtime/Year</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>99%</strong></td>
+                                    <td>~7 hours</td>
+                                    <td>~3.6 days</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>99.9%</strong></td>
+                                    <td>~44 minutes</td>
+                                    <td>~8.7 hours</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>99.95%</strong></td>
+                                    <td>~22 minutes</td>
+                                    <td>~4.4 hours</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>99.99%</strong></td>
+                                    <td>~4 minutes</td>
+                                    <td>~52 minutes</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reading the Status Page | FAQ side by side -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h4 class="font-weight-bold mb-4"><font-awesome-icon icon="eye" class="text-primary mr-2"/>Reading the Status Page</h4>
+                        <h6>Status Indicators</h6>
+                        <ul class="list-unstyled small mb-3">
+                            <li class="mb-2"><span class="badge bg-success text-white">Online</span> Service responding normally</li>
+                            <li class="mb-2"><span class="badge bg-danger text-white">Offline</span> Service not responding</li>
+                            <li class="mb-2"><span class="badge bg-warning text-dark">Degraded</span> Slow or partial errors</li>
+                        </ul>
+                        <h6>Top Banner Metrics</h6>
+                        <ul class="small text-muted mb-3">
+                            <li><strong>X/Y Online:</strong> Services currently up</li>
+                            <li><strong>XX% (24h):</strong> Average uptime</li>
+                            <li><strong>Last Check:</strong> Most recent check time</li>
+                        </ul>
+                        <h6>Service Details</h6>
+                        <p class="small text-muted mb-0">Click any service to view response times, uptime charts, failure history, and statistics.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm border-0 bg-light">
+                    <div class="card-body p-4">
+                        <h4 class="font-weight-bold mb-4"><font-awesome-icon icon="question-circle" class="text-primary mr-2"/>Frequently Asked Questions</h4>
+                        <p class="mb-1"><strong>How often are services checked?</strong></p>
+                        <p class="small text-muted mb-3">Each service has a configurable interval, typically 30 seconds to 5 minutes.</p>
+
+                        <p class="mb-1"><strong>How is uptime calculated?</strong></p>
+                        <p class="small text-muted mb-3">Uptime = (successful checks / total checks) × 100% over the selected period.</p>
+
+                        <p class="mb-1"><strong>Why might a service show as offline?</strong></p>
+                        <p class="small text-muted mb-3">Network issues, server errors (5xx), timeouts, or the service is genuinely down.</p>
+
+                        <p class="mb-1"><strong>Can I subscribe to updates?</strong></p>
+                        <p class="small text-muted mb-0">Contact your administrator to be added to notification channels.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+  </div>
 </template>
 
 <script>
+import TopNav from '@/components/Index/TopNav.vue'
+
 export default {
 	name: "Help",
+	components: { TopNav },
 };
 </script>
 

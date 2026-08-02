@@ -258,7 +258,13 @@ if $DO_BUILD; then
   # Build Go binary to testfiles/
   log_step "BUILD" "Building Go binary..."
   mkdir -p testfiles
-  go build -o "testfiles/statping${BIN_EXT}" ./cmd
+
+  # Get version and commit for ldflags
+  VERSION=$(cat version.txt 2> /dev/null || echo "dev")
+  COMMIT=$(git rev-parse --short=7 HEAD 2> /dev/null || echo "unknown")
+  LDFLAGS="-X main.VERSION=${VERSION} -X main.COMMIT=${COMMIT}"
+
+  go build -ldflags "$LDFLAGS" -o "testfiles/statping${BIN_EXT}" ./cmd
 
   log_success "Build complete (binary: testfiles/statping${BIN_EXT})"
 fi

@@ -2,6 +2,7 @@
   <nav class="top-nav">
     <div class="top-nav-content">
       <div class="top-nav-left">
+        <span v-if="core.environment" :class="['env-badge', 'env-' + core.environment.toLowerCase()]">{{ core.environment }}</span>
         <router-link to="/" class="top-nav-brand">
           <img v-if="core.footer" :src="core.footer" alt="Logo" class="top-nav-logo" />
           <span class="top-nav-title">{{ core.name }}</span>
@@ -37,6 +38,14 @@
       </div>
 
       <div class="top-nav-right">
+        <router-link to="/" class="top-nav-btn top-nav-btn-monitors">
+          <font-awesome-icon icon="server" class="me-1" />
+          Monitors
+        </router-link>
+        <router-link to="/help" class="top-nav-btn">
+          <font-awesome-icon icon="question-circle" class="me-1" />
+          Help
+        </router-link>
         <router-link to="/dashboard" class="top-nav-btn">
           <font-awesome-icon icon="tachometer-alt" class="me-1" />
           Dashboard
@@ -150,6 +159,41 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
 .top-nav-left {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
+}
+
+.env-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+}
+
+.env-prod, .env-production {
+  background-color: rgba(229, 62, 62, 0.2);
+  color: #fc8181;
+  border-color: rgba(229, 62, 62, 0.5);
+}
+
+.env-qa, .env-uat, .env-staging {
+  background-color: rgba(214, 158, 46, 0.2);
+  color: #f6e05e;
+  border-color: rgba(214, 158, 46, 0.5);
+}
+
+.env-dev, .env-development {
+  background-color: rgba(56, 161, 105, 0.2);
+  color: #68d391;
+  border-color: rgba(56, 161, 105, 0.5);
+}
+
+.env-test {
+  background-color: rgba(49, 130, 206, 0.2);
+  color: #63b3ed;
+  border-color: rgba(49, 130, 206, 0.5);
 }
 
 .top-nav-brand {
@@ -284,6 +328,15 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
 .top-nav-btn:hover {
   background: rgba(255, 255, 255, 0.25);
   color: #fff;
+}
+
+.top-nav-btn-monitors {
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.top-nav-btn-monitors:hover {
+  background: rgba(74, 222, 128, 0.3);
 }
 
 .top-nav-btn-login {

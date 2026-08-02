@@ -30,6 +30,7 @@ type Core struct {
 	Domain         string          `gorm:"not null;column:domain" json:"domain"`
 	Version        string          `gorm:"column:version" json:"version"`
 	Commit         string          `gorm:"-" json:"commit"`
+	Environment    string          `gorm:"-" json:"environment"`
 	Language       string          `gorm:"column:language" json:"language"`
 	Setup          bool            `gorm:"-" json:"setup"`
 	MigrationId    int64           `gorm:"column:migration_id" json:"migration_id,omitempty"`

@@ -11,6 +11,7 @@ const DashboardMessages = () => import('@/components/Dashboard/DashboardMessages
 const EditService = () => import('@/components/Dashboard/EditService.vue')
 const Logs = () => import('@/pages/Logs.vue')
 const Help = () => import('@/pages/Help.vue')
+const AdminHelp = () => import('@/components/Dashboard/AdminHelp.vue')
 const Settings = () => import('@/pages/Settings.vue')
 const Login = () => import('@/pages/Login.vue')
 const Service = () => import('@/pages/Service.vue')
@@ -145,10 +146,10 @@ const routes = [
       },
       {
         path: 'help',
-        component: Help,
+        component: AdminHelp,
         meta: {
           requiresAuth: true,
-          title: 'Statping - Help',
+          title: 'Statping - Admin Help',
         },
       },
       {
@@ -167,6 +168,14 @@ const routes = [
     component: Login,
     meta: {
       title: 'Statping - Login',
+    },
+  },
+  {
+    path: '/help',
+    name: 'Help',
+    component: Help,
+    meta: {
+      title: 'Statping - Help',
     },
   },
   { path: '/logout', redirect: '/' },

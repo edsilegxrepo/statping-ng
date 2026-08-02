@@ -190,6 +190,7 @@ func Select() (*Core, error) {
 	}
 	App.Version = utils.Params.GetString("VERSION")
 	App.Commit = utils.Params.GetString("COMMIT")
+	App.Environment = utils.Params.GetString("STATPING_ENV")
 	return App, q.Error()
 }
 
