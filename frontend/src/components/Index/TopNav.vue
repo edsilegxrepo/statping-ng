@@ -14,21 +14,21 @@
       </div>
 
       <div class="top-nav-center">
-        <span class="status-summary" :class="statusClass">
+        <span class="status-summary" :class="statusClass" title="Services currently responding">
           <span class="status-dot"></span>
           {{ onlineCount }}/{{ totalCount }} online
         </span>
 
         <span class="status-divider"></span>
 
-        <span class="status-uptime" :class="uptimeClass">
+        <span class="status-uptime" :class="uptimeClass" title="Average uptime across all services in the last 24 hours">
           <font-awesome-icon icon="chart-line" class="me-1" />
           {{ uptimePercent }}% (24h)
         </span>
 
         <span class="status-divider"></span>
 
-        <span class="status-lastcheck">
+        <span class="status-lastcheck" title="Time since last successful health check">
           <font-awesome-icon icon="sync-alt" class="me-1" />
           {{ lastCheckText }}
         </span>
