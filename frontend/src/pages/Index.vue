@@ -1,8 +1,8 @@
 <template>
   <div>
     <TopNav />
+    <Header />
     <div class="container-fluid px-md-5 sm-container">
-      <Header />
 
     <div v-if="loaded && groups.length === 0 && services.length === 0" class="row mt-5 mb-5">
       <div class="col-12 mt-5 mb-4 text-center">

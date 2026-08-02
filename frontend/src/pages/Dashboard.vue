@@ -1,9 +1,11 @@
 <template>
-  <div class="container-fluid px-md-5 mt-md-5">
+  <div class="dashboard-wrapper">
     <div v-if="modal" class="modal-backdrop"></div>
     <Modal />
     <TopNav :admin="admin" />
-    <router-view :admin="admin" />
+    <div class="dashboard-body">
+      <router-view :admin="admin" />
+    </div>
   </div>
 </template>
 
@@ -18,3 +20,13 @@ const store = useMainStore()
 const modal = computed(() => store.modal.visible)
 const admin = computed(() => store.admin)
 </script>
+
+<style scoped>
+.dashboard-wrapper {
+  min-height: 100vh;
+}
+
+.dashboard-body {
+  padding: 1.5rem 3rem;
+}
+</style>

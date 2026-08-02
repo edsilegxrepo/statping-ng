@@ -1,14 +1,8 @@
 <template>
   <div>
     <TopNav />
+    <PageHeader title="Platform Documentation" description="Comprehensive guide to the Enterprise Monitoring Platform" />
     <div class="col-12 mt-4">
-        <div class="row mb-5">
-            <div class="col-12 text-center">
-                <h2 class="font-weight-bold mb-3">Platform Documentation</h2>
-                <p class="text-muted lead">Comprehensive guide to the Enterprise Monitoring Platform</p>
-                <hr style="width: 60px; border-top: 3px solid #007bff; margin: 20px auto;">
-            </div>
-        </div>
 
         <div class="row">
             <!-- Platform Overview -->
@@ -252,10 +246,11 @@
 
 <script>
 import TopNav from '@/components/Index/TopNav.vue'
+import PageHeader from '@/components/Elements/PageHeader.vue'
 
 export default {
 	name: "Help",
-	components: { TopNav },
+	components: { TopNav, PageHeader },
 };
 </script>
 

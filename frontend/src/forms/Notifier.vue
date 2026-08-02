@@ -138,40 +138,34 @@
 
     <div class="card mb-3">
       <div class="card-body">
-        <div class="row">
-          <div class="col-12 col-sm-4 mb-2 mb-sm-0 mt-2 mt-sm-0">
-            <button
-              @click.prevent="saveNotifier"
-              :disabled="loading"
-              type="submit"
-              class="btn btn-block text-capitalize btn-primary save-notifier"
-            >
-              <font-awesome-icon v-if="loading" icon="circle-notch" class="mr-2" spin />
-              {{ loading ? 'Loading...' : saved ? 'Saved' : 'Save' }}
-            </button>
-          </div>
-          <div class="col-12 col-md-4 mb-2 mb-sm-0 mt-2 mt-sm-0">
-            <button
-              @click.prevent="testNotifier('success')"
-              :disabled="loadingTest"
-              class="btn btn-secondary btn-block text-capitalize test-notifier"
-            >
-              <font-awesome-icon v-if="loadingTest" icon="circle-notch" class="mr-2" spin />{{
-                loadingTest ? 'Loading...' : 'Test Success'
-              }}
-            </button>
-          </div>
-          <div class="col-12 col-md-4 mb-2 mb-sm-0 mt-2 mt-sm-0">
-            <button
-              @click.prevent="testNotifier('failure')"
-              :disabled="loadingTest"
-              class="btn btn-secondary btn-block text-capitalize test-notifier"
-            >
-              <font-awesome-icon v-if="loadingTest" icon="circle-notch" class="mr-2" spin />{{
-                loadingTest ? 'Loading...' : 'Test Failure'
-              }}
-            </button>
-          </div>
+        <div class="notifier-actions">
+          <button
+            @click.prevent="saveNotifier"
+            :disabled="loading"
+            type="submit"
+            class="btn text-capitalize btn-primary save-notifier"
+          >
+            <font-awesome-icon v-if="loading" icon="circle-notch" class="mr-2" spin />
+            {{ loading ? 'Loading...' : saved ? 'Saved' : 'Save' }}
+          </button>
+          <button
+            @click.prevent="testNotifier('success')"
+            :disabled="loadingTest"
+            class="btn btn-secondary text-capitalize test-notifier"
+          >
+            <font-awesome-icon v-if="loadingTest" icon="circle-notch" class="mr-2" spin />{{
+              loadingTest ? 'Loading...' : 'Test Success'
+            }}
+          </button>
+          <button
+            @click.prevent="testNotifier('failure')"
+            :disabled="loadingTest"
+            class="btn btn-secondary text-capitalize test-notifier"
+          >
+            <font-awesome-icon v-if="loadingTest" icon="circle-notch" class="mr-2" spin />{{
+              loadingTest ? 'Loading...' : 'Test Failure'
+            }}
+          </button>
         </div>
       </div>
     </div>
@@ -340,5 +334,14 @@ async function testNotifier(method = 'success') {
 }
 .pointer {
   cursor: pointer;
+}
+.notifier-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.notifier-actions .btn {
+  min-width: 140px;
 }
 </style>

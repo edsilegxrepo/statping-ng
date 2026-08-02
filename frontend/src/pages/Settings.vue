@@ -1,300 +1,202 @@
 <template>
-  <div class="col-12">
-    <div class="row">
-      <div class="col-md-3 col-sm-12 mb-4 mb-md-0">
-        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-          <h6 class="text-muted">{{ $t('main_settings') }}</h6>
-
+  <div class="settings-container">
+    <!-- Sidebar -->
+    <aside class="settings-sidebar">
+      <div class="sidebar-section">
+        <h6 class="sidebar-title">{{ $t('main_settings') }}</h6>
+        <nav class="sidebar-nav">
           <a
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-home-tab') }"
-            id="v-pills-home-tab"
-            data-toggle="pill"
-            href="#v-pills-home"
-            role="tab"
-            aria-controls="v-pills-home"
-            aria-selected="true"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-home-tab') }"
+            @click.prevent="changeTab('v-pills-home-tab')"
           >
-            <font-awesome-icon icon="cog" class="mr-2" /> {{ $t('settings') }}
+            <font-awesome-icon icon="cog" class="sidebar-icon" />
+            <span>{{ $t('settings') }}</span>
           </a>
           <a
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-style-tab') }"
-            id="v-pills-style-tab"
-            data-toggle="pill"
-            href="#v-pills-style"
-            role="tab"
-            aria-controls="v-pills-style"
-            aria-selected="false"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-style-tab') }"
+            @click.prevent="changeTab('v-pills-style-tab')"
           >
-            <font-awesome-icon icon="image" class="mr-2" /> {{ $t('theme') }}
+            <font-awesome-icon icon="palette" class="sidebar-icon" />
+            <span>{{ $t('theme') }}</span>
           </a>
           <a
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-oauth-tab') }"
-            id="v-pills-oauth-tab"
-            data-toggle="pill"
-            href="#v-pills-oauth"
-            role="tab"
-            aria-controls="v-pills-oauth"
-            aria-selected="false"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-oauth-tab') }"
+            @click.prevent="changeTab('v-pills-oauth-tab')"
           >
-            <font-awesome-icon icon="key" class="mr-2" /> {{ $t('authentication') }}
+            <font-awesome-icon icon="key" class="sidebar-icon" />
+            <span>{{ $t('authentication') }}</span>
           </a>
           <a
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-ldap-tab') }"
-            id="v-pills-ldap-tab"
-            data-toggle="pill"
-            href="#v-pills-ldap"
-            role="tab"
-            aria-controls="v-pills-ldap"
-            aria-selected="false"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-ldap-tab') }"
+            @click.prevent="changeTab('v-pills-ldap-tab')"
           >
-            <font-awesome-icon icon="server" class="mr-2" /> LDAP
+            <font-awesome-icon icon="sitemap" class="sidebar-icon" />
+            <span>LDAP</span>
           </a>
           <a
             v-if="coreData.allow_reports !== false"
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-digest-tab') }"
-            id="v-pills-digest-tab"
-            data-toggle="pill"
-            href="#v-pills-digest"
-            role="tab"
-            aria-controls="v-pills-digest"
-            aria-selected="false"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-digest-tab') }"
+            @click.prevent="changeTab('v-pills-digest-tab')"
           >
-            <font-awesome-icon icon="envelope" class="mr-2" /> Daily Digest
+            <font-awesome-icon icon="envelope" class="sidebar-icon" />
+            <span>Daily Digest</span>
           </a>
           <a
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-logship-tab') }"
-            id="v-pills-logship-tab"
-            data-toggle="pill"
-            href="#v-pills-logship"
-            role="tab"
-            aria-controls="v-pills-logship"
-            aria-selected="false"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-logship-tab') }"
+            @click.prevent="changeTab('v-pills-logship-tab')"
           >
-            <font-awesome-icon icon="file-export" class="mr-2" /> Log Shipping
+            <font-awesome-icon icon="file-export" class="sidebar-icon" />
+            <span>Log Shipping</span>
           </a>
           <a
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-import-tab') }"
-            id="v-pills-import-tab"
-            data-toggle="pill"
-            href="#v-pills-import"
-            role="tab"
-            aria-controls="v-pills-import"
-            aria-selected="false"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-import-tab') }"
+            @click.prevent="changeTab('v-pills-import-tab')"
           >
-            <font-awesome-icon icon="cloud-download-alt" class="mr-2" /> {{ $t('import') }}
+            <font-awesome-icon icon="cloud-download-alt" class="sidebar-icon" />
+            <span>{{ $t('import') }}</span>
           </a>
           <a
-            @click.prevent="changeTab"
-            class="nav-link"
-            :class="{ active: liClass('v-pills-configs-tab') }"
-            id="v-pills-configs-tab"
-            data-toggle="pill"
-            href="#v-pills-configs"
-            role="tab"
-            aria-controls="v-pills-configs"
-            aria-selected="false"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-configs-tab') }"
+            @click.prevent="changeTab('v-pills-configs-tab')"
           >
-            <font-awesome-icon icon="cogs" class="mr-2" /> {{ $t('configs') }}
+            <font-awesome-icon icon="cogs" class="sidebar-icon" />
+            <span>{{ $t('configs') }}</span>
           </a>
-
-          <h6 class="mt-4 text-muted">{{ $t('notifiers') }}</h6>
-
-          <div id="notifiers_tabs">
-            <a
-              v-for="notifier in notifiers"
-              :key="`${notifier.method}`"
-              @click.prevent="changeTab"
-              class="nav-link text-capitalize"
-              :class="{ active: liClass(`v-pills-${notifier.method.toLowerCase()}-tab`) }"
-              :id="`v-pills-${notifier.method.toLowerCase()}-tab`"
-              data-toggle="pill"
-              :href="`#v-pills-${notifier.method.toLowerCase()}`"
-              role="tab"
-              :aria-controls="`v-pills-${notifier.method.toLowerCase()}`"
-              aria-selected="false"
-            >
-              <font-awesome-icon :icon="iconName(notifier.icon)" class="mr-2" /> {{ notifier.title }}
-              <span
-                v-if="notifier.enabled"
-                class="badge badge-pill float-right mt-1"
-                :class="{
-                  'badge-success': !liClass(`v-pills-${notifier.method.toLowerCase()}-tab`),
-                  'badge-light': liClass(`v-pills-${notifier.method.toLowerCase()}-tab`),
-                  'text-dark': liClass(`v-pills-${notifier.method.toLowerCase()}-tab`),
-                }"
-                >ON</span
-              >
-            </a>
-            <a
-              @click.prevent="changeTab"
-              class="nav-link text-capitalize"
-              :class="{ active: liClass(`v-pills-notifier-docs-tab`) }"
-              :id="`v-pills-notifier-docs-tab`"
-              data-toggle="pill"
-              :href="`#v-pills-notifier-docs`"
-              role="tab"
-              :aria-controls="`v-pills-notifier-docs`"
-              aria-selected="false"
-            >
-              <font-awesome-icon icon="question" class="mr-2" /> {{ $t('variables') }}
-            </a>
-          </div>
-        </div>
+        </nav>
       </div>
-      <div class="col-md-9 col-sm-12">
-        <div class="tab-content" id="v-pills-tabContent">
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-home-tab'), show: liClass('v-pills-home-tab') }"
-            id="v-pills-home"
-            role="tabpanel"
-            aria-labelledby="v-pills-home-tab"
-          >
-            <CoreSettings />
 
-            <div class="card mt-3">
-              <div class="card-header">API {{ $t('settings') }}</div>
-              <div class="card-body">
-                <div class="form-group row">
-                  <label class="col-sm-3 col-form-label">API {{ $t('secret') }}</label>
-                  <div class="col-sm-9">
-                    <div class="input-group">
-                      <input
-                        v-model="coreData.api_secret"
-                        @focus="$event.target.select()"
-                        type="text"
-                        class="form-control select-input"
-                        id="api_secret"
-                        readonly
-                      />
-                      <div class="input-group-append copy-btn">
-                        <button @click="copySecret" class="btn btn-outline-secondary" type="button">{{ $t('copy') }}</button>
-                      </div>
-                    </div>
-                    <small class="form-text text-muted">{{ $t('regen_desc') }}</small>
-                  </div>
-                </div>
-              </div>
-              <div class="card-footer">
-                <button id="regenkeys" @click="renewApiKeys" class="btn btn-sm btn-danger float-right">
-                  {{ $t('regen_api') }}
+      <div class="sidebar-section">
+        <h6 class="sidebar-title">{{ $t('notifiers') }}</h6>
+        <nav class="sidebar-nav">
+          <a
+            v-for="notifier in notifiers"
+            :key="notifier.method"
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive(`v-pills-${notifier.method.toLowerCase()}-tab`) }"
+            @click.prevent="changeTab(`v-pills-${notifier.method.toLowerCase()}-tab`)"
+          >
+            <font-awesome-icon :icon="iconName(notifier.icon)" class="sidebar-icon" />
+            <span>{{ notifier.title }}</span>
+            <span v-if="notifier.enabled" class="sidebar-badge badge-success">ON</span>
+          </a>
+          <a
+            href="#"
+            class="sidebar-link"
+            :class="{ active: isActive('v-pills-notifier-docs-tab') }"
+            @click.prevent="changeTab('v-pills-notifier-docs-tab')"
+          >
+            <font-awesome-icon icon="book" class="sidebar-icon" />
+            <span>{{ $t('variables') }}</span>
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="settings-content">
+      <!-- General Settings -->
+      <div v-show="isActive('v-pills-home-tab')" class="settings-panel">
+        <CoreSettings />
+
+        <div class="panel-card mt-4">
+          <div class="panel-header">
+            <font-awesome-icon icon="key" class="me-2" />
+            API {{ $t('settings') }}
+          </div>
+          <div class="panel-body">
+            <div class="form-row">
+              <label class="form-label">API {{ $t('secret') }}</label>
+              <div class="input-with-action">
+                <input
+                  v-model="coreData.api_secret"
+                  @focus="$event.target.select()"
+                  type="text"
+                  class="form-input"
+                  readonly
+                />
+                <button @click="copySecret" class="input-action-btn" title="Copy to clipboard">
+                  <font-awesome-icon icon="copy" />
                 </button>
               </div>
+              <small class="form-hint">{{ $t('regen_desc') }}</small>
             </div>
           </div>
-
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-style-tab'), show: liClass('v-pills-style-tab') }"
-            id="v-pills-style"
-            role="tabpanel"
-            aria-labelledby="v-pills-style-tab"
-          >
-            <ThemeEditor />
-          </div>
-
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-oauth-tab'), show: liClass('v-pills-oauth-tab') }"
-            id="v-pills-oauth"
-            role="tabpanel"
-            aria-labelledby="v-pills-oauth-tab"
-          >
-            <OAuth />
-          </div>
-
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-ldap-tab'), show: liClass('v-pills-ldap-tab') }"
-            id="v-pills-ldap"
-            role="tabpanel"
-            aria-labelledby="v-pills-ldap-tab"
-          >
-            <LdapSettings />
-          </div>
-
-          <div
-            v-if="coreData.allow_reports !== false"
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-digest-tab'), show: liClass('v-pills-digest-tab') }"
-            id="v-pills-digest"
-            role="tabpanel"
-            aria-labelledby="v-pills-digest-tab"
-          >
-            <DigestSettings />
-          </div>
-
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-logship-tab'), show: liClass('v-pills-logship-tab') }"
-            id="v-pills-logship"
-            role="tabpanel"
-            aria-labelledby="v-pills-logship-tab"
-          >
-            <LogShipSettings />
-          </div>
-
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-configs-tab'), show: liClass('v-pills-configs-tab') }"
-            id="v-pills-configs"
-            role="tabpanel"
-            aria-labelledby="v-pills-configs-tab"
-          >
-            <Configs />
-          </div>
-
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass('v-pills-import-tab'), show: liClass('v-pills-import-tab') }"
-            id="v-pills-import"
-            role="tabpanel"
-            aria-labelledby="v-pills-import-tab"
-          >
-            <Importer />
-          </div>
-
-          <div
-            class="tab-pane fade"
-            :class="{ active: liClass(`v-pills-notifier-docs-tab`), show: liClass(`v-pills-notifier-docs-tab`) }"
-            :id="`v-pills-notifier-docs-tab`"
-            role="tabpanel"
-            :aria-labelledby="`v-pills-notifier-docs-tab`"
-          >
-            <Variables />
-          </div>
-
-          <div
-            v-for="notifier in notifiers"
-            :key="`${notifier.method}_panel`"
-            class="tab-pane fade"
-            :class="{
-              active: liClass(`v-pills-${notifier.method.toLowerCase()}-tab`),
-              show: liClass(`v-pills-${notifier.method.toLowerCase()}-tab`),
-            }"
-            :id="`v-pills-${notifier.method.toLowerCase()}-tab`"
-            role="tabpanel"
-            :aria-labelledby="`v-pills-${notifier.method.toLowerCase()}-tab`"
-          >
-            <Notifier :notifier="notifier" />
+          <div class="panel-footer">
+            <button @click="renewApiKeys" class="btn-danger-outline">
+              <font-awesome-icon icon="sync" class="me-2" />
+              {{ $t('regen_api') }}
+            </button>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- Theme -->
+      <div v-show="isActive('v-pills-style-tab')" class="settings-panel">
+        <ThemeEditor />
+      </div>
+
+      <!-- OAuth -->
+      <div v-show="isActive('v-pills-oauth-tab')" class="settings-panel">
+        <OAuth />
+      </div>
+
+      <!-- LDAP -->
+      <div v-show="isActive('v-pills-ldap-tab')" class="settings-panel">
+        <LdapSettings />
+      </div>
+
+      <!-- Daily Digest -->
+      <div v-if="coreData.allow_reports !== false" v-show="isActive('v-pills-digest-tab')" class="settings-panel">
+        <DigestSettings />
+      </div>
+
+      <!-- Log Shipping -->
+      <div v-show="isActive('v-pills-logship-tab')" class="settings-panel">
+        <LogShipSettings />
+      </div>
+
+      <!-- Import -->
+      <div v-show="isActive('v-pills-import-tab')" class="settings-panel">
+        <Importer />
+      </div>
+
+      <!-- Configs -->
+      <div v-show="isActive('v-pills-configs-tab')" class="settings-panel">
+        <Configs />
+      </div>
+
+      <!-- Variables Docs -->
+      <div v-show="isActive('v-pills-notifier-docs-tab')" class="settings-panel">
+        <Variables />
+      </div>
+
+      <!-- Notifiers -->
+      <div
+        v-for="notifier in notifiers"
+        :key="`${notifier.method}_panel`"
+        v-show="isActive(`v-pills-${notifier.method.toLowerCase()}-tab`)"
+        class="settings-panel"
+      >
+        <Notifier :notifier="notifier" />
+      </div>
+    </main>
   </div>
 </template>
 
@@ -324,17 +226,15 @@ const tab = ref('v-pills-home-tab')
 const coreData = computed(() => store.core)
 const notifiers = computed(() => store.notifiers)
 
-
 onMounted(() => {
   // GitHub version check removed (update command depended on defunct statping.com)
 })
 
-
-function changeTab(e) {
-  tab.value = e.target.id
+function changeTab(tabId) {
+  tab.value = tabId
 }
 
-function liClass(id) {
+function isActive(id) {
   return tab.value === id
 }
 
@@ -383,7 +283,6 @@ async function logout() {
   store.setLoggedIn(false)
   cookies.remove('statping_auth')
 
-  // If forward auth logout URL is configured, redirect there
   if (redirectUrl) {
     window.location.href = redirectUrl
   } else {
@@ -391,3 +290,255 @@ async function logout() {
   }
 }
 </script>
+
+<style scoped>
+.settings-container {
+  display: flex;
+  min-height: calc(100vh - 56px);
+  background: var(--color-gray-50);
+}
+
+/* Sidebar */
+.settings-sidebar {
+  width: 280px;
+  background: #fff;
+  border-right: 1px solid var(--color-gray-200);
+  padding: var(--space-4);
+  flex-shrink: 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+}
+
+.sidebar-section {
+  margin-bottom: var(--space-6);
+}
+
+.sidebar-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-gray-400);
+  margin: 0 0 var(--space-3);
+  padding: 0 var(--space-3);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-600);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.sidebar-link:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+.sidebar-link.active {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.sidebar-icon {
+  width: 18px;
+  margin-right: var(--space-3);
+  opacity: 0.7;
+}
+
+.sidebar-link.active .sidebar-icon {
+  opacity: 1;
+}
+
+.sidebar-badge {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+}
+
+.badge-success {
+  background: var(--color-success-bg);
+  color: var(--color-success-dark);
+}
+
+/* Content */
+.settings-content {
+  flex: 1;
+  padding: var(--space-6);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-panel {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Panel Card */
+.panel-card {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: var(--space-4) var(--space-5);
+  font-weight: 600;
+  color: var(--color-gray-800);
+  border-bottom: 1px solid var(--color-gray-100);
+  background: var(--color-gray-50);
+}
+
+.panel-body {
+  padding: var(--space-5);
+}
+
+.panel-footer {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-gray-50);
+  border-top: 1px solid var(--color-gray-100);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Form Elements */
+.form-row {
+  margin-bottom: var(--space-4);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-2);
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.875rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  background: #fff;
+  transition: all var(--transition-fast);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-gray-500);
+  margin-top: var(--space-1);
+}
+
+.input-with-action {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input-with-action .form-input {
+  flex: 1;
+}
+
+.input-action-btn {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.input-action-btn:hover {
+  background: var(--color-gray-200);
+  color: var(--color-gray-800);
+}
+
+/* Buttons */
+.btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-danger);
+  background: transparent;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-danger-outline:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .settings-sidebar {
+    width: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-container {
+    flex-direction: column;
+  }
+
+  .settings-sidebar {
+    width: 100%;
+    max-height: none;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .sidebar-link {
+    flex: 0 0 auto;
+  }
+
+  .settings-content {
+    padding: var(--space-4);
+  }
+}
+</style>

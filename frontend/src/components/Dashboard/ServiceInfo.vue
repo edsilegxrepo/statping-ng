@@ -1,79 +1,74 @@
 <template>
   <router-link :to="serviceLink" custom v-slot="{ navigate }">
     <div
-      class="dashboard_card card mb-4"
-      style="cursor: pointer"
-      :class="{ 'offline-card': !service.online }"
+      class="service-card"
+      :class="service.online ? 'service-card-online' : 'service-card-offline'"
       @click="navigate"
     >
-      <div class="card-header pb-1">
-        <h6>
-          <span class="no-decoration font-weight-bold text-dark">{{ service.name }}</span>
-          <span
-            class="badge float-right text-uppercase"
-            :class="{ 'badge-success': service.online, 'badge-danger': !service.online }"
-          >
+      <!-- Header -->
+      <div class="service-header">
+        <div class="service-title-row">
+          <span class="service-name">{{ service.name }}</span>
+          <span class="service-badge" :class="service.online ? 'badge-online' : 'badge-offline'">
             {{ service.online ? $t('online') : $t('offline') }}
           </span>
-        </h6>
-      </div>
-
-      <div class="card-body pb-1">
-        <div v-if="loaded" class="row pl-2">
-          <div class="col-md-12 col-sm-12 pl-2 mt-2 mt-md-0 mb-3">
-            <ServiceSparkLine :title="set2_name" subtitle="Latency Last 24 Hours" :series="set2" />
-          </div>
-          <ServiceEvents :service="service" />
         </div>
-        <div v-else class="row mb-5">
-          <div class="col-12 col-md-12 text-center">
-            <font-awesome-icon icon="circle-notch" class="text-dim" size="2x" spin />
-          </div>
+        <div class="service-uptime">
+          <font-awesome-icon icon="clock" class="me-1" />
+          {{ service.online_7_days }}% uptime (7d)
         </div>
       </div>
 
-      <div class="card-footer">
-        <div class="row">
-          <div class="col-5 pr-0">
-            <span class="small text-dim">{{ hoverbtn }}</span>
-          </div>
-
-          <div class="col-7 pr-2 pl-0">
-            <div class="btn-group float-right">
-              <button
-                @click.stop="goToIncidents"
-                @mouseleave="unsetHover"
-                @mouseover="setHover($t('incidents'))"
-                class="btn btn-sm btn-white incident"
-              >
-                <font-awesome-icon icon="bullhorn" />
-              </button>
-              <button
-                @click.stop="goToCheckins"
-                @mouseleave="unsetHover"
-                @mouseover="setHover($t('checkins'))"
-                class="btn btn-sm btn-white checkins"
-              >
-                <font-awesome-icon icon="calendar-check" />
-              </button>
-              <button
-                @click.stop="goToFailures"
-                @mouseleave="unsetHover"
-                @mouseover="setHover($t('failures'))"
-                class="btn btn-sm btn-white failures"
-              >
-                <font-awesome-icon icon="exclamation-triangle" />
-                <span v-if="service.stats?.failures" class="badge badge-danger ml-1">{{ service.stats.failures }}</span>
-              </button>
-            </div>
-          </div>
+      <!-- Chart -->
+      <div class="service-chart-area">
+        <div v-if="loaded">
+          <ServiceSparkLine :title="set2_name" subtitle="Latency Last 24 Hours" :series="set2" />
+        </div>
+        <div v-else class="service-loading">
+          <font-awesome-icon icon="circle-notch" class="text-dim" size="2x" spin />
         </div>
       </div>
 
-      <span v-for="(failure, index) in failures" :key="index" class="alert alert-light">
-        {{ $t('failed') }} {{ failure.created_at }}<br />
-        {{ failure.issue }}
-      </span>
+      <!-- Events -->
+      <div class="service-events">
+        <ServiceEvents :service="service" />
+      </div>
+
+      <!-- Footer -->
+      <div class="service-footer">
+        <span class="footer-info">{{ hoverbtn }}</span>
+        <div class="footer-actions">
+          <button
+            @click.stop="goToIncidents"
+            @mouseleave="unsetHover"
+            @mouseover="setHover($t('incidents'))"
+            class="action-btn"
+            title="Incidents"
+          >
+            <font-awesome-icon icon="bullhorn" />
+          </button>
+          <button
+            @click.stop="goToCheckins"
+            @mouseleave="unsetHover"
+            @mouseover="setHover($t('checkins'))"
+            class="action-btn"
+            title="Checkins"
+          >
+            <font-awesome-icon icon="calendar-check" />
+          </button>
+          <button
+            @click.stop="goToFailures"
+            @mouseleave="unsetHover"
+            @mouseover="setHover($t('failures'))"
+            class="action-btn"
+            :class="{ 'action-btn-danger': service.stats?.failures }"
+            title="Failures"
+          >
+            <font-awesome-icon icon="exclamation-triangle" />
+            <span v-if="service.stats?.failures" class="failure-count">{{ service.stats.failures }}</span>
+          </button>
+        </div>
+      </div>
     </div>
   </router-link>
 </template>
@@ -116,7 +111,7 @@ function setHover(name) {
 }
 
 function unsetHover() {
-  hoverbtn.value = `${t('uptime')} ${props.service.online_7_days}%`
+  hoverbtn.value = `Avg: ${set2_name.value || '—'}`
 }
 
 function goToIncidents() {
@@ -135,6 +130,7 @@ async function loadInfo() {
   set2.value = await getHits(86400 * 3, '60m')
   set2_name.value = calc(set2.value)
   loaded.value = true
+  unsetHover()
 }
 
 function nowSubtract(seconds) {
@@ -187,3 +183,156 @@ function calc(s) {
   return 'Offline'
 }
 </script>
+
+<style scoped>
+.service-card {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.service-card-online {
+  border-left: 4px solid var(--color-success);
+}
+
+.service-card-offline {
+  border-left: 4px solid var(--color-danger);
+}
+
+/* Header */
+.service-header {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.service-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.service-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.service-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.badge-online {
+  background: var(--color-success-bg);
+  color: var(--color-success-dark);
+}
+
+.badge-offline {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-dark);
+}
+
+.service-uptime {
+  font-size: 0.8rem;
+  color: var(--color-gray-500);
+}
+
+/* Chart Area */
+.service-chart-area {
+  padding: var(--space-3) var(--space-4);
+  flex: 1;
+  min-height: 120px;
+}
+
+.service-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+}
+
+/* Events */
+.service-events {
+  padding: 0 var(--space-4);
+}
+
+/* Footer */
+.service-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-gray-50);
+  border-top: 1px solid var(--color-gray-100);
+}
+
+.footer-info {
+  font-size: 0.8rem;
+  color: var(--color-gray-500);
+}
+
+.footer-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #fff;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border-color: var(--color-gray-300);
+}
+
+.action-btn-danger {
+  background: var(--color-danger-bg);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--color-danger);
+}
+
+.action-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.failure-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--color-danger);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  margin-left: 2px;
+}
+</style>

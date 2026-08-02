@@ -1,6 +1,6 @@
 <template>
-  <div v-if="series && series.length">
-    <apexchart width="100%" height="100" type="bar" :options="chartOpts" :series="series"></apexchart>
+  <div v-if="series && series.length" class="sparkline-container">
+    <apexchart width="100%" height="120" type="bar" :options="chartOpts" :series="series"></apexchart>
   </div>
 </template>
 
@@ -40,9 +40,15 @@ function humanTime(ms) {
 const chartOpts = computed(() => ({
   chart: {
     type: 'bar',
-    height: 180,
+    height: 120,
     sparkline: {
       enabled: true,
+    },
+  },
+  plotOptions: {
+    bar: {
+      columnWidth: '70%',
+      borderRadius: 2,
     },
   },
   showPoint: false,
@@ -52,12 +58,12 @@ const chartOpts = computed(() => ({
     curve: 'straight',
   },
   fill: {
-    opacity: 0.3,
+    opacity: 1,
   },
   yaxis: {
     min: 0,
   },
-  colors: ['#b3bdc3'],
+  colors: ['#9ca3af'],
   tooltip: {
     theme: false,
     enabled: true,

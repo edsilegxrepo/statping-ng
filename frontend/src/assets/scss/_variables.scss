@@ -1,3 +1,86 @@
+/* ===========================
+   CSS Custom Properties (Design Tokens)
+   =========================== */
+:root {
+  /* Primary palette */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-primary-light: #60a5fa;
+  --color-primary-bg: rgba(59, 130, 246, 0.1);
+
+  /* Status colors */
+  --color-success: #22c55e;
+  --color-success-dark: #16a34a;
+  --color-success-light: #4ade80;
+  --color-success-bg: rgba(34, 197, 94, 0.1);
+
+  --color-danger: #ef4444;
+  --color-danger-dark: #dc2626;
+  --color-danger-light: #f87171;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+
+  --color-warning: #f59e0b;
+  --color-warning-dark: #d97706;
+  --color-warning-light: #fbbf24;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+
+  --color-info: #06b6d4;
+  --color-info-dark: #0891b2;
+  --color-info-light: #22d3ee;
+  --color-info-bg: rgba(6, 182, 212, 0.1);
+
+  /* Neutral palette */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Dark theme (dashboard nav) */
+  --color-dark-bg: #1a1a2e;
+  --color-dark-bg-secondary: #16213e;
+  --color-dark-border: #2d3748;
+  --color-dark-text: #e2e8f0;
+  --color-dark-text-muted: #a0aec0;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
 /*    Index Page      */
 $background-color: #EAEAEA;
 $container-color: #ffffff;
@@ -34,9 +117,9 @@ $service-stats-size: 2.3rem;
 $service-card-height: 520px;
 
 /*    Button Colors      */
-$success-color: #47d337;
-$danger-color: #dd3545;
-$primary-color: #3e9bff;
+$success-color: #22c55e;
+$danger-color: #ef4444;
+$primary-color: #3b82f6;
 
 /*   Footer Settings   */
 $footer-text-color: #b0b0b0;

@@ -4,8 +4,12 @@
       <div class="top-nav-left">
         <span v-if="core.environment" :class="['env-badge', 'env-' + core.environment.toLowerCase()]">{{ core.environment }}</span>
         <router-link to="/" class="top-nav-brand">
-          <img v-if="core.footer" :src="core.footer" alt="Logo" class="top-nav-logo" />
           <span class="top-nav-title">{{ core.name }}</span>
+        </router-link>
+        <span class="nav-divider">|</span>
+        <router-link to="/" class="nav-label">
+          <font-awesome-icon icon="signal" class="nav-label-icon" />
+          <span>Status Page</span>
         </router-link>
       </div>
 
@@ -38,10 +42,6 @@
       </div>
 
       <div class="top-nav-right">
-        <router-link to="/" class="top-nav-btn top-nav-btn-monitors">
-          <font-awesome-icon icon="server" class="me-1" />
-          Monitors
-        </router-link>
         <router-link to="/help" class="top-nav-btn">
           <font-awesome-icon icon="question-circle" class="me-1" />
           Help
@@ -141,9 +141,9 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #3A619D 0%, #2d4a7c 100%);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  padding: 0 1rem;
+  padding: 0;
   height: 48px;
 }
 
@@ -160,6 +160,30 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.nav-divider {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.25rem;
+  font-weight: 300;
+}
+
+.nav-label {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.nav-label:hover {
+  color: #fff;
+}
+
+.nav-label-icon {
+  color: #68d391;
+  margin-right: 0.5rem;
 }
 
 .env-badge {
@@ -276,7 +300,7 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
 .status-divider {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.5);
   margin: 0 0.75rem;
 }
 
@@ -309,6 +333,7 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
 .top-nav-right {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .top-nav-btn {
@@ -319,7 +344,7 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
   font-weight: 500;
   color: #fff;
   background: rgba(255, 255, 255, 0.15);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -330,17 +355,7 @@ const activeIncidentCount = computed(() => activeIncidents.value.length)
   color: #fff;
 }
 
-.top-nav-btn-monitors {
-  background: rgba(74, 222, 128, 0.2);
-  border: 1px solid rgba(74, 222, 128, 0.4);
-}
-
-.top-nav-btn-monitors:hover {
-  background: rgba(74, 222, 128, 0.3);
-}
-
 .top-nav-btn-login {
-  margin-left: 0.5rem;
   background: rgba(74, 222, 128, 0.2);
   border: 1px solid rgba(74, 222, 128, 0.4);
 }

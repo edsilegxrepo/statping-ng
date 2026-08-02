@@ -8,9 +8,9 @@
         </div>
         <div class="footer-right">
           <router-link class="footer-link" to="/">Monitors</router-link>
-          <span class="footer-sep">|</span>
+          <span class="footer-divider"></span>
           <router-link class="footer-link" to="/help">Help</router-link>
-          <span class="footer-sep">|</span>
+          <span class="footer-divider"></span>
           <router-link class="footer-link" :to="admin ? '/dashboard' : '/login'">{{ $t('dashboard') }}</router-link>
         </div>
       </div>
@@ -33,8 +33,8 @@ const sanitizedFooter = computed(() => DOMPurify.sanitize(core.value.footer || '
 
 <style scoped>
 .footer-bar {
-  background: #2d3748;
-  border-top: 1px solid #4a5568;
+  background: linear-gradient(135deg, #3A619D 0%, #2d4a7c 100%);
+  border-top: 1px solid #4a7abf;
   padding: 0.5rem 1.5rem;
   margin-top: 3rem;
 }
@@ -64,9 +64,10 @@ const sanitizedFooter = computed(() => DOMPurify.sanitize(core.value.footer || '
 .footer-link:hover {
   color: #fff;
 }
-.footer-sep {
-  color: #4a5568;
-  font-size: 0.8rem;
+.footer-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.5);
 }
 .env-badge {
   font-size: 0.65rem;

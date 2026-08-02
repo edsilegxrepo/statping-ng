@@ -27,23 +27,16 @@
     </div>
 
     <div v-if="servicesLoaded && service && hasData" class="col-12 mb-4">
-      <span
-        class="mt-3 mb-3 text-white d-md-none btn d-block d-md-none text-uppercase"
-        :class="{ 'bg-success': service.online, 'bg-danger': !service.online }"
-      >
-        {{ service.online ? $t('online') : $t('offline') }}
-      </span>
-
-      <span class="mt-2 font-3">
-        <router-link to="/" class="text-black-50 text-decoration-none">{{ coreData.name }}</router-link> -
-        <span class="text-muted">{{ service.name }}</span>
-        <span
-          class="badge float-right d-none d-md-block text-uppercase"
-          :class="{ 'bg-success': service.online, 'bg-danger': !service.online }"
-        >
+      <div class="service-header">
+        <div class="service-breadcrumb">
+          <router-link to="/" class="breadcrumb-link">{{ coreData.name }}</router-link>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current">{{ service.name }}</span>
+        </div>
+        <span class="service-badge" :class="service.online ? 'badge-online' : 'badge-offline'">
           {{ service.online ? $t('online') : $t('offline') }}
         </span>
-      </span>
+      </div>
 
       <ServiceTopStats v-if="loaded" :service="service" />
 
@@ -314,4 +307,59 @@ function endOf(period) {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.service-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-gray-800, #1f2937) 0%, var(--color-gray-900, #111827) 100%);
+  border-radius: var(--radius-lg, 0.5rem);
+  margin-bottom: 0;
+}
+
+.service-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.breadcrumb-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.breadcrumb-link:hover {
+  color: #fff;
+}
+
+.breadcrumb-sep {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.breadcrumb-current {
+  color: #fff;
+  font-weight: 600;
+}
+
+.service-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full, 9999px);
+}
+
+.badge-online {
+  background: var(--color-success, #22c55e);
+  color: #fff;
+}
+
+.badge-offline {
+  background: var(--color-danger, #ef4444);
+  color: #fff;
+}
+</style>
