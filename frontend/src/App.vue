@@ -10,12 +10,15 @@ import { ref, computed, onBeforeMount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useMainStore } from './stores/main'
+import { useFaviconStatus } from './composables/useFaviconStatus'
 import Footer from './components/Index/Footer.vue'
 
 const router = useRouter()
 const route = useRoute()
 const store = useMainStore()
 const { locale } = useI18n()
+
+useFaviconStatus()
 
 const loaded = ref(false)
 

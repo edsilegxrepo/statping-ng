@@ -1,12 +1,27 @@
 <template>
   <div class="service-chart-container">
+    <div class="chart-actions">
+      <button class="data-btn" @click="showDataModal = true" title="View raw data">
+        <font-awesome-icon icon="table" />
+      </button>
+    </div>
     <apexchart v-if="ready" width="100%" height="420" type="line" :options="main_chart_options" :series="main_chart"></apexchart>
+
+    <ChartDataModal
+      :show="showDataModal"
+      :latencyData="main_data"
+      :pingData="ping_data"
+      :failureData="failure_data"
+      :serviceName="service.name"
+      @close="showDataModal = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import Api from '@/API'
+import ChartDataModal from './ChartDataModal.vue'
 
 const props = defineProps({
   service: {
@@ -45,6 +60,7 @@ const loading = ref(true)
 const main_data = ref(null)
 const ping_data = ref(null)
 const failure_data = ref(null)
+const showDataModal = ref(false)
 
 function toUnix(date) {
   return Math.floor(date.getTime() / 1000)
@@ -241,4 +257,38 @@ async function load_failures(start = params.value.start, end = params.value.end,
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.service-chart-container {
+  position: relative;
+  width: 100%;
+}
+
+.chart-actions {
+  position: absolute;
+  top: 5px;
+  right: 195px;
+  z-index: 20;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.data-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: #6e8192;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 15px;
+  padding: 0;
+}
+
+.data-btn:hover {
+  color: #3b82f6;
+}
+</style>

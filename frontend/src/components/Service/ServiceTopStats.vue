@@ -5,15 +5,15 @@
       <span class="stat-label">Average Response</span>
     </div>
     <div class="stat-item">
-      <span class="stat-value" :class="statusClass">{{ service.online_24_hours }}%</span>
+      <span class="stat-value" :class="statusClass">{{ formatPercent(service.online_24_hours) }}%</span>
       <span class="stat-label">24h</span>
     </div>
     <div class="stat-item">
-      <span class="stat-value" :class="statusClass">{{ service.online_7_days }}%</span>
+      <span class="stat-value" :class="statusClass">{{ formatPercent(service.online_7_days) }}%</span>
       <span class="stat-label">7d</span>
     </div>
     <div class="stat-item">
-      <span class="stat-value" :class="statusClass">{{ service.online_1_year }}%</span>
+      <span class="stat-value" :class="statusClass">{{ formatPercent(service.online_1_year) }}%</span>
       <span class="stat-label">12m</span>
     </div>
   </div>
@@ -34,9 +34,17 @@ const statusClass = computed(() => props.service.online ? 'stat-online' : 'stat-
 
 function humanTime(ms) {
   if (ms < 1000) {
-    return `${ms}ms`
+    return `${Math.round(ms)}ms`
   }
-  return `${(ms / 1000).toFixed(2)}s`
+  return `${(ms / 1000).toFixed(1)}s`
+}
+
+function formatPercent(val) {
+  if (val === undefined || val === null) return '—'
+  const num = parseFloat(val)
+  if (isNaN(num)) return '—'
+  if (num === 100) return '100'
+  return num.toFixed(1)
 }
 </script>
 
@@ -59,8 +67,8 @@ function humanTime(ms) {
 
 .stat-value {
   display: block;
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 600;
   line-height: 1.2;
 }
 

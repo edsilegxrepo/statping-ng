@@ -1,91 +1,69 @@
 <template>
-  <div class="mb-md-4 mb-4">
+  <div class="service-block-wrapper">
     <router-link :to="serviceLink" custom v-slot="{ navigate }">
-      <div class="card index-chart" :class="{ 'expanded-service': expanded }" style="cursor: pointer" @click="navigate">
-        <div class="card-body">
-          <div class="col-12">
-            <h4 class="mt-2">
-              <span class="d-inline-block text-truncate font-4 text-dark font-weight-bold" style="max-width: 65vw">{{
-                service.name
-              }}</span>
-              <span class="badge float-right" :class="{ 'bg-success': service.online, 'bg-danger': !service.online }">{{
-                service.online ? 'ONLINE' : 'OFFLINE'
-              }}</span>
-            </h4>
-
-            <ServiceTopStats :service="service" />
+      <div
+        class="service-block"
+        :class="service.online ? 'service-block-online' : 'service-block-offline'"
+        @click="navigate"
+      >
+        <!-- Header -->
+        <div class="service-block-header">
+          <div class="service-block-title-row">
+            <span class="service-block-name">{{ service.name }}</span>
+            <span class="service-block-badge" :class="service.online ? 'badge-online' : 'badge-offline'">
+              {{ service.online ? 'ONLINE' : 'OFFLINE' }}
+            </span>
           </div>
+          <ServiceTopStats :service="service" />
         </div>
 
-        <div v-show="!expanded" class="chart-container">
+        <!-- Chart -->
+        <div v-show="!expanded" class="service-block-chart">
           <ServiceChart :service="service" :visible="visible" :chart_timeframe="chartTimeframe" />
         </div>
 
-        <div
-          class="row lower_canvas full-col-12 text-white"
-          :class="{ 'bg-success': service.online, 'bg-danger': !service.online }"
-        >
-          <div class="col-md-10 col-6">
-            <div class="dropup" :class="{ show: dropDownMenu }">
-              <button
-                style="font-size: 10pt"
-                @click.stop.prevent="openMenu('timeframe')"
-                type="button"
-                class="col-4 float-left btn btn-sm float-right btn-block text-white dropdown-toggle service_scale pr-2"
-              >
+        <!-- Footer -->
+        <div class="service-block-footer" :class="service.online ? 'footer-online' : 'footer-offline'">
+          <div class="footer-controls">
+            <div class="dropdown-wrapper">
+              <button @click.stop.prevent="openMenu('timeframe')" class="control-btn">
                 {{ timeframepick.text }}
+                <font-awesome-icon icon="chevron-down" class="ms-1" size="xs" />
               </button>
-              <div class="service-tm-menu" :class="{ 'd-none': !dropDownMenu }">
+              <div v-if="dropDownMenu" class="dropdown-menu-custom">
                 <a
                   v-for="(tf, i) in timeframes"
                   :key="i"
                   @click.stop.prevent="changeTimeframe(tf)"
-                  class="dropdown-item"
-                  href="#"
+                  class="dropdown-item-custom"
                   :class="{ active: timeframepick === tf }"
-                  >{{ tf.text }}</a
-                >
+                >{{ tf.text }}</a>
               </div>
             </div>
 
-            <div class="dropup" :class="{ show: intervalMenu }">
-              <button
-                style="font-size: 10pt"
-                @click.stop.prevent="openMenu('interval')"
-                type="button"
-                class="col-4 float-left btn btn-sm float-right btn-block text-white dropdown-toggle service_scale pr-2"
-              >
+            <div class="dropdown-wrapper">
+              <button @click.stop.prevent="openMenu('interval')" class="control-btn">
                 {{ intervalpick.text }}
+                <font-awesome-icon icon="chevron-down" class="ms-1" size="xs" />
               </button>
-              <div class="service-tm-menu" :class="{ 'd-none': !intervalMenu }">
+              <div v-if="intervalMenu" class="dropdown-menu-custom">
                 <a
                   v-for="(intv, i) in intervals"
                   :key="i"
                   @click.stop.prevent="changeInterval(intv)"
-                  class="dropdown-item"
-                  href="#"
+                  class="dropdown-item-custom"
                   :class="{ active: intervalpick === intv, disabled: disabledInterval(intv) }"
-                >
-                  {{ intv.text }}
-                </a>
+                >{{ intv.text }}</a>
               </div>
-
-              <span class="d-none float-left d-md-inline">
-                {{ smallText }}
-              </span>
             </div>
+
+            <span class="footer-status">{{ smallText }}</span>
           </div>
 
-          <div class="col-md-2 col-6 float-right">
-            <button
-              v-if="!expanded"
-              @click.stop="goToService"
-              class="btn btn-sm float-right dyn-dark text-white"
-              :class="{ 'bg-success': service.online, 'bg-danger': !service.online }"
-            >
-              {{ $t('view') }}
-            </button>
-          </div>
+          <button v-if="!expanded" @click.stop="goToService" class="view-btn">
+            {{ $t('view') }}
+            <font-awesome-icon icon="arrow-right" class="ms-1" />
+          </button>
         </div>
       </div>
     </router-link>
@@ -194,3 +172,192 @@ function goToService() {
   router.push(`/service/${props.service.id}`)
 }
 </script>
+
+<style scoped>
+.service-block-wrapper {
+  margin-bottom: 1.5rem;
+}
+
+.service-block {
+  background: #fff;
+  border-radius: var(--radius-xl, 12px);
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.service-block:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
+}
+
+.service-block-online {
+  border-left: 4px solid var(--color-success, #22c55e);
+}
+
+.service-block-offline {
+  border-left: 4px solid var(--color-danger, #ef4444);
+}
+
+/* Header */
+.service-block-header {
+  padding: 1rem 1.25rem;
+}
+
+.service-block-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.service-block-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-gray-900, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.service-block-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.badge-online {
+  background: var(--color-success-bg, rgba(34, 197, 94, 0.1));
+  color: var(--color-success-dark, #15803d);
+}
+
+.badge-offline {
+  background: var(--color-danger-bg, rgba(239, 68, 68, 0.1));
+  color: var(--color-danger-dark, #b91c1c);
+}
+
+/* Chart */
+.service-block-chart {
+  padding: 0 1rem;
+  min-height: 180px;
+}
+
+/* Footer */
+.service-block-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-gray-100, #f3f4f6);
+}
+
+.footer-online {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.footer-offline {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.footer-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-wrapper {
+  position: relative;
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dropdown-menu-custom {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  z-index: 100;
+}
+
+.dropdown-item-custom {
+  display: block;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: #374151;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dropdown-item-custom:hover {
+  background: #f3f4f6;
+}
+
+.dropdown-item-custom.active {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.dropdown-item-custom.disabled {
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.footer-status {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.view-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.view-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+  .footer-status {
+    display: none;
+  }
+}
+</style>

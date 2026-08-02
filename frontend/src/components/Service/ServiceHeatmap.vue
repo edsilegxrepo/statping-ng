@@ -1,10 +1,25 @@
 <template>
-  <apexchart v-if="ready" width="100%" height="400" type="heatmap" :options="plotOptions" :series="series"></apexchart>
+  <div class="heatmap-container">
+    <div class="heatmap-actions">
+      <button class="data-btn" @click="showDataModal = true" title="View raw data">
+        <font-awesome-icon icon="table" />
+      </button>
+    </div>
+    <apexchart v-if="ready" width="100%" height="400" type="heatmap" :options="plotOptions" :series="series"></apexchart>
+
+    <HeatmapDataModal
+      :show="showDataModal"
+      :series="series"
+      :serviceName="service.name"
+      @close="showDataModal = false"
+    />
+  </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import Api from '@/API'
+import HeatmapDataModal from './HeatmapDataModal.vue'
 
 const props = defineProps({
   service: {
@@ -17,6 +32,7 @@ const emit = defineEmits(['selected-day'])
 
 const ready = ref(false)
 const series = ref([{ data: [] }])
+const showDataModal = ref(false)
 
 const outageSeverity = {
   minor: { start: 1, end: 30 },
@@ -164,4 +180,38 @@ function mergeData(failuresData) {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.heatmap-container {
+  position: relative;
+  width: 100%;
+}
+
+.heatmap-actions {
+  position: absolute;
+  top: 5px;
+  right: 35px;
+  z-index: 20;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.data-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: #6e8192;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 15px;
+  padding: 0;
+}
+
+.data-btn:hover {
+  color: #3b82f6;
+}
+</style>
