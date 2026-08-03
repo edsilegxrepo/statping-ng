@@ -82,24 +82,24 @@ func connectLDAP(host string, port int, skipVerify bool, startTLS bool) (*ldap.C
 		return ldap.DialURL("ldaps://"+address, ldap.DialWithTLSConfig(tlsConfig))
 	}
 
-	// Plain connection with optional StartTLS upgrade
+	// Plain connection REQUIRES StartTLS upgrade for security
+	if !startTLS {
+		return nil, fmt.Errorf("LDAP encryption is mandatory: enable StartTLS or use LDAPS (port 636/3269)")
+	}
+
 	conn, err := ldap.DialURL("ldap://" + address)
 	if err != nil {
 		return nil, err
 	}
 
-	if startTLS {
-		tlsConfig := &tls.Config{
-			InsecureSkipVerify: skipVerify, // #nosec G402 - user-configurable for self-signed certs
-			ServerName:         host,
-			MinVersion:         tls.VersionTLS12,
-		}
-		if err := conn.StartTLS(tlsConfig); err != nil {
-			_ = conn.Close()
-			return nil, fmt.Errorf("StartTLS failed: %w", err)
-		}
-	} else {
-		utils.Log.Warnln("LDAP connection is unencrypted - credentials will be sent in plaintext")
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: skipVerify, // #nosec G402 - user-configurable for self-signed certs
+		ServerName:         host,
+		MinVersion:         tls.VersionTLS12,
+	}
+	if err := conn.StartTLS(tlsConfig); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("StartTLS failed: %w", err)
 	}
 
 	return conn, nil

@@ -82,12 +82,12 @@
     </a>
 
     <a
-      v-if="oauth && oauth.custom_client_id"
-      @click.prevent="Customlogin"
+      v-if="oauth && oauth.oidc_enabled && oauth.oidc_client_id"
+      @click.prevent="OIDClogin"
       href="#"
       class="btn btn-block btn-outline-dark"
     >
-      <font-awesome-icon :icon="['fas', 'address-card']" /> Login with {{ oauth.custom_name }}
+      <font-awesome-icon :icon="['fas', 'key']" /> Login with {{ oauth.oidc_name || 'OIDC' }}
     </a>
   </div>
 </template>
@@ -150,18 +150,6 @@ function encode(val) {
   return encodeURI(val)
 }
 
-function custom_scopes() {
-  let scopes = []
-  if (oauth.value.custom_open_id) {
-    scopes.push('openid')
-  }
-  scopes.push(oauth.value.custom_scopes.split(','))
-  if (scopes.length !== 0) {
-    return `&scope=${scopes.join(' ')}`
-  }
-  return ''
-}
-
 async function getOAuthState() {
   try {
     const response = await fetch('api/oauth/state')
@@ -191,10 +179,21 @@ async function Googlelogin() {
   window.location = `https://accounts.google.com/signin/oauth?client_id=${oauth.value.google_client_id}&redirect_uri=${encode(`${core.value.domain}/oauth/google`)}&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email&state=${state}`
 }
 
-async function Customlogin() {
-  const state = await getOAuthState()
-  if (!state) return
-  window.location = `${oauth.value.custom_endpoint_auth}?client_id=${oauth.value.custom_client_id}&redirect_uri=${encode(`${core.value.domain}/oauth/custom`)}&response_type=code${custom_scopes()}&state=${state}`
+async function OIDClogin() {
+  try {
+    const response = await fetch('api/oauth/oidc/auth-url')
+    const data = await response.json()
+    if (data.url) {
+      window.location = data.url
+    } else if (data.error) {
+      error.value = true
+      errorMessage.value = data.error
+    }
+  } catch (e) {
+    console.error('Failed to get OIDC auth URL:', e)
+    error.value = true
+    errorMessage.value = 'Failed to initiate OIDC login'
+  }
 }
 </script>
 

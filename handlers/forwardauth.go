@@ -137,8 +137,8 @@ func forwardAuthExtract(r *http.Request) *ForwardAuthInfo {
 	isAdmin := isForwardAuthAdmin(groups)
 
 	return &ForwardAuthInfo{
-		Username: username,
-		Email:    email,
+		Username: strings.ToLower(username),
+		Email:    strings.ToLower(email),
 		Name:     name,
 		Groups:   groups,
 		IsAdmin:  isAdmin,
@@ -218,7 +218,11 @@ func forwardAuthUser(r *http.Request) *users.User {
 			log.Errorln("Failed to create forward auth user:", err)
 			return nil
 		}
-		log.Infof("Created forward auth user: %s (admin=%v)", info.Username, info.IsAdmin)
+		AuditLog(AuditUserCreated, r, map[string]interface{}{
+			"username":      info.Username,
+			"auth_provider": users.AuthProviderForwardAuth,
+			"is_admin":      info.IsAdmin,
+		})
 	} else {
 		// Only update admin status for forward-auth-managed users
 		// This prevents demoting manually-created admin accounts
@@ -289,10 +293,10 @@ func isForwardAuthAdmin(userGroups []string) bool {
 		}
 	}
 
-	// Check for match
+	// Check for match (case-insensitive for consistency with OIDC)
 	for _, ag := range adminGroups {
 		for _, ug := range userGroups {
-			if ug == ag {
+			if strings.EqualFold(ug, ag) {
 				return true
 			}
 		}

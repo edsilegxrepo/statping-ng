@@ -843,3 +843,147 @@ func TestTimestamps(t *testing.T) {
 		_ = originalUpdatedAt // avoid unused variable warning
 	})
 }
+
+func TestCaseInsensitiveLookups(t *testing.T) {
+	t.Run("FindByUsernameCaseInsensitive", func(t *testing.T) {
+		// Create user with lowercase username
+		user := &User{
+			Username: "casetestuser",
+			Password: testPassword,
+			Email:    "casetest@example.com",
+		}
+		err := user.Create()
+		require.Nil(t, err)
+
+		// Should find with exact case
+		found, err := FindByUsername("casetestuser")
+		require.Nil(t, err)
+		assert.Equal(t, "casetestuser", found.Username)
+
+		// Should find with different case
+		found, err = FindByUsername("CaseTestUser")
+		require.Nil(t, err)
+		assert.Equal(t, "casetestuser", found.Username)
+
+		// Should find with all caps
+		found, err = FindByUsername("CASETESTUSER")
+		require.Nil(t, err)
+		assert.Equal(t, "casetestuser", found.Username)
+	})
+
+	t.Run("FindByEmailCaseInsensitive", func(t *testing.T) {
+		// Should find with exact case
+		found, err := FindByEmail("casetest@example.com")
+		require.Nil(t, err)
+		assert.Equal(t, "casetest@example.com", found.Email)
+
+		// Should find with different case
+		found, err = FindByEmail("CaseTest@Example.COM")
+		require.Nil(t, err)
+		assert.Equal(t, "casetest@example.com", found.Email)
+	})
+
+	t.Run("UsernameNormalizedOnCreate", func(t *testing.T) {
+		user := &User{
+			Username: "MixedCaseUser",
+			Password: testPassword,
+			Email:    "mixedcase@example.com",
+		}
+		err := user.Create()
+		require.Nil(t, err)
+
+		// Username should be stored lowercase
+		found, err := Find(user.Id)
+		require.Nil(t, err)
+		assert.Equal(t, "mixedcaseuser", found.Username)
+		assert.Equal(t, "mixedcase@example.com", found.Email)
+	})
+}
+
+func TestLastAdminProtection(t *testing.T) {
+	t.Run("CountEnabledAdminsWithNewAdmins", func(t *testing.T) {
+		// Get initial count
+		initialCount := CountEnabledAdmins()
+
+		// Create an enabled admin
+		admin := &User{
+			Username: "countadmintest",
+			Password: testPassword,
+			Email:    "countadmin@example.com",
+			Admin:    null.NewNullBool(true),
+			Enabled:  null.NewNullBool(true),
+		}
+		err := admin.Create()
+		require.Nil(t, err)
+
+		// Count should increase by 1
+		newCount := CountEnabledAdmins()
+		assert.Equal(t, initialCount+1, newCount)
+
+		// Disable the admin
+		admin.Enabled = null.NewNullBool(false)
+		err = admin.Update()
+		require.Nil(t, err)
+
+		// Count should decrease back
+		afterDisable := CountEnabledAdmins()
+		assert.Equal(t, initialCount, afterDisable)
+	})
+
+	t.Run("IsLastEnabledAdminWithMultipleAdmins", func(t *testing.T) {
+		// Create two enabled admins
+		admin1 := &User{
+			Username: "lastadmintest1",
+			Password: testPassword,
+			Email:    "lastadmin1@example.com",
+			Admin:    null.NewNullBool(true),
+			Enabled:  null.NewNullBool(true),
+		}
+		err := admin1.Create()
+		require.Nil(t, err)
+
+		admin2 := &User{
+			Username: "lastadmintest2",
+			Password: testPassword,
+			Email:    "lastadmin2@example.com",
+			Admin:    null.NewNullBool(true),
+			Enabled:  null.NewNullBool(true),
+		}
+		err = admin2.Create()
+		require.Nil(t, err)
+
+		// Neither should be the last admin (there are at least 2)
+		assert.False(t, IsLastEnabledAdmin(admin1.Id))
+		assert.False(t, IsLastEnabledAdmin(admin2.Id))
+	})
+
+	t.Run("IsLastEnabledAdminNonAdmin", func(t *testing.T) {
+		user := &User{
+			Username: "nonadminuser",
+			Password: testPassword,
+			Email:    "nonadmin@example.com",
+			Admin:    null.NewNullBool(false),
+			Enabled:  null.NewNullBool(true),
+		}
+		err := user.Create()
+		require.Nil(t, err)
+
+		// Non-admin user should never be "last enabled admin"
+		assert.False(t, IsLastEnabledAdmin(user.Id))
+	})
+
+	t.Run("IsLastEnabledAdminDisabledAdmin", func(t *testing.T) {
+		user := &User{
+			Username: "disabledadmin",
+			Password: testPassword,
+			Email:    "disabledadmin@example.com",
+			Admin:    null.NewNullBool(true),
+			Enabled:  null.NewNullBool(false),
+		}
+		err := user.Create()
+		require.Nil(t, err)
+
+		// Disabled admin should never be "last enabled admin"
+		assert.False(t, IsLastEnabledAdmin(user.Id))
+	})
+}

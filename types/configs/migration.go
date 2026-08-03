@@ -120,6 +120,13 @@ func (d *DbConfig) DatabaseChanges() error {
 			}
 		}
 
+		// Migration 1722700000: normalize usernames and emails to lowercase (2024)
+		if cr.MigrationId < 1722700000 {
+			if err := d.migrateNormalizeUsernames(); err != nil {
+				return err
+			}
+		}
+
 		if err := d.Db.Exec("UPDATE core SET migration_id = ?", latestMigration).Error(); err != nil {
 			return err
 		}

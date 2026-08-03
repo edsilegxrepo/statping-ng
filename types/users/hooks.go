@@ -1,6 +1,8 @@
 package users
 
 import (
+	"strings"
+
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/utils"
 	"gorm.io/gorm"
@@ -34,6 +36,10 @@ func (u *User) BeforeDelete(tx *gorm.DB) (err error) {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+	// Normalize username and email to lowercase for case-insensitive lookups
+	u.Username = strings.ToLower(u.Username)
+	u.Email = strings.ToLower(u.Email)
+
 	if err := u.Validate(); err != nil {
 		return err
 	}

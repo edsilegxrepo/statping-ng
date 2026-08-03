@@ -45,8 +45,8 @@ func googleOAuth(r *http.Request) (*oAuth, error) {
 
 	return &oAuth{
 		Token:        gg,
-		Username:     info.Name,
-		Email:        info.Email,
+		Username:     strings.ToLower(info.Name),
+		Email:        strings.ToLower(info.Email),
 		ProviderType: users.AuthProviderOAuthGoogle,
 	}, nil
 }

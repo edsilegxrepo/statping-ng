@@ -34,6 +34,14 @@ var loginRateLimiter = &rateLimiter{
 	stopCh:     make(chan struct{}),
 }
 
+var oauthStateRateLimiter = &rateLimiter{
+	requests:   make(map[string]*bucket),
+	rate:       20,              // 20 OAuth state requests
+	window:     1 * time.Minute, // per minute
+	maxEntries: 100000,
+	stopCh:     make(chan struct{}),
+}
+
 // cleanup removes expired entries periodically
 func init() {
 	go func() {
@@ -43,6 +51,8 @@ func init() {
 			select {
 			case <-ticker.C:
 				loginRateLimiter.cleanup()
+				oauthStateRateLimiter.cleanup()
+				cleanupExpiredOAuthStates()
 			case <-loginRateLimiter.stopCh:
 				return
 			}
@@ -280,6 +290,22 @@ func rateLimitLoginMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		w.Header().Set("X-RateLimit-Remaining", fmt.Sprintf("%d", loginRateLimiter.remaining(ip)))
+		next(w, r)
+	}
+}
+
+// rateLimitOAuthStateMiddleware applies rate limiting to OAuth state generation
+func rateLimitOAuthStateMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip := getClientIP(r)
+
+		if !oauthStateRateLimiter.allow(ip) {
+			w.Header().Set("Retry-After", oauthStateRateLimiter.resetTime(ip).Format(time.RFC1123))
+			log.Warnln("OAuth state rate limit exceeded for IP:", ip)
+			http.Error(w, "Too many requests. Please try again later.", http.StatusTooManyRequests)
+			return
+		}
+
 		next(w, r)
 	}
 }

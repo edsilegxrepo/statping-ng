@@ -57,10 +57,10 @@
           <div class="col-sm-8">
             <div class="switch">
               <input v-model="ldap.ldap_start_tls" type="checkbox" id="ldap_start_tls" />
-              <label for="ldap_start_tls">Upgrade plain connection to TLS (for ports 389/3268)</label>
+              <label for="ldap_start_tls">Upgrade connection to TLS (required for ports 389/3268)</label>
             </div>
             <small class="form-text text-muted">
-              Ports 636/3269 use implicit TLS automatically - StartTLS is ignored for these ports
+              <strong>Encryption is mandatory.</strong> Use LDAPS (ports 636/3269) or enable StartTLS (ports 389/3268).
             </small>
           </div>
         </div>

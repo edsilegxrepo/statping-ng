@@ -100,17 +100,35 @@ type OAuth struct {
 	GoogleClientID      string        `gorm:"column:google_client_id" json:"google_client_id"`
 	GoogleClientSecret  string        `gorm:"column:google_client_secret" json:"google_client_secret" scope:"admin"`
 	GoogleUsers         string        `gorm:"column:google_users" json:"google_users" scope:"admin"`
-	SlackClientID       string        `gorm:"column:slack_client_id" json:"slack_client_id"`
-	SlackClientSecret   string        `gorm:"column:slack_client_secret" json:"slack_client_secret" scope:"admin"`
-	SlackTeam           string        `gorm:"column:slack_team" json:"slack_team" scope:"admin"`
-	SlackUsers          string        `gorm:"column:slack_users" json:"slack_users" scope:"admin"`
-	CustomName          string        `gorm:"column:custom_name" json:"custom_name"`
-	CustomClientID      string        `gorm:"column:custom_client_id" json:"custom_client_id"`
-	CustomClientSecret  string        `gorm:"column:custom_client_secret" json:"custom_client_secret" scope:"admin"`
-	CustomEndpointAuth  string        `gorm:"column:custom_endpoint_auth" json:"custom_endpoint_auth"`
-	CustomEndpointToken string        `gorm:"column:custom_endpoint_token" json:"custom_endpoint_token" scope:"admin"`
-	CustomScopes        string        `gorm:"column:custom_scopes" json:"custom_scopes"`
-	CustomIsOpenID      null.NullBool `gorm:"column:custom_open_id" json:"custom_open_id"`
+	SlackClientID     string `gorm:"column:slack_client_id" json:"slack_client_id"`
+	SlackClientSecret string `gorm:"column:slack_client_secret" json:"slack_client_secret" scope:"admin"`
+	SlackTeam         string `gorm:"column:slack_team" json:"slack_team" scope:"admin"`
+	SlackUsers        string `gorm:"column:slack_users" json:"slack_users" scope:"admin"`
+
+	// OIDC Configuration - Standards-compliant OpenID Connect
+	OidcEnabled      null.NullBool `gorm:"column:oidc_enabled;default:false" json:"oidc_enabled"`
+	OidcName         string        `gorm:"column:oidc_name" json:"oidc_name"`                                // Display name (e.g., "Keycloak", "Azure AD")
+	OidcIssuerURL    string        `gorm:"column:oidc_issuer_url" json:"oidc_issuer_url"`                    // Issuer URL for discovery
+	OidcClientID     string        `gorm:"column:oidc_client_id" json:"oidc_client_id"`
+	OidcClientSecret string        `gorm:"column:oidc_client_secret" json:"oidc_client_secret" scope:"admin"`
+	OidcScopes       string        `gorm:"column:oidc_scopes;default:openid,profile,email" json:"oidc_scopes"` // Comma-separated
+	OidcAllowedUsers string        `gorm:"column:oidc_allowed_users" json:"oidc_allowed_users" scope:"admin"`  // Comma-separated emails or @domain patterns
+	OidcAdminGroups  string        `gorm:"column:oidc_admin_groups" json:"oidc_admin_groups" scope:"admin"`    // Semicolon-separated group names for admin
+
+	// OIDC Claim mapping (optional overrides, defaults to standard OIDC claims)
+	OidcClaimUsername string `gorm:"column:oidc_claim_username;default:preferred_username" json:"oidc_claim_username"`
+	OidcClaimEmail    string `gorm:"column:oidc_claim_email;default:email" json:"oidc_claim_email"`
+	OidcClaimGroups   string `gorm:"column:oidc_claim_groups;default:groups" json:"oidc_claim_groups"`
+
+	// OIDC PKCE (required by some IdPs like Azure AD)
+	OidcUsePKCE null.NullBool `gorm:"column:oidc_use_pkce;default:true" json:"oidc_use_pkce"`
+
+	// OIDC Manual endpoint configuration (fallback when discovery unavailable)
+	OidcSkipDiscovery          null.NullBool `gorm:"column:oidc_skip_discovery;default:false" json:"oidc_skip_discovery"`
+	OidcManualAuthEndpoint     string        `gorm:"column:oidc_manual_auth_endpoint" json:"oidc_manual_auth_endpoint"`
+	OidcManualTokenEndpoint    string        `gorm:"column:oidc_manual_token_endpoint" json:"oidc_manual_token_endpoint" scope:"admin"`
+	OidcManualUserInfoEndpoint string        `gorm:"column:oidc_manual_userinfo_endpoint" json:"oidc_manual_userinfo_endpoint"`
+	OidcManualJwksURL          string        `gorm:"column:oidc_manual_jwks_url" json:"oidc_manual_jwks_url"`
 }
 
 // AllNotifiers contains all the Notifiers loaded

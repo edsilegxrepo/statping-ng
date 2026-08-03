@@ -7,7 +7,7 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
-const latestMigration = 1722600000 // 2024-08-02: auth_provider migration
+const latestMigration = 1722700000 // 2024-08-03: normalize usernames/emails to lowercase
 
 func init() {
 	_ = os.Setenv("MIGRATION_ID", utils.ToString(latestMigration))
@@ -45,6 +45,15 @@ func (d *DbConfig) genericMigration(alterStr string, isPostgres bool) error {
 func (d *DbConfig) migrateAuthProvider() error {
 	log.Infoln("Migrating users: setting auth_provider to 'local' for existing users")
 	if err := d.Db.Exec("UPDATE users SET auth_provider = 'local' WHERE auth_provider IS NULL OR auth_provider = ''").Error(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// migrateNormalizeUsernames normalizes existing usernames and emails to lowercase
+func (d *DbConfig) migrateNormalizeUsernames() error {
+	log.Infoln("Migrating users: normalizing usernames and emails to lowercase")
+	if err := d.Db.Exec("UPDATE users SET username = LOWER(username), email = LOWER(email)").Error(); err != nil {
 		return err
 	}
 	return nil

@@ -49,7 +49,7 @@ func (c *Core) encryptSecrets() error {
 		hasSecrets := c.GithubClientSecret != "" && !utils.IsEncrypted(c.GithubClientSecret) ||
 			c.GoogleClientSecret != "" && !utils.IsEncrypted(c.GoogleClientSecret) ||
 			c.SlackClientSecret != "" && !utils.IsEncrypted(c.SlackClientSecret) ||
-			c.CustomClientSecret != "" && !utils.IsEncrypted(c.CustomClientSecret) ||
+			c.OidcClientSecret != "" && !utils.IsEncrypted(c.OidcClientSecret) ||
 			c.LdapBindPassword != "" && !utils.IsEncrypted(c.LdapBindPassword) ||
 			c.LogShipToken != "" && !utils.IsEncrypted(c.LogShipToken)
 
@@ -81,12 +81,12 @@ func (c *Core) encryptSecrets() error {
 		}
 		c.SlackClientSecret = encrypted
 	}
-	if c.CustomClientSecret != "" && !utils.IsEncrypted(c.CustomClientSecret) {
-		encrypted, err := utils.Encrypt(c.CustomClientSecret)
+	if c.OidcClientSecret != "" && !utils.IsEncrypted(c.OidcClientSecret) {
+		encrypted, err := utils.Encrypt(c.OidcClientSecret)
 		if err != nil {
-			return errors.Wrap(err, "failed to encrypt CustomClientSecret")
+			return errors.Wrap(err, "failed to encrypt OidcClientSecret")
 		}
-		c.CustomClientSecret = encrypted
+		c.OidcClientSecret = encrypted
 	}
 
 	// LDAP bind password
@@ -137,11 +137,11 @@ func (c *Core) decryptSecrets() {
 			utils.Log.Warnf("Failed to decrypt SlackClientSecret: %v", err)
 		}
 	}
-	if c.CustomClientSecret != "" && utils.IsEncrypted(c.CustomClientSecret) {
-		if decrypted, err := utils.Decrypt(c.CustomClientSecret); err == nil {
-			c.CustomClientSecret = decrypted
+	if c.OidcClientSecret != "" && utils.IsEncrypted(c.OidcClientSecret) {
+		if decrypted, err := utils.Decrypt(c.OidcClientSecret); err == nil {
+			c.OidcClientSecret = decrypted
 		} else {
-			utils.Log.Warnf("Failed to decrypt CustomClientSecret: %v", err)
+			utils.Log.Warnf("Failed to decrypt OidcClientSecret: %v", err)
 		}
 	}
 

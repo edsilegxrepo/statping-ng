@@ -207,89 +207,118 @@
     <div class="card mb-3">
       <div class="card-header">
         <font-awesome-icon
-          @click="expanded.custom = !expanded.custom"
-          :icon="expanded.custom ? 'minus' : 'plus'"
+          @click="expanded.oidc = !expanded.oidc"
+          :icon="expanded.oidc ? 'minus' : 'plus'"
           class="mr-2 pointer"
         />
-        Custom oAuth Settings
-        <span @click="custom_enabled = !!custom_enabled" class="switch switch-sm switch-rd-gr float-right">
-          <input v-model="custom_enabled" type="checkbox" id="switch-custom-oauth" :checked="custom_enabled" />
-          <label for="switch-custom-oauth" class="mb-0"> </label>
+        OpenID Connect (OIDC)
+        <span @click="oidc_enabled = !oidc_enabled" class="switch switch-sm switch-rd-gr float-right">
+          <input v-model="oidc_enabled" type="checkbox" id="switch-oidc" :checked="oidc_enabled" />
+          <label for="switch-oidc" class="mb-0"> </label>
         </span>
       </div>
-      <div class="card-body" :class="{ 'd-none': !expanded.custom || !custom_enabled }">
-        <div class="form-group row">
-          <label for="custom_name" class="col-sm-4 col-form-label">Custom Name</label>
-          <div class="col-sm-8">
-            <input v-model="oauth.custom_name" type="text" class="form-control" id="custom_name" required />
-          </div>
+      <div class="card-body" :class="{ 'd-none': !expanded.oidc }">
+        <div class="alert alert-info mb-3">
+          <strong>OpenID Connect</strong> provides standardized authentication with any OIDC-compliant
+          identity provider: Keycloak, Authentik, Azure AD, Okta, Auth0, Google Workspace, and others.
+          Endpoints are auto-discovered from the issuer URL.
         </div>
-        <div class="form-group row mt-3">
-          <label for="custom_client" class="col-sm-4 col-form-label">Client ID</label>
-          <div class="col-sm-8">
-            <input v-model="oauth.custom_client_id" type="text" class="form-control" id="custom_client" required />
-          </div>
-        </div>
+
         <div class="form-group row">
-          <label for="custom_secret" class="col-sm-4 col-form-label">Client Secret</label>
+          <label for="oidc_name" class="col-sm-4 col-form-label">Provider Name</label>
           <div class="col-sm-8">
-            <input v-model="oauth.custom_client_secret" type="text" class="form-control" id="custom_secret" required />
+            <input v-model="oauth.oidc_name" type="text" class="form-control" id="oidc_name" placeholder="Keycloak" />
+            <small class="text-muted">Display name shown on login button</small>
           </div>
         </div>
         <div class="form-group row">
-          <label for="custom_endpoint" class="col-sm-4 col-form-label">Auth Endpoint</label>
+          <label for="oidc_issuer" class="col-sm-4 col-form-label">Issuer URL</label>
           <div class="col-sm-8">
-            <input v-model="oauth.custom_endpoint_auth" type="text" class="form-control" id="custom_endpoint" required />
+            <input v-model="oauth.oidc_issuer_url" type="url" class="form-control" id="oidc_issuer" placeholder="https://keycloak.example.com/realms/main" />
+            <small class="text-muted">Base URL for OIDC discovery (/.well-known/openid-configuration)</small>
           </div>
         </div>
         <div class="form-group row">
-          <label for="custom_endpoint_token" class="col-sm-4 col-form-label">Token Endpoint</label>
+          <label for="oidc_client_id" class="col-sm-4 col-form-label">Client ID</label>
           <div class="col-sm-8">
-            <input
-              v-model="oauth.custom_endpoint_token"
-              type="text"
-              class="form-control"
-              id="custom_endpoint_token"
-              required
-            />
+            <input v-model="oauth.oidc_client_id" type="text" class="form-control" id="oidc_client_id" />
           </div>
         </div>
         <div class="form-group row">
-          <label for="custom_scopes" class="col-sm-4 col-form-label">Scopes</label>
+          <label for="oidc_client_secret" class="col-sm-4 col-form-label">Client Secret</label>
           <div class="col-sm-8">
-            <input v-model="oauth.custom_scopes" type="text" class="form-control" id="custom_scopes" />
-            <small>Optional comma delimited list of oauth scopes</small>
+            <input v-model="oauth.oidc_client_secret" type="password" class="form-control" id="oidc_client_secret" />
           </div>
         </div>
         <div class="form-group row">
-          <label for="switch-custom-openid" class="col-sm-4 col-form-label">Open ID</label>
+          <label for="oidc_scopes" class="col-sm-4 col-form-label">Scopes</label>
           <div class="col-sm-8">
-            <span @click="oauth.custom_open_id = !!oauth.custom_open_id" class="switch switch-rd-gr float-right">
-              <input
-                v-model="oauth.custom_open_id"
-                type="checkbox"
-                id="switch-custom-openid"
-                :checked="oauth.custom_open_id"
-              />
-              <label for="switch-custom-openid" class="mb-0"> </label>
+            <input v-model="oauth.oidc_scopes" type="text" class="form-control" id="oidc_scopes" placeholder="openid,profile,email,groups" />
+            <small class="text-muted">Comma-separated scopes (openid is required and added automatically)</small>
+          </div>
+        </div>
+
+        <hr />
+        <h6>Authorization</h6>
+
+        <div class="form-group row">
+          <label for="oidc_allowed_users" class="col-sm-4 col-form-label">Allowed Users/Domains</label>
+          <div class="col-sm-8">
+            <input v-model="oauth.oidc_allowed_users" type="text" class="form-control" id="oidc_allowed_users" placeholder="admin@example.com,@company.com" />
+            <small class="text-muted">Comma-separated emails or @domain.com patterns. Leave empty to allow all.</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="oidc_admin_groups" class="col-sm-4 col-form-label">Admin Groups</label>
+          <div class="col-sm-8">
+            <input v-model="oauth.oidc_admin_groups" type="text" class="form-control" id="oidc_admin_groups" placeholder="admins;statping-admins" />
+            <small class="text-muted">Semicolon-separated group names that grant admin access</small>
+          </div>
+        </div>
+
+        <hr />
+        <h6>Claim Mapping (Optional)</h6>
+
+        <div class="form-group row">
+          <label for="oidc_claim_username" class="col-sm-4 col-form-label">Username Claim</label>
+          <div class="col-sm-8">
+            <input v-model="oauth.oidc_claim_username" type="text" class="form-control" id="oidc_claim_username" placeholder="preferred_username" />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="oidc_claim_email" class="col-sm-4 col-form-label">Email Claim</label>
+          <div class="col-sm-8">
+            <input v-model="oauth.oidc_claim_email" type="text" class="form-control" id="oidc_claim_email" placeholder="email" />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="oidc_claim_groups" class="col-sm-4 col-form-label">Groups Claim</label>
+          <div class="col-sm-8">
+            <input v-model="oauth.oidc_claim_groups" type="text" class="form-control" id="oidc_claim_groups" placeholder="groups" />
+          </div>
+        </div>
+
+        <hr />
+        <h6>Security Options</h6>
+
+        <div class="form-group row">
+          <label for="switch-oidc-pkce" class="col-sm-4 col-form-label">Use PKCE</label>
+          <div class="col-sm-8">
+            <span @click="oauth.oidc_use_pkce = !oauth.oidc_use_pkce" class="switch switch-rd-gr">
+              <input v-model="oauth.oidc_use_pkce" type="checkbox" id="switch-oidc-pkce" :checked="oauth.oidc_use_pkce" />
+              <label for="switch-oidc-pkce" class="mb-0"> </label>
             </span>
-            <small>Enable if provider is OpenID</small>
+            <small class="text-muted d-block">Proof Key for Code Exchange - recommended, required by some IdPs (Azure AD)</small>
           </div>
         </div>
 
         <div class="form-group row">
-          <label for="custom_callback" class="col-sm-4 col-form-label">Callback URL</label>
+          <label for="oidc_callback" class="col-sm-4 col-form-label">Callback URL</label>
           <div class="col-sm-8">
             <div class="input-group">
-              <input
-                :value="`${coreData.domain}/oauth/custom`"
-                type="text"
-                class="form-control"
-                id="custom_callback"
-                readonly
-              />
+              <input :value="`${coreData.domain}/oauth/oidc`" type="text" class="form-control" id="oidc_callback" readonly />
               <div class="input-group-append copy-btn">
-                <button @click.prevent="copyCallback('custom')" class="btn btn-outline-secondary" type="button">Copy</button>
+                <button @click.prevent="copyCallback('oidc')" class="btn btn-outline-secondary" type="button">Copy</button>
               </div>
             </div>
           </div>
@@ -401,7 +430,7 @@ const google_enabled = ref(false)
 const slack_enabled = ref(false)
 const github_enabled = ref(false)
 const local_enabled = ref(false)
-const custom_enabled = ref(false)
+const oidc_enabled = ref(false)
 const loading = ref(false)
 const forwardAuthLoading = ref(false)
 
@@ -409,8 +438,7 @@ const expanded = reactive({
   github: false,
   google: false,
   slack: false,
-  custom: false,
-  openid: false,
+  oidc: false,
   forwardauth: false,
 })
 
@@ -438,13 +466,24 @@ const oauth = reactive({
   slack_client_secret: '',
   slack_team: '',
   slack_users: '',
-  custom_name: '',
-  custom_client_id: '',
-  custom_client_secret: '',
-  custom_endpoint_auth: '',
-  custom_endpoint_token: '',
-  custom_scopes: '',
-  custom_open_id: false,
+  // OIDC fields
+  oidc_enabled: false,
+  oidc_name: '',
+  oidc_issuer_url: '',
+  oidc_client_id: '',
+  oidc_client_secret: '',
+  oidc_scopes: 'openid,profile,email',
+  oidc_allowed_users: '',
+  oidc_admin_groups: '',
+  oidc_claim_username: 'preferred_username',
+  oidc_claim_email: 'email',
+  oidc_claim_groups: 'groups',
+  oidc_use_pkce: true,
+  oidc_skip_discovery: false,
+  oidc_manual_auth_endpoint: '',
+  oidc_manual_token_endpoint: '',
+  oidc_manual_userinfo_endpoint: '',
+  oidc_manual_jwks_url: '',
 })
 
 onMounted(async () => {
@@ -454,7 +493,7 @@ onMounted(async () => {
   github_enabled.value = has('github')
   google_enabled.value = has('google')
   slack_enabled.value = has('slack')
-  custom_enabled.value = has('custom')
+  oidc_enabled.value = has('oidc') || oauth.oidc_enabled
 
   // Load forward auth settings
   try {
@@ -478,7 +517,7 @@ function providers() {
   if (local_enabled.value) list.push('local')
   if (google_enabled.value) list.push('google')
   if (slack_enabled.value) list.push('slack')
-  if (custom_enabled.value) list.push('custom')
+  if (oidc_enabled.value) list.push('oidc')
   return list.join(',')
 }
 
@@ -495,6 +534,7 @@ async function copyCallback(provider) {
 async function saveOAuth() {
   loading.value = true
   oauth.oauth_providers = providers()
+  oauth.oidc_enabled = oidc_enabled.value
   await Api.oauth_save(oauth)
   const data = await Api.oauth()
   store.setOAuth(data)

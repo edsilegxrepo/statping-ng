@@ -13,7 +13,7 @@ const (
 	AuthProviderOAuthGoogle = "oauth_google"
 	AuthProviderOAuthGitHub = "oauth_github"
 	AuthProviderOAuthSlack  = "oauth_slack"
-	AuthProviderOAuthCustom = "oauth_custom"
+	AuthProviderOIDC        = "oidc"
 	AuthProviderForwardAuth = "forward_auth"
 )
 
@@ -31,7 +31,7 @@ func GetAuthProviders() []AuthProviderInfo {
 		{Value: AuthProviderOAuthGoogle, Label: "OAuth - Google"},
 		{Value: AuthProviderOAuthGitHub, Label: "OAuth - GitHub"},
 		{Value: AuthProviderOAuthSlack, Label: "OAuth - Slack"},
-		{Value: AuthProviderOAuthCustom, Label: "OAuth - Custom"},
+		{Value: AuthProviderOIDC, Label: "OIDC"},
 		{Value: AuthProviderForwardAuth, Label: "Forward Auth"},
 	}
 }

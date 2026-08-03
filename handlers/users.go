@@ -40,14 +40,31 @@ func apiUserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Store original state for audit logging and last-admin check
+	wasAdmin := user.Admin.Bool
+	wasEnabled := user.Enabled.Bool
+	originalUsername := user.Username
+
 	err = DecodeJSON(r, &user)
 	if err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}
 
+	// Protect against demoting or disabling the last admin
+	if wasAdmin && wasEnabled {
+		beingDemoted := !user.Admin.Bool
+		beingDisabled := !user.Enabled.Bool
+		if (beingDemoted || beingDisabled) && users.IsLastEnabledAdmin(user.Id) {
+			sendErrorJson(errors.New("cannot demote or disable the last enabled admin"), w, r)
+			return
+		}
+	}
+
+	passwordChanged := false
 	if user.Password != "" {
 		user.Password = utils.HashPassword(user.Password)
+		passwordChanged = true
 	}
 
 	err = user.Update()
@@ -55,6 +72,26 @@ func apiUserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(fmt.Errorf("issue updating user #%d: %s", user.Id, err), w, r)
 		return
 	}
+
+	// Audit log security-relevant changes
+	if wasAdmin && !user.Admin.Bool {
+		AuditLog(AuditAdminDemoted, r, map[string]interface{}{"username": originalUsername})
+	} else if !wasAdmin && user.Admin.Bool {
+		AuditLog(AuditAdminPromoted, r, map[string]interface{}{"username": originalUsername})
+	}
+	if wasEnabled && !user.Enabled.Bool {
+		AuditLog(AuditUserDisabled, r, map[string]interface{}{"username": originalUsername})
+	} else if !wasEnabled && user.Enabled.Bool {
+		AuditLog(AuditUserEnabled, r, map[string]interface{}{"username": originalUsername})
+	}
+	if passwordChanged {
+		AuditLog(AuditPasswordChanged, r, map[string]interface{}{"username": originalUsername})
+	}
+
+	AuditLog(AuditUserUpdated, r, map[string]interface{}{"username": originalUsername})
+
+	// Clear sensitive data before returning
+	user.Password = ""
 	sendJsonAction(user, "update", w, r)
 }
 
@@ -69,10 +106,20 @@ func apiUserDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(err, w, r)
 		return
 	}
+
+	// Protect against deleting the last enabled admin
+	if users.IsLastEnabledAdmin(user.Id) {
+		sendErrorJson(errors.New("cannot delete the last enabled admin"), w, r)
+		return
+	}
+
+	username := user.Username
 	if err := user.Delete(); err != nil {
 		sendErrorJson(err, w, r)
 		return
 	}
+
+	AuditLog(AuditUserDeleted, r, map[string]interface{}{"username": username})
 	sendJsonAction(user, "delete", w, r)
 }
 
@@ -128,5 +175,13 @@ func apiCreateUsersHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(err, w, r)
 		return
 	}
+
+	AuditLog(AuditUserCreated, r, map[string]interface{}{
+		"username": user.Username,
+		"is_admin": user.Admin.Bool,
+	})
+
+	// Clear sensitive data before returning
+	user.Password = ""
 	sendJsonAction(user, "create", w, r)
 }

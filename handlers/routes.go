@@ -112,7 +112,8 @@ func Router() *mux.Router {
 	// API OAUTH Routes
 	api.Handle("/api/oauth", scoped(apiOAuthHandler)).Methods("GET")
 	api.Handle("/api/oauth", authenticated(apiUpdateOAuthHandler, false)).Methods("POST")
-	api.Handle("/api/oauth/state", http.HandlerFunc(oauthStateHandler)).Methods("GET")
+	api.Handle("/api/oauth/state", rateLimitOAuthStateMiddleware(oauthStateHandler)).Methods("GET")
+	api.Handle("/api/oauth/oidc/auth-url", rateLimitOAuthStateMiddleware(oidcAuthURLHandler)).Methods("GET")
 	api.Handle("/oauth/{provider}", http.HandlerFunc(oauthHandler))
 
 	// API LDAP Routes

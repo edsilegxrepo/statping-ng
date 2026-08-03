@@ -297,7 +297,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			auth = (user != nil)
 
-		case users.AuthProviderOAuthGoogle, users.AuthProviderOAuthGitHub, users.AuthProviderOAuthSlack, users.AuthProviderOAuthCustom:
+		case users.AuthProviderOAuthGoogle, users.AuthProviderOAuthGitHub, users.AuthProviderOAuthSlack, users.AuthProviderOIDC:
 			// OAuth users cannot use username/password login
 			returnJson(struct {
 				Error    string `json:"error"`
@@ -338,14 +338,20 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if auth {
 		// Check if user is enabled
 		if !user.Enabled.Bool {
-			log.Infoln(fmt.Sprintf("User %v login rejected - account pending approval", user.Username))
+			AuditLog(AuditLoginFailed, r, map[string]interface{}{
+				"username": user.Username,
+				"reason":   "account_disabled",
+			})
 			returnJson(struct {
 				Error string `json:"error"`
 			}{"account pending approval - please contact an administrator"}, w, r)
 			return
 		}
 
-		log.Infoln(fmt.Sprintf("User %v logged in from IP %v via %v", user.Username, r.RemoteAddr, user.AuthProvider))
+		AuditLog(AuditLoginSuccess, r, map[string]interface{}{
+			"username":      user.Username,
+			"auth_provider": user.AuthProvider,
+		})
 		claim, token := setJwtToken(user, w, r)
 		resp := struct {
 			Token   string `json:"token"`
@@ -356,6 +362,10 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		returnJson(resp, w, r)
 	} else {
+		AuditLog(AuditLoginFailed, r, map[string]interface{}{
+			"username": username,
+			"reason":   "invalid_credentials",
+		})
 		resp := struct {
 			Error string `json:"error"`
 		}{

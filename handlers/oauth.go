@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,10 +18,14 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// oauthUserProvisionMu prevents race conditions during OAuth user creation
+var oauthUserProvisionMu sync.Mutex
+
 type oAuth struct {
 	Email        string
 	Username     string
 	ProviderType string // e.g., "oauth_google", "oauth_github", etc.
+	IsAdmin      bool   // Set by OIDC group claim check
 	*oauth2.Token
 }
 
@@ -143,8 +148,8 @@ func oauthHandler(w http.ResponseWriter, r *http.Request) {
 		oauth, err = githubOAuth(r)
 	case "slack":
 		oauth, err = slackOAuth(r)
-	case "custom":
-		oauth, err = customOAuth(r)
+	case "oidc":
+		oauth, err = oidcOAuth(r)
 	default:
 		err = errors.New("unknown oauth provider")
 	}
@@ -159,41 +164,78 @@ func oauthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func oauthLogin(oauth *oAuth, w http.ResponseWriter, r *http.Request) {
+	// Use mutex to prevent race condition during user lookup/creation
+	oauthUserProvisionMu.Lock()
+	defer oauthUserProvisionMu.Unlock()
+
+	// Normalize email for lookup (already lowercased in provider handlers)
+	email := strings.ToLower(oauth.Email)
+
 	// First, check if this OAuth user already exists in the database
-	existingUser, err := users.FindByEmail(oauth.Email)
+	existingUser, err := users.FindByEmail(email)
 	if err == nil && existingUser != nil {
 		// Check if user is enabled
 		if !existingUser.Enabled.Bool {
-			log.Infoln(fmt.Sprintf("OAuth %s User %s login rejected - account pending approval", oauth.Type(), oauth.Email))
+			AuditLog(AuditOAuthFailed, r, map[string]interface{}{
+				"email":    email,
+				"provider": oauth.ProviderType,
+				"reason":   "account_disabled",
+			})
 			http.Redirect(w, r, core.App.Domain+"/login?error=pending_approval", http.StatusTemporaryRedirect)
 			return
 		}
 		// Existing user - use their existing permissions
-		log.Infoln(fmt.Sprintf("OAuth %s User %s (existing) logged in from IP %s", oauth.Type(), oauth.Email, r.RemoteAddr))
+		AuditLog(AuditOAuthLogin, r, map[string]interface{}{
+			"username": existingUser.Username,
+			"email":    email,
+			"provider": oauth.ProviderType,
+		})
 		setJwtToken(existingUser, w, r)
-		http.Redirect(w, r, core.App.Domain+"/dashboard", http.StatusPermanentRedirect)
+		http.Redirect(w, r, core.App.Domain+"/dashboard", http.StatusFound)
 		return
+	}
+
+	// Normalize username
+	username := strings.ToLower(oauth.Username)
+
+	// Check if username already exists (could be a local user or from another OAuth provider)
+	existingByUsername, _ := users.FindByUsername(username)
+	if existingByUsername != nil {
+		// Username collision - append a unique suffix
+		username = fmt.Sprintf("%s_%s", username, utils.RandomString(6))
+		log.Warnf("OAuth: username collision, using %s for %s", username, email)
 	}
 
 	// New OAuth user - create as non-admin and disabled by default
 	// Requires admin approval before they can access the system
+	// Exception: OIDC can set admin based on group claims
 	user := &users.User{
 		Id:           0,
-		Username:     oauth.Username,
-		Email:        oauth.Email,
+		Username:     username,
+		Email:        email,
 		Password:     utils.HashPassword(utils.RandomString(32)), // Random password - user authenticates via OAuth
 		AuthProvider: oauth.ProviderType,
-		Admin:        null.NewNullBool(false), // SECURITY: OAuth users are NOT admin by default
-		Enabled:      null.NewNullBool(false), // Requires admin approval
+		Admin:        null.NewNullBool(oauth.IsAdmin), // OIDC can set admin via group claims
+		Enabled:      null.NewNullBool(false),         // Requires admin approval
 	}
 
 	// Create the user in the database
 	if err := user.Create(); err != nil {
-		log.Errorln(fmt.Sprintf("Failed to create OAuth user %s: %v", oauth.Email, err))
+		AuditLog(AuditOAuthFailed, r, map[string]interface{}{
+			"email":    email,
+			"provider": oauth.ProviderType,
+			"reason":   "create_failed",
+			"error":    err.Error(),
+		})
 		sendErrorJson(errors.New("failed to create user account"), w, r)
 		return
 	}
 
-	log.Infoln(fmt.Sprintf("OAuth %s User %s (new) created - pending approval", oauth.Type(), oauth.Email))
+	AuditLog(AuditOAuthUserCreated, r, map[string]interface{}{
+		"username": username,
+		"email":    email,
+		"provider": oauth.ProviderType,
+		"is_admin": oauth.IsAdmin,
+	})
 	http.Redirect(w, r, core.App.Domain+"/login?error=pending_approval", http.StatusTemporaryRedirect)
 }
