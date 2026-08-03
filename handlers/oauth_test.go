@@ -338,7 +338,7 @@ func TestOAuthLoginDisabledUser(t *testing.T) {
 		oauthLogin(oauth, rr, req)
 
 		// Should redirect to dashboard (successful login)
-		assert.Equal(t, http.StatusPermanentRedirect, rr.Code)
+		assert.Equal(t, http.StatusFound, rr.Code)
 		location := rr.Header().Get("Location")
 		assert.Contains(t, location, "dashboard")
 	})

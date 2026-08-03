@@ -634,7 +634,7 @@ func TestForwardAuthEdgeCases(t *testing.T) {
 		assert.True(t, info.IsAdmin)
 	})
 
-	t.Run("case sensitive group matching", func(t *testing.T) {
+	t.Run("case insensitive group matching", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		req.RemoteAddr = "127.0.0.1:12345"
 		req.Header.Set("Remote-User", "user5")
@@ -642,7 +642,7 @@ func TestForwardAuthEdgeCases(t *testing.T) {
 
 		info := forwardAuthExtract(req)
 		require.NotNil(t, info)
-		assert.False(t, info.IsAdmin, "group matching should be case sensitive")
+		assert.True(t, info.IsAdmin, "group matching should be case insensitive")
 	})
 }
 
