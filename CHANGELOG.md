@@ -1,4 +1,14 @@
 # 0.97.4 (08-03-2026)
+- **New: OIDC (OpenID Connect) Authentication**:
+  - Full OIDC connector for enterprise identity providers (Keycloak, Okta, Azure AD, Auth0, etc.)
+  - Automatic discovery via `.well-known/openid-configuration`
+  - PKCE (Proof Key for Code Exchange) for enhanced security
+  - ID token signature verification with JWKS rotation support
+  - Configurable claim mapping (username, email, groups)
+  - Admin group mapping from OIDC group claims
+  - Scopes configuration (default: openid, profile, email)
+  - Replaces broken Custom OAuth provider
+  - UI configuration in Settings > Authentication > OIDC
 - **New: Worker Pool Polling Engine**:
   - Replaced goroutine-per-service model with scalable worker pool architecture
   - Single scheduler goroutine with heap-based next-check tracking
@@ -9,14 +19,12 @@
   - Higher priority services checked first when queue is busy
   - Live statistics API at `/api/polling/stats`
   - Panic recovery in workers prevents single bad check from killing worker
-- **New: Comprehensive Auth Security Hardening**:
-  - OIDC provider with PKCE, discovery, ID token verification (replaces broken Custom OAuth)
+- **New: Auth Security Hardening**:
   - OAuth state CSRF protection with expiration and memory limits (max 10,000 pending)
   - Race condition prevention for concurrent OAuth/Forward Auth user provisioning
   - Mandatory LDAP encryption (LDAPS or StartTLS required)
   - Case-insensitive username/email lookups (normalize on write, normalize search term)
   - Last admin protection (cannot delete/demote/disable last enabled admin)
-  - Comprehensive audit logging for security events (login, logout, user changes, OAuth)
   - Rate limiting on OAuth state generation
   - Data migration normalizes existing mixed-case usernames/emails to lowercase
 - **New: Security Audit Logging**:
