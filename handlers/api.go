@@ -178,3 +178,11 @@ func sendUnauthorizedJson(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	returnJson(errors.NotAuthenticated, w, r)
 }
+
+func sendPendingApprovalJson(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	returnJson(struct {
+		Error string `json:"error"`
+	}{"account pending approval - please contact an administrator"}, w, r)
+}

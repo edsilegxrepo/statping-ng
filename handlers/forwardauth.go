@@ -209,7 +209,7 @@ func forwardAuthUser(r *http.Request) *users.User {
 			Username:           info.Username,
 			Email:              email,
 			Password:           utils.HashPassword(utils.RandomString(32)),
-			Admin:              null.NewNullBool(false),
+			Admin:              null.NewNullBool(info.IsAdmin),
 			AuthProvider:       users.AuthProviderForwardAuth,
 			Enabled:            null.NewNullBool(false), // Requires admin approval
 			ForwardAuthManaged: null.NewNullBool(true),

@@ -1,11 +1,17 @@
 package handlers
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/statping-ng/statping-ng/types/core"
+	"github.com/statping-ng/statping-ng/types/null"
+	"github.com/statping-ng/statping-ng/types/users"
+	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateOAuthState(t *testing.T) {
@@ -267,5 +273,101 @@ func TestValidateSlack(t *testing.T) {
 			Email string `json:"email"`
 		}{Name: "notallowed", Email: "notallowed@example.com"}}
 		assert.False(t, validateSlack(id))
+	})
+}
+
+func TestOAuthLoginDisabledUser(t *testing.T) {
+	ensureHandlerSetup(t)
+
+	t.Run("disabled existing user is rejected with pending_approval redirect", func(t *testing.T) {
+		// Create a disabled OAuth user
+		disabledUser := &users.User{
+			Username:     "oauth_disabled_user",
+			Email:        "oauth_disabled@test.local",
+			Password:     utils.HashPassword("testpass123"),
+			Admin:        null.NewNullBool(false),
+			Enabled:      null.NewNullBool(false), // Disabled - pending approval
+			AuthProvider: users.AuthProviderOAuthGoogle,
+		}
+		err := disabledUser.Create()
+		require.NoError(t, err)
+		defer func() { _ = disabledUser.Delete() }()
+
+		// Simulate OAuth callback for existing disabled user
+		oauth := &oAuth{
+			Email:        "oauth_disabled@test.local",
+			Username:     "oauth_disabled_user",
+			ProviderType: "oauth_google",
+		}
+
+		req := httptest.NewRequest("GET", "/oauth/google", nil)
+		rr := httptest.NewRecorder()
+
+		oauthLogin(oauth, rr, req)
+
+		// Should redirect to login with pending_approval error
+		assert.Equal(t, http.StatusTemporaryRedirect, rr.Code)
+		location := rr.Header().Get("Location")
+		assert.Contains(t, location, "login?error=pending_approval")
+	})
+
+	t.Run("enabled existing user is allowed to login", func(t *testing.T) {
+		// Create an enabled OAuth user
+		enabledUser := &users.User{
+			Username:     "oauth_enabled_user",
+			Email:        "oauth_enabled@test.local",
+			Password:     utils.HashPassword("testpass123"),
+			Admin:        null.NewNullBool(false),
+			Enabled:      null.NewNullBool(true), // Enabled - approved
+			AuthProvider: users.AuthProviderOAuthGoogle,
+		}
+		err := enabledUser.Create()
+		require.NoError(t, err)
+		defer func() { _ = enabledUser.Delete() }()
+
+		// Simulate OAuth callback for existing enabled user
+		oauth := &oAuth{
+			Email:        "oauth_enabled@test.local",
+			Username:     "oauth_enabled_user",
+			ProviderType: "oauth_google",
+		}
+
+		req := httptest.NewRequest("GET", "/oauth/google", nil)
+		rr := httptest.NewRecorder()
+
+		oauthLogin(oauth, rr, req)
+
+		// Should redirect to dashboard (successful login)
+		assert.Equal(t, http.StatusPermanentRedirect, rr.Code)
+		location := rr.Header().Get("Location")
+		assert.Contains(t, location, "dashboard")
+	})
+
+	t.Run("new OAuth user is created as disabled", func(t *testing.T) {
+		// Use a unique email that doesn't exist
+		oauth := &oAuth{
+			Email:        "oauth_new_user_test@test.local",
+			Username:     "oauth_new_user_test",
+			ProviderType: "oauth_google",
+		}
+
+		req := httptest.NewRequest("GET", "/oauth/google", nil)
+		rr := httptest.NewRecorder()
+
+		oauthLogin(oauth, rr, req)
+
+		// Should redirect to login with pending_approval (new user is disabled)
+		assert.Equal(t, http.StatusTemporaryRedirect, rr.Code)
+		location := rr.Header().Get("Location")
+		assert.Contains(t, location, "login?error=pending_approval")
+
+		// Verify user was created and is disabled
+		createdUser, err := users.FindByEmail("oauth_new_user_test@test.local")
+		require.NoError(t, err)
+		assert.False(t, createdUser.Enabled.Bool, "New OAuth user should be disabled by default")
+		assert.False(t, createdUser.Admin.Bool, "New OAuth user should not be admin")
+
+		// Cleanup
+		_ = createdUser.Delete()
 	})
 }

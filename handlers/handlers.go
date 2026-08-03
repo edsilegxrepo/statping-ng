@@ -97,7 +97,7 @@ func IsFullAuthenticated(r *http.Request) bool {
 		return true
 	}
 	// Check forward auth (Authelia, Authentik, etc.)
-	if user, ok := hasForwardAuth(r); ok && user.Admin.Bool {
+	if user, ok, _ := hasForwardAuth(r); ok && user.Admin.Bool {
 		return true
 	}
 	claim, err := getJwtToken(r)
@@ -107,6 +107,27 @@ func IsFullAuthenticated(r *http.Request) bool {
 	return claim.Admin
 }
 
+// IsFullAuthenticatedWithReason returns auth status and reason for failure
+func IsFullAuthenticatedWithReason(r *http.Request) (bool, AuthResult) {
+	if ok := hasAuthorizationHeader(r); ok {
+		return true, AuthResultOK
+	}
+	// Check forward auth (Authelia, Authentik, etc.)
+	if user, ok, result := hasForwardAuth(r); ok && user.Admin.Bool {
+		return true, AuthResultOK
+	} else if result == AuthResultPendingApproval {
+		return false, AuthResultPendingApproval
+	}
+	claim, err := getJwtToken(r)
+	if err != nil {
+		return false, AuthResultNoUser
+	}
+	if claim.Admin {
+		return true, AuthResultOK
+	}
+	return false, AuthResultNoUser
+}
+
 // ScopeName will show private JSON fields in the API.
 // It will return "admin" if request has valid admin authentication.
 func ScopeName(r *http.Request) string {
@@ -114,7 +135,7 @@ func ScopeName(r *http.Request) string {
 		return "admin"
 	}
 	// Check forward auth
-	if user, ok := hasForwardAuth(r); ok {
+	if user, ok, _ := hasForwardAuth(r); ok {
 		if user.Admin.Bool {
 			return "admin"
 		}
@@ -145,11 +166,29 @@ func IsUser(r *http.Request) bool {
 		return true
 	}
 	// Check forward auth
-	if _, ok := hasForwardAuth(r); ok {
+	if _, ok, _ := hasForwardAuth(r); ok {
 		return true
 	}
 	_, err := getJwtToken(r)
 	return err == nil
+}
+
+// IsUserWithReason returns auth status and reason for failure
+func IsUserWithReason(r *http.Request) (bool, AuthResult) {
+	if ok := hasAuthorizationHeader(r); ok {
+		return true, AuthResultOK
+	}
+	// Check forward auth
+	if _, ok, result := hasForwardAuth(r); ok {
+		return true, AuthResultOK
+	} else if result == AuthResultPendingApproval {
+		return false, AuthResultPendingApproval
+	}
+	_, err := getJwtToken(r)
+	if err == nil {
+		return true, AuthResultOK
+	}
+	return false, AuthResultNoUser
 }
 
 func loadTemplate(w http.ResponseWriter, r *http.Request) (*template.Template, error) {

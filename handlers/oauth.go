@@ -13,6 +13,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/errors"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/users"
+	"github.com/statping-ng/statping-ng/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -161,6 +162,12 @@ func oauthLogin(oauth *oAuth, w http.ResponseWriter, r *http.Request) {
 	// First, check if this OAuth user already exists in the database
 	existingUser, err := users.FindByEmail(oauth.Email)
 	if err == nil && existingUser != nil {
+		// Check if user is enabled
+		if !existingUser.Enabled.Bool {
+			log.Infoln(fmt.Sprintf("OAuth %s User %s login rejected - account pending approval", oauth.Type(), oauth.Email))
+			http.Redirect(w, r, core.App.Domain+"/login?error=pending_approval", http.StatusTemporaryRedirect)
+			return
+		}
 		// Existing user - use their existing permissions
 		log.Infoln(fmt.Sprintf("OAuth %s User %s (existing) logged in from IP %s", oauth.Type(), oauth.Email, r.RemoteAddr))
 		setJwtToken(existingUser, w, r)
@@ -174,6 +181,7 @@ func oauthLogin(oauth *oAuth, w http.ResponseWriter, r *http.Request) {
 		Id:           0,
 		Username:     oauth.Username,
 		Email:        oauth.Email,
+		Password:     utils.HashPassword(utils.RandomString(32)), // Random password - user authenticates via OAuth
 		AuthProvider: oauth.ProviderType,
 		Admin:        null.NewNullBool(false), // SECURITY: OAuth users are NOT admin by default
 		Enabled:      null.NewNullBool(false), // Requires admin approval
@@ -186,8 +194,6 @@ func oauthLogin(oauth *oAuth, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infoln(fmt.Sprintf("OAuth %s User %s (new, non-admin) logged in from IP %s", oauth.Type(), oauth.Email, r.RemoteAddr))
-	setJwtToken(user, w, r)
-
-	http.Redirect(w, r, core.App.Domain+"/dashboard", http.StatusPermanentRedirect)
+	log.Infoln(fmt.Sprintf("OAuth %s User %s (new) created - pending approval", oauth.Type(), oauth.Email))
+	http.Redirect(w, r, core.App.Domain+"/login?error=pending_approval", http.StatusTemporaryRedirect)
 }

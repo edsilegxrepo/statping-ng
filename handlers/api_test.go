@@ -559,3 +559,14 @@ var (
 	BadJSONResponse = `{"error":"could not decode incoming JSON"}`
 	BadJSONDatabase = `{"error":"error connecting to database`
 )
+
+func TestSendPendingApprovalJson(t *testing.T) {
+	req := httptest.NewRequest("GET", "/api/test", nil)
+	rr := httptest.NewRecorder()
+
+	sendPendingApprovalJson(rr, req)
+
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	assert.Contains(t, rr.Body.String(), "pending approval")
+	assert.Contains(t, rr.Body.String(), "contact an administrator")
+}

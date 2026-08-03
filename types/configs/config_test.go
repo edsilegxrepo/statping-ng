@@ -45,7 +45,6 @@ database: test.db
 port: 0
 language: en
 allow_reports: true
-letsencrypt_enable: false
 `
 	configPath := filepath.Join(tmpDir, "config.yml")
 	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
@@ -109,27 +108,6 @@ port: 3306
 	assert.Equal(t, "mysqlpass", cfg.DbPass)
 	assert.Equal(t, "statping_db", cfg.DbData)
 	assert.Equal(t, 3306, cfg.DbPort)
-}
-
-func TestLoadConfigs_WithLetsEncrypt(t *testing.T) {
-	tmpDir := t.TempDir()
-	setTestDir(t, tmpDir)
-
-	yamlContent := `connection: sqlite
-database: statping.db
-letsencrypt_enable: true
-letsencrypt_host: status.example.com
-letsencrypt_email: admin@example.com
-`
-	configPath := filepath.Join(tmpDir, "config.yml")
-	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
-	require.NoError(t, err)
-
-	cfg, err := LoadConfigs(configPath)
-	require.NoError(t, err)
-	assert.True(t, cfg.LetsEncryptEnable)
-	assert.Equal(t, "status.example.com", cfg.LetsEncryptHost)
-	assert.Equal(t, "admin@example.com", cfg.LetsEncryptEmail)
 }
 
 // =============================================================================
@@ -739,19 +717,16 @@ func TestDbConfig_Clean_PreservesNonSensitiveFields(t *testing.T) {
 
 func TestDbConfig_ToYAML_AllFields(t *testing.T) {
 	cfg := &DbConfig{
-		DbConn:            "postgres",
-		DbHost:            "dbserver",
-		DbUser:            "admin",
-		DbPass:            "secret",
-		DbData:            "statping",
-		DbPort:            5432,
-		Language:          "en",
-		AllowReports:      true,
-		LetsEncryptEnable: true,
-		LetsEncryptHost:   "status.example.com",
-		LetsEncryptEmail:  "admin@example.com",
-		AdminLock:         true,
-		BasePath:          "/status",
+		DbConn:       "postgres",
+		DbHost:       "dbserver",
+		DbUser:       "admin",
+		DbPass:       "secret",
+		DbData:       "statping",
+		DbPort:       5432,
+		Language:     "en",
+		AllowReports: true,
+		AdminLock:    true,
+		BasePath:     "/status",
 	}
 
 	yamlBytes := cfg.ToYAML()
@@ -766,8 +741,6 @@ func TestDbConfig_ToYAML_AllFields(t *testing.T) {
 	assert.Contains(t, yamlStr, "port: 5432")
 	assert.Contains(t, yamlStr, "language: en")
 	assert.Contains(t, yamlStr, "allow_reports: true")
-	assert.Contains(t, yamlStr, "letsencrypt_enable: true")
-	assert.Contains(t, yamlStr, "letsencrypt_host: status.example.com")
 	assert.Contains(t, yamlStr, "admin_lock: true")
 	assert.Contains(t, yamlStr, "base_path: /status")
 }

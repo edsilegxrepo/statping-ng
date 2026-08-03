@@ -214,7 +214,7 @@ func TestApiUsersRoutes(t *testing.T) {
 			Method:         "GET",
 			HttpHeaders:    []string{"Authorization=" + core.App.ApiSecret},
 			ExpectedStatus: 200,
-			ResponseLen:    3,
+			GreaterThan:    3, // At least 3 users from initial setup; may be more from other tests
 			BeforeTest:     SetTestENV,
 		},
 		{

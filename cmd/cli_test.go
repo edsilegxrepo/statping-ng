@@ -96,7 +96,7 @@ func TestResetCLI(t *testing.T) {
 	cmd := rootCmd
 	b := bytes.NewBufferString("")
 	cmd.SetOut(b)
-	cmd.SetArgs([]string{"reset"})
+	cmd.SetArgs([]string{"reset", "--force"})
 	err = cmd.Execute()
 	require.Nil(t, err)
 

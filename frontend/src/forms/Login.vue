@@ -38,7 +38,7 @@
       <div class="form-group row">
         <div class="col-sm-12">
           <div v-if="error" class="alert alert-danger" role="alert">
-            {{ $t('wrong_login') }}
+            {{ errorMessage || $t('wrong_login') }}
           </div>
           <button
             @click.prevent="login"
@@ -93,19 +93,29 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useMainStore } from '@/stores/main'
 import Api from '@/API'
 
 const router = useRouter()
+const route = useRoute()
 const store = useMainStore()
 
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref(false)
+const errorMessage = ref('')
 const disabled = ref(true)
+
+onMounted(() => {
+  // Check for OAuth redirect errors
+  if (route.query.error === 'pending_approval') {
+    error.value = true
+    errorMessage.value = 'Account pending approval - please contact an administrator'
+  }
+})
 
 const core = computed(() => store.core)
 const oauth = computed(() => store.oauth)
@@ -117,10 +127,12 @@ function checkForm() {
 async function login() {
   loading.value = true
   error.value = false
+  errorMessage.value = ''
   try {
     const auth = await Api.login(username.value, password.value)
     if (auth.error) {
       error.value = true
+      errorMessage.value = auth.error
     } else if (auth.token) {
       await store.loadAdmin()
       store.setAdmin(auth.admin)
@@ -129,6 +141,7 @@ async function login() {
     }
   } catch (e) {
     error.value = true
+    errorMessage.value = ''
   }
   loading.value = false
 }

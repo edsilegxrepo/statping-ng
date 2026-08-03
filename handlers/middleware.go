@@ -111,11 +111,20 @@ func scoped(handler func(r *http.Request) interface{}) http.Handler {
 // authenticated is a middleware function to check if user is an Admin before running original request
 func authenticated(handler func(w http.ResponseWriter, r *http.Request), redirect bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !IsFullAuthenticated(r) {
+		ok, reason := IsFullAuthenticatedWithReason(r)
+		if !ok {
 			if redirect {
-				http.Redirect(w, r, basePath, http.StatusSeeOther)
+				if reason == AuthResultPendingApproval {
+					http.Redirect(w, r, basePath+"login?error=pending_approval", http.StatusSeeOther)
+				} else {
+					http.Redirect(w, r, basePath, http.StatusSeeOther)
+				}
 			} else {
-				sendUnauthorizedJson(w, r)
+				if reason == AuthResultPendingApproval {
+					sendPendingApprovalJson(w, r)
+				} else {
+					sendUnauthorizedJson(w, r)
+				}
 			}
 			return
 		}
@@ -126,11 +135,20 @@ func authenticated(handler func(w http.ResponseWriter, r *http.Request), redirec
 // readOnly is a middleware function to check if user is a User before running original request
 func readOnly(handler http.Handler, redirect bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !IsReadAuthenticated(r) {
+		ok, reason := IsUserWithReason(r)
+		if !ok {
 			if redirect {
-				http.Redirect(w, r, basePath, http.StatusSeeOther)
+				if reason == AuthResultPendingApproval {
+					http.Redirect(w, r, basePath+"login?error=pending_approval", http.StatusSeeOther)
+				} else {
+					http.Redirect(w, r, basePath, http.StatusSeeOther)
+				}
 			} else {
-				sendUnauthorizedJson(w, r)
+				if reason == AuthResultPendingApproval {
+					sendPendingApprovalJson(w, r)
+				} else {
+					sendUnauthorizedJson(w, r)
+				}
 			}
 			return
 		}

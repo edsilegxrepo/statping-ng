@@ -9,6 +9,7 @@ import (
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/types/users"
+	"github.com/statping-ng/statping-ng/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -703,9 +704,22 @@ func TestForwardAuthIntegrationWithIsFullAuthenticated(t *testing.T) {
 	}
 
 	t.Run("admin user via forward auth is fully authenticated", func(t *testing.T) {
+		// Pre-create an enabled admin user (simulating admin approval)
+		faadmin := &users.User{
+			Username:           "faadmin_enabled",
+			Email:              "faadmin_enabled@test.local",
+			Password:           utils.HashPassword("testpass123"),
+			Admin:              null.NewNullBool(true),
+			Enabled:            null.NewNullBool(true),
+			AuthProvider:       users.AuthProviderForwardAuth,
+			ForwardAuthManaged: null.NewNullBool(true),
+		}
+		_ = faadmin.Create()
+		defer func() { _ = faadmin.Delete() }()
+
 		req := httptest.NewRequest("GET", "/api/users", nil)
 		req.RemoteAddr = "127.0.0.1:12345"
-		req.Header.Set("Remote-User", "faadmin")
+		req.Header.Set("Remote-User", "faadmin_enabled")
 		req.Header.Set("Remote-Groups", "admins")
 
 		result := IsFullAuthenticated(req)
@@ -743,9 +757,22 @@ func TestForwardAuthIntegrationWithIsUser(t *testing.T) {
 	}
 
 	t.Run("any forward auth user is a user", func(t *testing.T) {
+		// Pre-create an enabled user (simulating admin approval)
+		anyuserEnabled := &users.User{
+			Username:           "anyuser_enabled",
+			Email:              "anyuser_enabled@test.local",
+			Password:           utils.HashPassword("testpass123"),
+			Admin:              null.NewNullBool(false),
+			Enabled:            null.NewNullBool(true),
+			AuthProvider:       users.AuthProviderForwardAuth,
+			ForwardAuthManaged: null.NewNullBool(true),
+		}
+		_ = anyuserEnabled.Create()
+		defer func() { _ = anyuserEnabled.Delete() }()
+
 		req := httptest.NewRequest("GET", "/api/services", nil)
 		req.RemoteAddr = "127.0.0.1:12345"
-		req.Header.Set("Remote-User", "anyuser")
+		req.Header.Set("Remote-User", "anyuser_enabled")
 
 		result := IsUser(req)
 		assert.True(t, result)
@@ -773,9 +800,22 @@ func TestForwardAuthIntegrationWithScopeName(t *testing.T) {
 	}
 
 	t.Run("admin forward auth user gets admin scope", func(t *testing.T) {
+		// Pre-create an enabled admin user (simulating admin approval)
+		scopeadminEnabled := &users.User{
+			Username:           "scopeadmin_enabled",
+			Email:              "scopeadmin_enabled@test.local",
+			Password:           utils.HashPassword("testpass123"),
+			Admin:              null.NewNullBool(true),
+			Enabled:            null.NewNullBool(true),
+			AuthProvider:       users.AuthProviderForwardAuth,
+			ForwardAuthManaged: null.NewNullBool(true),
+		}
+		_ = scopeadminEnabled.Create()
+		defer func() { _ = scopeadminEnabled.Delete() }()
+
 		req := httptest.NewRequest("GET", "/api", nil)
 		req.RemoteAddr = "127.0.0.1:12345"
-		req.Header.Set("Remote-User", "scopeadmin")
+		req.Header.Set("Remote-User", "scopeadmin_enabled")
 		req.Header.Set("Remote-Groups", "admins")
 
 		scope := ScopeName(req)
@@ -783,9 +823,22 @@ func TestForwardAuthIntegrationWithScopeName(t *testing.T) {
 	})
 
 	t.Run("non-admin forward auth user gets user scope", func(t *testing.T) {
+		// Pre-create an enabled non-admin user (simulating admin approval)
+		scopeuserEnabled := &users.User{
+			Username:           "scopeuser_enabled",
+			Email:              "scopeuser_enabled@test.local",
+			Password:           utils.HashPassword("testpass123"),
+			Admin:              null.NewNullBool(false),
+			Enabled:            null.NewNullBool(true),
+			AuthProvider:       users.AuthProviderForwardAuth,
+			ForwardAuthManaged: null.NewNullBool(true),
+		}
+		_ = scopeuserEnabled.Create()
+		defer func() { _ = scopeuserEnabled.Delete() }()
+
 		req := httptest.NewRequest("GET", "/api", nil)
 		req.RemoteAddr = "127.0.0.1:12345"
-		req.Header.Set("Remote-User", "scopeuser")
+		req.Header.Set("Remote-User", "scopeuser_enabled")
 		req.Header.Set("Remote-Groups", "users")
 
 		scope := ScopeName(req)
@@ -895,21 +948,43 @@ func TestHasForwardAuth(t *testing.T) {
 		ForwardAuthTrustedProxies: "127.0.0.1/32",
 	}
 
-	t.Run("returns user and true when valid", func(t *testing.T) {
+	t.Run("returns user and true when valid and enabled", func(t *testing.T) {
+		// Pre-create an enabled user for this test
+		enabledUser := &users.User{
+			Username:           "hasfa_enabled_user",
+			Email:              "hasfa_enabled@test.local",
+			Password:           utils.HashPassword("testpass123"),
+			AuthProvider:       users.AuthProviderForwardAuth,
+			Enabled:            null.NewNullBool(true), // Enabled user
+			ForwardAuthManaged: null.NewNullBool(true),
+		}
+		_ = enabledUser.Create()
+		defer func() { _ = enabledUser.Delete() }()
+
 		req := httptest.NewRequest("GET", "/", nil)
 		req.RemoteAddr = "127.0.0.1:12345"
-		req.Header.Set("Remote-User", "hasfahelper2") // Use unique username
+		req.Header.Set("Remote-User", "hasfa_enabled_user")
 
-		user, ok := hasForwardAuth(req)
-		assert.True(t, ok, "hasForwardAuth should return true for valid request")
-		if !ok {
-			t.Skip("hasForwardAuth returned false, skipping assertions")
-		}
+		user, ok, result := hasForwardAuth(req)
+		assert.True(t, ok, "hasForwardAuth should return true for enabled user")
+		assert.Equal(t, AuthResultOK, result)
 		require.NotNil(t, user, "user should not be nil")
-		assert.Equal(t, "hasfahelper2", user.Username)
+		assert.Equal(t, "hasfa_enabled_user", user.Username)
 	})
 
-	t.Run("returns nil and false when disabled", func(t *testing.T) {
+	t.Run("returns pending approval for new auto-provisioned user", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/", nil)
+		req.RemoteAddr = "127.0.0.1:12345"
+		req.Header.Set("Remote-User", "hasfa_new_user")
+
+		user, ok, result := hasForwardAuth(req)
+		assert.False(t, ok, "hasForwardAuth should return false for new user (pending approval)")
+		assert.Equal(t, AuthResultPendingApproval, result)
+		// User is returned (created) but not authenticated
+		assert.NotNil(t, user)
+	})
+
+	t.Run("returns nil and false when forward auth disabled", func(t *testing.T) {
 		core.App.ForwardAuthEnabled = null.NewNullBool(false)
 		defer func() { core.App.ForwardAuthEnabled = null.NewNullBool(true) }()
 
@@ -917,9 +992,10 @@ func TestHasForwardAuth(t *testing.T) {
 		req.RemoteAddr = "127.0.0.1:12345"
 		req.Header.Set("Remote-User", "disabled")
 
-		user, ok := hasForwardAuth(req)
+		user, ok, result := hasForwardAuth(req)
 		assert.False(t, ok)
 		assert.Nil(t, user)
+		assert.Equal(t, AuthResultNoUser, result)
 	})
 
 	t.Run("returns nil and false when untrusted", func(t *testing.T) {
@@ -927,9 +1003,10 @@ func TestHasForwardAuth(t *testing.T) {
 		req.RemoteAddr = "8.8.8.8:12345"
 		req.Header.Set("Remote-User", "untrusted")
 
-		user, ok := hasForwardAuth(req)
+		user, ok, result := hasForwardAuth(req)
 		assert.False(t, ok)
 		assert.Nil(t, user)
+		assert.Equal(t, AuthResultNoUser, result)
 	})
 }
 

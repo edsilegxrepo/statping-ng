@@ -85,9 +85,10 @@ func TestIsEncrypted(t *testing.T) {
 		expected bool
 	}{
 		{"v1:gcm:ABC123", true},
-		{"enc:ABC123", true},
+		{"v1:gcm:someLongBase64EncodedString==", true},
 		{"plaintext", false},
 		{"v1:ABC123", false},
+		{"enc:ABC123", false}, // enc: is not the encryption prefix
 		{"", false},
 	}
 
