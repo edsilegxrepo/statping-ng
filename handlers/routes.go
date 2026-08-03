@@ -137,6 +137,11 @@ func Router() *mux.Router {
 	api.Handle("/api/forwardauth", authenticated(forwardAuthSettingsHandler, false)).Methods("GET")
 	api.Handle("/api/forwardauth", authenticated(forwardAuthSaveHandler, false)).Methods("POST")
 
+	// API Polling/Worker Pool Routes
+	api.Handle("/api/polling", authenticated(apiPollingSettingsHandler, false)).Methods("GET")
+	api.Handle("/api/polling", authenticated(apiPollingSaveHandler, false)).Methods("POST")
+	api.Handle("/api/polling/stats", authenticated(apiPollingStatsHandler, false)).Methods("GET")
+
 	// API SCSS and ASSETS Routes
 	api.Handle("/api/theme", authenticated(apiThemeViewHandler, false)).Methods("GET")
 	api.Handle("/api/theme", authenticated(apiThemeSaveHandler, false)).Methods("POST")

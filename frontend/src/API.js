@@ -348,6 +348,18 @@ class Api {
     return axios.get('api/logout').then((response) => response.data)
   }
 
+  async polling_settings() {
+    return axios.get('api/polling').then((response) => response.data)
+  }
+
+  async polling_save(data) {
+    return axios.post('api/polling', data).then((response) => response.data)
+  }
+
+  async polling_stats() {
+    return axios.get('api/polling/stats').then((response) => response.data)
+  }
+
 }
 
 export default new Api()

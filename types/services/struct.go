@@ -36,6 +36,7 @@ type Service struct {
 	Permalink           null.NullString       `gorm:"index;column:permalink" json:"permalink" yaml:"permalink"`
 	Redirect            null.NullBool         `gorm:"default:false;column:redirect" json:"redirect" scope:"user,admin" yaml:"redirect"`
 	AllowInternal       null.NullBool         `gorm:"default:false;column:allow_internal" json:"allow_internal" scope:"admin" yaml:"allow_internal"`
+	Priority            int                   `gorm:"default:3;column:priority" json:"priority" yaml:"priority"` // 1=Critical, 2=High, 3=Normal, 4=Low
 	CreatedAt           time.Time             `gorm:"column:created_at" json:"created_at" yaml:"-"`
 	UpdatedAt           time.Time             `gorm:"column:updated_at" json:"updated_at" yaml:"-"`
 	Online              bool                  `gorm:"-" json:"online" yaml:"-"`

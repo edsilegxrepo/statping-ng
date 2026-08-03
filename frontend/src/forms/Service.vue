@@ -68,6 +68,19 @@
         </div>
 
         <div class="form-group row">
+          <label for="service_priority" class="col-sm-4 col-form-label">Priority</label>
+          <div class="col-sm-8">
+            <select v-model.number="service.priority" class="form-control" id="service_priority">
+              <option :value="1">Critical</option>
+              <option :value="2">High</option>
+              <option :value="3">Normal</option>
+              <option :value="4">Low</option>
+            </select>
+            <small class="form-text text-muted">Higher priority services are checked first when the queue is busy</small>
+          </div>
+        </div>
+
+        <div class="form-group row">
           <label class="col-sm-4 col-form-label">{{ $t('service_public') }}</label>
           <div class="col-12 col-md-8 mt-1 mb-2">
             <span @click="service.public = !!service.public" class="switch float-left">
@@ -532,6 +545,7 @@ const service = reactive({
   timeout: 15,
   permalink: '',
   order: 1,
+  priority: 3,
   verify_ssl: true,
   grpc_health_check: false,
   redirect: true,

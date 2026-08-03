@@ -49,6 +49,14 @@ type Core struct {
 	LDAP        `json:"-"`
 	LogShipping `json:"-"`
 	ForwardAuth `json:"-"`
+	Polling     `json:"-"`
+}
+
+// Polling configures the worker pool polling engine
+type Polling struct {
+	PollingWorkers            int `gorm:"column:polling_workers;default:50" json:"polling_workers"`             // Number of concurrent check workers
+	PollingQueueSize          int `gorm:"column:polling_queue_size;default:1000" json:"polling_queue_size"`     // Max pending checks before backpressure
+	PollingRateLimitPerDomain int `gorm:"column:polling_rate_limit;default:60" json:"polling_rate_limit"`       // Max checks per domain per minute
 }
 
 type LDAP struct {

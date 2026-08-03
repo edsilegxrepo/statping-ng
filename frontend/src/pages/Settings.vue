@@ -63,6 +63,15 @@
           <a
             href="#"
             class="sidebar-link"
+            :class="{ active: isActive('v-pills-polling-tab') }"
+            @click.prevent="changeTab('v-pills-polling-tab')"
+          >
+            <font-awesome-icon icon="clock" class="sidebar-icon" />
+            <span>Polling Engine</span>
+          </a>
+          <a
+            href="#"
+            class="sidebar-link"
             :class="{ active: isActive('v-pills-import-tab') }"
             @click.prevent="changeTab('v-pills-import-tab')"
           >
@@ -172,6 +181,11 @@
         <LogShipSettings />
       </div>
 
+      <!-- Polling Engine -->
+      <div v-show="isActive('v-pills-polling-tab')" class="settings-panel">
+        <PollingSettings />
+      </div>
+
       <!-- Import -->
       <div v-show="isActive('v-pills-import-tab')" class="settings-panel">
         <Importer />
@@ -212,6 +226,7 @@ import OAuth from '@/forms/OAuth.vue'
 import LdapSettings from '@/forms/LdapSettings.vue'
 import DigestSettings from '@/forms/DigestSettings.vue'
 import LogShipSettings from '@/forms/LogShipSettings.vue'
+import PollingSettings from '@/forms/PollingSettings.vue'
 import ThemeEditor from '@/components/Dashboard/ThemeEditor.vue'
 import Importer from '@/components/Dashboard/Importer.vue'
 import Variables from '@/components/Dashboard/Variables.vue'

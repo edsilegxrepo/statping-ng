@@ -1,3 +1,42 @@
+# 0.97.4 (08-03-2026)
+- **New: Worker Pool Polling Engine**:
+  - Replaced goroutine-per-service model with scalable worker pool architecture
+  - Single scheduler goroutine with heap-based next-check tracking
+  - Configurable worker count (5-500, default: 50) via `POLLING_WORKERS` env or Settings
+  - Configurable queue size (100-10000, default: 1000) via `POLLING_QUEUE_SIZE` env or Settings
+  - Per-domain rate limiting (default: 60/min) prevents accidental DoS of monitored targets
+  - Service priority levels: Critical (1), High (2), Normal (3), Low (4)
+  - Higher priority services checked first when queue is busy
+  - Live statistics API at `/api/polling/stats`
+  - Panic recovery in workers prevents single bad check from killing worker
+- **New: Comprehensive Auth Security Hardening**:
+  - OIDC provider with PKCE, discovery, ID token verification (replaces broken Custom OAuth)
+  - OAuth state CSRF protection with expiration and memory limits (max 10,000 pending)
+  - Race condition prevention for concurrent OAuth/Forward Auth user provisioning
+  - Mandatory LDAP encryption (LDAPS or StartTLS required)
+  - Case-insensitive username/email lookups (normalize on write, normalize search term)
+  - Last admin protection (cannot delete/demote/disable last enabled admin)
+  - Comprehensive audit logging for security events (login, logout, user changes, OAuth)
+  - Rate limiting on OAuth state generation
+  - Data migration normalizes existing mixed-case usernames/emails to lowercase
+- **New: Security Audit Logging**:
+  - New `handlers/audit.go` with structured security event logging
+  - Events: login_success, login_failed, oauth_login, user_created, admin_promoted/demoted, password_changed
+  - Includes IP address, user agent, and event-specific metadata
+- **UI Enhancements**:
+  - Service form: Priority dropdown (Critical/High/Normal/Low)
+  - Settings: Polling Engine configuration page with live worker pool statistics
+  - OIDC configuration card in OAuth settings
+- **Bug Fixes**:
+  - Fixed division by zero in rate limit delay calculation
+  - Fixed IPv6 domain extraction for rate limiting
+  - Removed broken Custom OAuth provider (use OIDC instead)
+- **Tests**:
+  - 24 new worker pool tests (heap ordering, rate limiting, concurrency, panic recovery)
+  - OIDC PKCE and claim extraction tests
+  - Case-insensitive lookup tests
+  - Last admin protection tests
+
 # 0.97.3 (08-02-2026)
 - **New: Auth Provider Binding**:
   - Each user is now bound to a single authentication provider (local, ldap, oauth_google, oauth_github, oauth_slack, oauth_custom, forward_auth)

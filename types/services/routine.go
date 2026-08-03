@@ -33,13 +33,27 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-// checkServices will start the checking go routine for each service
+// CheckServices starts the worker pool and schedules all services for monitoring
 func CheckServices() {
 	log.Infoln(fmt.Sprintf("Starting monitoring process for %v Services", len(allServices)))
+
+	// Initialize and start the worker pool
+	wp := GetWorkerPool()
+	wp.Start()
+
+	// Schedule all services
 	for _, s := range allServices {
-		time.Sleep(50 * time.Millisecond)
-		go ServiceCheckQueue(s, true)
+		s.Start()
+		wp.ScheduleService(s)
 	}
+
+	log.Infof("Worker pool started: %d workers, %d services scheduled", wp.workers, len(allServices))
+}
+
+// StopCheckServices stops the worker pool
+func StopCheckServices() {
+	wp := GetWorkerPool()
+	wp.Stop()
 }
 
 // CheckQueue is the main go routine for checking a service
