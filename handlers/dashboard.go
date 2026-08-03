@@ -271,29 +271,68 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user *users.User
 	var auth bool
+	var authErr error
 
-	// Try LDAP authentication first if enabled
-	if core.App.LdapEnabled.Bool {
-		ldapUser, err := processLDAPLogin(username, password)
-		if err != nil {
-			log.Warnln(fmt.Sprintf("LDAP auth error for user %v: %v", username, err))
-			// Check if it's a group membership error
-			if err.Error() == "user is not a member of the authorized group" {
+	// First, try to find the user to determine their auth provider
+	existingUser, err := users.FindByUsername(username)
+	if err == nil && existingUser != nil {
+		// User exists - route to their specific auth provider
+		switch existingUser.AuthProvider {
+		case users.AuthProviderLDAP:
+			if !core.App.LdapEnabled.Bool {
 				returnJson(struct {
 					Error string `json:"error"`
-				}{"not authorized to access this application"}, w, r)
+				}{"LDAP authentication is not enabled"}, w, r)
 				return
 			}
-		}
-		if ldapUser != nil {
-			user = ldapUser
-			auth = true
-		}
-	}
+			user, authErr = processLDAPLogin(username, password)
+			if authErr != nil {
+				log.Warnln(fmt.Sprintf("LDAP auth error for user %v: %v", username, authErr))
+				if authErr.Error() == "user is not a member of the authorized group" {
+					returnJson(struct {
+						Error string `json:"error"`
+					}{"not authorized to access this application"}, w, r)
+					return
+				}
+			}
+			auth = (user != nil)
 
-	// Fallback to local authentication
-	if !auth {
-		user, auth = users.AuthUser(username, password)
+		case users.AuthProviderOAuthGoogle, users.AuthProviderOAuthGitHub, users.AuthProviderOAuthSlack, users.AuthProviderOAuthCustom:
+			// OAuth users cannot use username/password login
+			returnJson(struct {
+				Error    string `json:"error"`
+				Provider string `json:"provider"`
+			}{"please use OAuth login", existingUser.AuthProvider}, w, r)
+			return
+
+		case users.AuthProviderLocal, "":
+			// Local authentication
+			user, auth = users.AuthUser(username, password)
+
+		default:
+			// Unknown provider, try local
+			user, auth = users.AuthUser(username, password)
+		}
+	} else {
+		// User not found - try LDAP first if enabled (for auto-provisioning), then local
+		if core.App.LdapEnabled.Bool {
+			user, authErr = processLDAPLogin(username, password)
+			if authErr != nil {
+				log.Warnln(fmt.Sprintf("LDAP auth error for user %v: %v", username, authErr))
+				if authErr.Error() == "user is not a member of the authorized group" {
+					returnJson(struct {
+						Error string `json:"error"`
+					}{"not authorized to access this application"}, w, r)
+					return
+				}
+			}
+			auth = (user != nil)
+		}
+
+		// Fallback to local authentication
+		if !auth {
+			user, auth = users.AuthUser(username, password)
+		}
 	}
 
 	if auth {
@@ -306,7 +345,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Infoln(fmt.Sprintf("User %v logged in from IP %v", user.Username, r.RemoteAddr))
+		log.Infoln(fmt.Sprintf("User %v logged in from IP %v via %v", user.Username, r.RemoteAddr, user.AuthProvider))
 		claim, token := setJwtToken(user, w, r)
 		resp := struct {
 			Token   string `json:"token"`

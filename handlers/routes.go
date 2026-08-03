@@ -183,6 +183,7 @@ func Router() *mux.Router {
 	// API USER Routes
 	api.Handle("/api/users", authenticated(func(w http.ResponseWriter, r *http.Request) { scoped(apiAllUsersHandler).ServeHTTP(w, r) }, false)).Methods("GET")
 	api.Handle("/api/users", authenticated(apiCreateUsersHandler, false)).Methods("POST")
+	api.Handle("/api/users/auth-providers", authenticated(apiAuthProvidersHandler, false)).Methods("GET")
 	api.Handle("/api/users/token", http.HandlerFunc(apiGetUserTokenHandler)).Methods("GET")
 	api.Handle("/api/users/token", http.HandlerFunc(apiCheckUserTokenHandler)).Methods("POST")
 	api.Handle("/api/users/{id}", authenticated(apiUserHandler, false)).Methods("GET")

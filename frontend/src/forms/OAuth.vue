@@ -48,7 +48,7 @@
               type="text"
               class="form-control"
               id="github_users"
-              placeholder="octocat,hunterlong,jimbo123"
+              placeholder="user1,user2,user3"
             />
             <small>Optional comma delimited list of usernames</small>
           </div>

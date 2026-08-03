@@ -8,6 +8,7 @@ import (
 
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
+	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -48,9 +49,10 @@ func githubOAuth(r *http.Request) (*oAuth, error) {
 	}
 
 	return &oAuth{
-		Token:    gg,
-		Username: strings.ToLower(user.Name),
-		Email:    strings.ToLower(user.Email),
+		Token:        gg,
+		Username:     strings.ToLower(user.Name),
+		Email:        strings.ToLower(user.Email),
+		ProviderType: users.AuthProviderOAuthGitHub,
 	}, nil
 }
 

@@ -220,11 +220,12 @@ func processLDAPLogin(username, password string) (*users.User, error) {
 		// Create new user with disabled state
 		randomPass := generateRandomPassword(32)
 		user = &users.User{
-			Username: username,
-			Email:    authResult.Email,
-			Password: utils.HashPassword(randomPass),
-			Admin:    null.NewNullBool(false),
-			Enabled:  null.NewNullBool(false), // Requires admin approval
+			Username:     username,
+			Email:        authResult.Email,
+			Password:     utils.HashPassword(randomPass),
+			Admin:        null.NewNullBool(false),
+			AuthProvider: users.AuthProviderLDAP,
+			Enabled:      null.NewNullBool(false), // Requires admin approval
 		}
 		if err := user.Create(); err != nil {
 			return nil, fmt.Errorf("failed to create user: %w", err)

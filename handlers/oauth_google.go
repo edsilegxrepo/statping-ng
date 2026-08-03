@@ -8,6 +8,7 @@ import (
 
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
+	"github.com/statping-ng/statping-ng/types/users"
 	"github.com/statping-ng/statping-ng/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -43,9 +44,10 @@ func googleOAuth(r *http.Request) (*oAuth, error) {
 	}
 
 	return &oAuth{
-		Token:    gg,
-		Username: info.Name,
-		Email:    info.Email,
+		Token:        gg,
+		Username:     info.Name,
+		Email:        info.Email,
+		ProviderType: users.AuthProviderOAuthGoogle,
 	}, nil
 }
 

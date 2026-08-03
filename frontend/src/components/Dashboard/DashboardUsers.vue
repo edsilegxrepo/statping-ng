@@ -14,8 +14,9 @@
             <tr>
               <th>{{ $t('username') }}</th>
               <th>{{ $t('type') }}</th>
+              <th class="d-none d-md-table-cell">Provider</th>
               <th class="d-none d-md-table-cell">{{ $t('last_login') }}</th>
-              <th class="d-none d-md-table-cell">Scopes</th>
+              <th class="d-none d-lg-table-cell">Scopes</th>
               <th class="text-right">Actions</th>
             </tr>
           </thead>
@@ -35,9 +36,14 @@
                 </span>
               </td>
               <td class="d-none d-md-table-cell">
-                <span class="date-text">{{ niceDate(user.updated_at) }}</span>
+                <span class="provider-badge" :class="'provider-' + (user.auth_provider || 'local')">
+                  {{ formatProvider(user.auth_provider) }}
+                </span>
               </td>
               <td class="d-none d-md-table-cell">
+                <span class="date-text">{{ niceDate(user.updated_at) }}</span>
+              </td>
+              <td class="d-none d-lg-table-cell">
                 <span class="scopes-text">{{ user.scopes || '—' }}</span>
               </td>
               <td class="text-right">
@@ -84,6 +90,19 @@ const users = computed(() => store.users)
 function niceDate(date) {
   if (!date) return '—'
   return new Date(date).toLocaleDateString()
+}
+
+function formatProvider(provider) {
+  const providers = {
+    local: 'Local',
+    ldap: 'LDAP',
+    oauth_google: 'Google',
+    oauth_github: 'GitHub',
+    oauth_slack: 'Slack',
+    oauth_custom: 'OAuth',
+    forward_auth: 'Forward Auth',
+  }
+  return providers[provider] || 'Local'
 }
 
 function editChange(v) {
@@ -245,6 +264,40 @@ function deleteUser(u) {
   background: var(--color-primary-bg);
   color: var(--color-primary);
 }
+
+/* Provider Badges */
+.provider-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+.provider-local {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.provider-ldap {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.provider-oauth_google,
+.provider-oauth_github,
+.provider-oauth_slack,
+.provider-oauth_custom {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.provider-forward_auth {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
 
 /* Text Styles */
 .date-text,

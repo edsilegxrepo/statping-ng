@@ -209,8 +209,10 @@ func forwardAuthUser(r *http.Request) *users.User {
 			Username:           info.Username,
 			Email:              email,
 			Password:           utils.HashPassword(utils.RandomString(32)),
-			Admin:              null.NewNullBool(info.IsAdmin),
-			ForwardAuthManaged: null.NewNullBool(true), // Mark as forward auth managed
+			Admin:              null.NewNullBool(false),
+			AuthProvider:       users.AuthProviderForwardAuth,
+			Enabled:            null.NewNullBool(false), // Requires admin approval
+			ForwardAuthManaged: null.NewNullBool(true),
 		}
 		if err := user.Create(); err != nil {
 			log.Errorln("Failed to create forward auth user:", err)

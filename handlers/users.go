@@ -81,6 +81,10 @@ func apiAllUsersHandler(r *http.Request) interface{} {
 	return allUsers
 }
 
+func apiAuthProvidersHandler(w http.ResponseWriter, r *http.Request) {
+	returnJson(users.GetAuthProviders(), w, r)
+}
+
 func apiCheckUserTokenHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		sendErrorJson(err, w, r)

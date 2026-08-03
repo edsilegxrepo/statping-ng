@@ -1,8 +1,8 @@
-// Statup
+// Statping-ng
 // Copyright (C) 2020.  Hunter Long and the project contributors
-// Written by Hunter Long <info@socialeck.com> and the project contributors
+// Copyright (C) 2024-2026.  Statping-ng maintainers
 //
-// https://github.com/hunterlong/statup
+// Originally from https://github.com/statping/statping
 //
 // The licenses for most software and other practical works are designed
 // to take away your freedom to share and change the works.  By contrast,

@@ -17,9 +17,18 @@ import (
 )
 
 type oAuth struct {
-	Email    string
-	Username string
+	Email        string
+	Username     string
+	ProviderType string // e.g., "oauth_google", "oauth_github", etc.
 	*oauth2.Token
+}
+
+// Type returns the OAuth provider type for logging purposes
+func (o *oAuth) Type() string {
+	if o.ProviderType != "" {
+		return o.ProviderType
+	}
+	return "oauth"
 }
 
 // oauthStateStore stores OAuth state tokens with expiration for CSRF protection
@@ -159,13 +168,15 @@ func oauthLogin(oauth *oAuth, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// New OAuth user - create as non-admin by default
-	// Admins must be promoted manually through the admin interface
+	// New OAuth user - create as non-admin and disabled by default
+	// Requires admin approval before they can access the system
 	user := &users.User{
-		Id:       0,
-		Username: oauth.Username,
-		Email:    oauth.Email,
-		Admin:    null.NewNullBool(false), // SECURITY: OAuth users are NOT admin by default
+		Id:           0,
+		Username:     oauth.Username,
+		Email:        oauth.Email,
+		AuthProvider: oauth.ProviderType,
+		Admin:        null.NewNullBool(false), // SECURITY: OAuth users are NOT admin by default
+		Enabled:      null.NewNullBool(false), // Requires admin approval
 	}
 
 	// Create the user in the database

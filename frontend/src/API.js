@@ -130,6 +130,10 @@ class Api {
     return axios.get(`api/users/${id}`).then((response) => response.data)
   }
 
+  async auth_providers() {
+    return axios.get('api/users/auth-providers').then((response) => response.data)
+  }
+
   async user_create(data) {
     return axios.post('api/users', data).then((response) => response.data)
   }

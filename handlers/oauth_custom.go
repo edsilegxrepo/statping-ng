@@ -6,6 +6,7 @@ import (
 
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/errors"
+	"github.com/statping-ng/statping-ng/types/users"
 	"golang.org/x/oauth2"
 )
 
@@ -34,6 +35,7 @@ func customOAuth(r *http.Request) (*oAuth, error) {
 	}
 
 	return &oAuth{
-		Token: gg,
+		Token:        gg,
+		ProviderType: users.AuthProviderOAuthCustom,
 	}, nil
 }

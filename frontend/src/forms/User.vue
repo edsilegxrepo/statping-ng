@@ -46,12 +46,23 @@
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-sm-4 col-form-label">{{ $t('password') }}</label>
+          <label class="col-sm-4 col-form-label">Auth Provider</label>
           <div class="col-sm-8">
-            <input v-model="user.password" type="password" id="password" class="form-control" placeholder="Password" required />
+            <select v-model="user.auth_provider" class="form-control" id="auth_provider">
+              <option v-for="provider in authProviders" :key="provider.value" :value="provider.value">
+                {{ provider.label }}
+              </option>
+            </select>
+            <small class="text-muted">Authentication method for this user</small>
           </div>
         </div>
-        <div class="form-group row">
+        <div class="form-group row" v-if="user.auth_provider === 'local' || !user.auth_provider">
+          <label class="col-sm-4 col-form-label">{{ $t('password') }}</label>
+          <div class="col-sm-8">
+            <input v-model="user.password" type="password" id="password" class="form-control" placeholder="Password" :required="!user.id && (user.auth_provider === 'local' || !user.auth_provider)" />
+          </div>
+        </div>
+        <div class="form-group row" v-if="user.auth_provider === 'local' || !user.auth_provider">
           <label class="col-sm-4 col-form-label">{{ $t('confirm_password') }}</label>
           <div class="col-sm-8">
             <input
@@ -60,7 +71,7 @@
               id="password_confirm"
               class="form-control"
               placeholder="Confirm Password"
-              required
+              :required="!user.id && (user.auth_provider === 'local' || !user.auth_provider)"
             />
             <span v-if="passTooWeak" class="small text-danger d-block"
               >Password must be at least 30 characters and include uppercase, lowercase, and digits</span
@@ -109,6 +120,21 @@ const props = defineProps({
 const store = useMainStore()
 const loading = ref(false)
 const passTooWeak = ref(false)
+const authProviders = ref([{ value: 'local', label: 'Local' }])
+
+// Fetch auth providers on mount
+async function loadAuthProviders() {
+  try {
+    const providers = await Api.auth_providers()
+    if (providers && providers.length) {
+      authProviders.value = providers
+    }
+  } catch (e) {
+    console.error('Failed to load auth providers:', e)
+  }
+}
+loadAuthProviders()
+
 const user = ref({
   username: '',
   admin: false,
@@ -116,10 +142,19 @@ const user = ref({
   password: '',
   confirm_password: '',
   api_key: '',
+  auth_provider: 'local',
 })
 
 const canSubmit = computed(() => {
   const u = user.value
+  const isLocalAuth = !u.auth_provider || u.auth_provider === 'local'
+
+  // For non-local auth, only need username and email
+  if (!isLocalAuth) {
+    return u.username && u.email
+  }
+
+  // For local auth, need strong password
   const hasUpper = /[A-Z]/.test(u.password)
   const hasLower = /[a-z]/.test(u.password)
   const hasDigit = /[0-9]/.test(u.password)
@@ -151,6 +186,7 @@ function removeEdit() {
     password: '',
     confirm_password: '',
     api_key: '',
+    auth_provider: 'local',
   }
   props.edit(false)
 }
@@ -183,6 +219,10 @@ async function saveUser() {
 async function createUser() {
   const userData = { ...user.value }
   delete userData.confirm_password
+  // For non-local auth, generate a random password (user won't use it)
+  if (userData.auth_provider && userData.auth_provider !== 'local' && !userData.password) {
+    userData.password = Math.random().toString(36).slice(-32) + 'Aa1!'
+  }
   await Api.user_create(userData)
   await update()
   user.value = {
@@ -192,6 +232,7 @@ async function createUser() {
     password: '',
     confirm_password: '',
     api_key: '',
+    auth_provider: 'local',
   }
 }
 
