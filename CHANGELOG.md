@@ -1,3 +1,37 @@
+# 0.97.3 (08-02-2026)
+- **New: Auth Provider Binding**:
+  - Each user is now bound to a single authentication provider (local, ldap, oauth_google, oauth_github, oauth_slack, oauth_custom, forward_auth)
+  - Auto-routing: users authenticate via their bound provider without selection UI
+  - Database migration sets existing users to 'local' provider
+- **New: Auto-Provisioned Users Disabled by Default**:
+  - OAuth and Forward Auth auto-provisioned users are now disabled by default
+  - Requires admin approval before accessing the system
+  - Pre-created users by admin remain enabled by default
+- **New: Pending Approval UI Feedback**:
+  - Login page shows clear message when disabled users attempt login
+  - OAuth and Forward Auth redirect disabled users to `/login?error=pending_approval`
+  - API returns 403 with "account pending approval" for disabled users
+- **New: API Key Query Parameter Authentication**:
+  - Added support for `?api=<key>` query parameter authentication
+  - Works alongside existing Authorization header method
+- **Security: AuthResult Enum**:
+  - Better auth failure handling with `AuthResultOK`, `AuthResultNoUser`, `AuthResultPendingApproval`
+  - Middleware distinguishes between unauthenticated and pending approval states
+- **Bug Fix: OAuth User Creation**:
+  - Fixed OAuth user creation to generate random password (was missing, causing creation failure)
+- **Test Improvements**:
+  - Added comprehensive OAuth disabled user flow tests
+  - Added `sendPendingApprovalJson` unit test
+  - Fixed forward auth integration tests for disabled-by-default behavior
+  - Removed LetsEncrypt test references (feature was removed)
+  - Fixed test isolation issues in user count assertions
+- **UI Enhancements**:
+  - Chart data export functionality
+  - Tooltips on status bar metrics
+  - Major visual modernization for enterprise dashboard
+  - Enhanced Help pages, TopNav improvements, footer redesign
+  - PageHeader component, improved 404 page
+
 # 0.97.2 (07-31-2026)
 - **New: Forward Auth (Authelia, Authentik, etc.)**:
   - Enables authentication via reverse proxy headers from SSO providers
