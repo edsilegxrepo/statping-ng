@@ -95,17 +95,27 @@ func (d *DbConfig) DatabaseChanges() error {
 	if latestMigration > cr.MigrationId {
 		log.Infof("Statping database is out of date, migrating to: %d", latestMigration)
 
-		switch d.Db.DbType() {
-		case "mysql":
-			if err := d.genericMigration("MODIFY", false); err != nil {
-				return err
+		// Migration 1583860000: latency column type changes (2020)
+		if cr.MigrationId < 1583860000 {
+			switch d.Db.DbType() {
+			case "mysql":
+				if err := d.genericMigration("MODIFY", false); err != nil {
+					return err
+				}
+			case "postgres":
+				if err := d.genericMigration("ALTER", true); err != nil {
+					return err
+				}
+			default:
+				if err := d.sqliteMigration(); err != nil {
+					return err
+				}
 			}
-		case "postgres":
-			if err := d.genericMigration("ALTER", true); err != nil {
-				return err
-			}
-		default:
-			if err := d.sqliteMigration(); err != nil {
+		}
+
+		// Migration 1722600000: set auth_provider to 'local' for existing users (2024)
+		if cr.MigrationId < 1722600000 {
+			if err := d.migrateAuthProvider(); err != nil {
 				return err
 			}
 		}

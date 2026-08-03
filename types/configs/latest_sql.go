@@ -7,7 +7,7 @@ import (
 	"github.com/statping-ng/statping-ng/utils"
 )
 
-const latestMigration = 1583860000
+const latestMigration = 1722600000 // 2024-08-02: auth_provider migration
 
 func init() {
 	_ = os.Setenv("MIGRATION_ID", utils.ToString(latestMigration))
@@ -36,6 +36,15 @@ func (d *DbConfig) genericMigration(alterStr string, isPostgres bool) error {
 		return err
 	}
 	if err := d.Db.Exec(fmt.Sprintf("UPDATE failures SET ping_time = CAST(ping_time * 1000000 AS %s);", extraType)).Error(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// migrateAuthProvider sets auth_provider to 'local' for existing users where it's NULL or empty
+func (d *DbConfig) migrateAuthProvider() error {
+	log.Infoln("Migrating users: setting auth_provider to 'local' for existing users")
+	if err := d.Db.Exec("UPDATE users SET auth_provider = 'local' WHERE auth_provider IS NULL OR auth_provider = ''").Error(); err != nil {
 		return err
 	}
 	return nil
