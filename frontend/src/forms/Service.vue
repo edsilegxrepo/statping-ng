@@ -33,6 +33,9 @@
               <option value="grpc">gRPC {{ $t('service') }}</option>
               <option value="smtp">SMTP {{ $t('service') }}</option>
               <option value="imap">IMAP {{ $t('service') }}</option>
+              <option value="storage">Cloud Storage</option>
+              <option value="database">Database</option>
+              <option value="tls">TLS Certificate</option>
               <option value="static">Static {{ $t('service') }}</option>
             </select>
             <small class="form-text text-muted"
@@ -122,7 +125,7 @@
       </div>
     </div>
 
-    <div v-if="service.type !== 'static'" class="card contain-card mb-4">
+    <div v-if="service.type !== 'static' && service.type !== 'storage' && service.type !== 'database' && service.type !== 'tls'" class="card contain-card mb-4">
       <div class="card-header">Request Details</div>
       <div class="card-body">
         <div v-if="service.type !== 'cmd'" class="form-group row">
@@ -438,6 +441,278 @@
       </div>
     </div>
 
+    <!-- Cloud Storage Service Configuration -->
+    <div v-if="service.type === 'storage'" class="card contain-card mb-4">
+      <div class="card-header">Cloud Storage Configuration</div>
+      <div class="card-body">
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Storage Backend</label>
+          <div class="col-sm-8">
+            <select v-model="service.storage_backend" class="form-control">
+              <option value="gcs">Google Cloud Storage (GCS)</option>
+              <option value="s3">Amazon S3</option>
+              <option value="azureblob">Azure Blob Storage</option>
+              <option value="sftp">SFTP</option>
+              <option value="b2">Backblaze B2</option>
+              <option value="dropbox">Dropbox</option>
+              <option value="minio">MinIO (S3-compatible)</option>
+            </select>
+            <small class="form-text text-muted">Select the cloud storage provider (rclone backend)</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Bucket / Container</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.storage_bucket"
+              type="text"
+              class="form-control"
+              placeholder="my-bucket-name"
+              required
+            />
+            <small class="form-text text-muted">Name of the bucket or container to check</small>
+          </div>
+        </div>
+        <div v-if="service.storage_backend && service.storage_backend.match(/^(s3|minio|azureblob)$/)" class="form-group row">
+          <label class="col-sm-4 col-form-label">Region</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.storage_region"
+              type="text"
+              class="form-control"
+              placeholder="us-east-1"
+            />
+            <small class="form-text text-muted">Cloud region (e.g., us-east-1, westus2)</small>
+          </div>
+        </div>
+        <div v-if="service.storage_backend && service.storage_backend.match(/^(s3|minio)$/)" class="form-group row">
+          <label class="col-sm-4 col-form-label">Custom Endpoint</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.storage_endpoint"
+              type="text"
+              class="form-control"
+              placeholder="https://minio.example.com:9000"
+            />
+            <small class="form-text text-muted">Custom endpoint for S3-compatible storage (MinIO, etc.)</small>
+          </div>
+        </div>
+        <div v-if="service.storage_backend === 'gcs'" class="form-group row">
+          <label class="col-sm-4 col-form-label">GCP Project ID</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.storage_project_id"
+              type="text"
+              class="form-control"
+              placeholder="my-gcp-project"
+            />
+            <small class="form-text text-muted">Google Cloud Project ID</small>
+          </div>
+        </div>
+        <div v-if="service.storage_backend === 'gcs'" class="form-group row">
+          <label class="col-sm-4 col-form-label">Credentials File</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.storage_cred_file"
+              type="text"
+              class="form-control"
+              placeholder="/path/to/service-account.json"
+            />
+            <small class="form-text text-muted">Path to GCS service account JSON key file</small>
+          </div>
+        </div>
+        <div v-if="service.storage_backend === 'gcs'" class="form-group row">
+          <label class="col-12 col-md-4 col-form-label">Application Default Credentials</label>
+          <div class="col-12 col-md-8 mt-1 mb-2 mb-md-0">
+            <span class="switch float-left">
+              <input
+                v-model="service.storage_allow_adc"
+                type="checkbox"
+                class="switch"
+                id="switch-adc"
+                :checked="service.storage_allow_adc"
+              />
+              <label for="switch-adc">Allow Application Default Credentials (ADC)</label>
+            </span>
+          </div>
+        </div>
+        <div v-if="service.storage_backend && service.storage_backend.match(/^(s3|minio|azureblob|b2)$/)" class="form-group row">
+          <label class="col-sm-4 col-form-label">Access Key / Client ID</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.storage_access_key"
+              type="text"
+              class="form-control"
+              placeholder="AKIAIOSFODNN7EXAMPLE"
+            />
+            <small class="form-text text-muted">Access key or client ID (encrypted at rest)</small>
+          </div>
+        </div>
+        <div v-if="service.storage_backend && service.storage_backend.match(/^(s3|minio|azureblob|b2)$/)" class="form-group row">
+          <label class="col-sm-4 col-form-label">Secret Key</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.storage_secret_key"
+              type="password"
+              class="form-control"
+              placeholder="••••••••••••••••"
+            />
+            <small class="form-text text-muted">Secret key (encrypted at rest)</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">{{ $t('service_timeout') }}</label>
+          <div class="col-sm-6">
+            <span class="slider-info">{{ secondsHumanize(service.timeout) }}</span>
+            <input v-model.number="service.timeout" type="range" class="slider" min="1" max="120" />
+            <small class="form-text text-muted">Timeout for storage connectivity check</small>
+          </div>
+          <div class="col-sm-2">
+            <input v-model.number="service.timeout" type="number" class="form-control" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database Service Configuration -->
+    <div v-if="service.type === 'database'" class="card contain-card mb-4">
+      <div class="card-header">Database Configuration</div>
+      <div class="card-body">
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Database Type</label>
+          <div class="col-sm-8">
+            <select v-model="service.database_type" class="form-control">
+              <option value="postgres">PostgreSQL</option>
+              <option value="mysql">MySQL / MariaDB</option>
+              <option value="sqlite">SQLite</option>
+              <option value="sqlserver">SQL Server</option>
+              <option value="mongodb">MongoDB</option>
+              <option value="oracle">Oracle</option>
+            </select>
+            <small class="form-text text-muted">Select the database engine</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Connection String (DSN)</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.database_dsn"
+              type="password"
+              class="form-control"
+              :placeholder="getDsnPlaceholder(service.database_type)"
+              required
+            />
+            <small class="form-text text-muted">Database connection string (encrypted at rest)</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Health Check Query</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.database_query"
+              type="text"
+              class="form-control"
+              placeholder="SELECT 1"
+            />
+            <small class="form-text text-muted">Query to verify database connectivity (default: SELECT 1)</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">{{ $t('service_timeout') }}</label>
+          <div class="col-sm-6">
+            <span class="slider-info">{{ secondsHumanize(service.timeout) }}</span>
+            <input v-model.number="service.timeout" type="range" class="slider" min="1" max="120" />
+            <small class="form-text text-muted">Timeout for database connectivity check</small>
+          </div>
+          <div class="col-sm-2">
+            <input v-model.number="service.timeout" type="number" class="form-control" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TLS Certificate Service Configuration -->
+    <div v-if="service.type === 'tls'" class="card contain-card mb-4">
+      <div class="card-header">TLS Certificate Configuration</div>
+      <div class="card-body">
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Host / Domain</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.domain"
+              type="text"
+              class="form-control"
+              placeholder="example.com"
+              required
+            />
+            <small class="form-text text-muted">Domain or hostname to check TLS certificate</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Port</label>
+          <div class="col-sm-8">
+            <input
+              v-model.number="service.port"
+              type="number"
+              class="form-control"
+              placeholder="443"
+            />
+            <small class="form-text text-muted">TLS port (default: 443)</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Minimum Days Before Expiry</label>
+          <div class="col-sm-6">
+            <span class="slider-info">{{ service.tls_min_days }} days</span>
+            <input v-model.number="service.tls_min_days" type="range" class="slider" min="0" max="90" />
+            <small class="form-text text-muted">Alert if certificate expires within this many days (0 to disable)</small>
+          </div>
+          <div class="col-sm-2">
+            <input v-model.number="service.tls_min_days" type="number" class="form-control" />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">Expected SAN</label>
+          <div class="col-sm-8">
+            <input
+              v-model="service.tls_expected_san"
+              type="text"
+              class="form-control"
+              placeholder="*.example.com"
+            />
+            <small class="form-text text-muted">Expected Subject Alternative Name (optional)</small>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-12 col-md-4 col-form-label">{{ $t('verify_ssl') }}</label>
+          <div class="col-12 col-md-8 mt-1 mb-2 mb-md-0">
+            <span class="switch float-left">
+              <input
+                v-model="service.verify_ssl"
+                type="checkbox"
+                class="switch"
+                id="switch-tls-verify"
+                :checked="service.verify_ssl"
+              />
+              <label for="switch-tls-verify" v-if="service.verify_ssl">Verify certificate chain</label>
+              <label for="switch-tls-verify" v-if="!service.verify_ssl">Skip certificate chain verification</label>
+            </span>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-4 col-form-label">{{ $t('service_timeout') }}</label>
+          <div class="col-sm-6">
+            <span class="slider-info">{{ secondsHumanize(service.timeout) }}</span>
+            <input v-model.number="service.timeout" type="range" class="slider" min="1" max="60" />
+            <small class="form-text text-muted">Timeout for TLS handshake</small>
+          </div>
+          <div class="col-sm-2">
+            <input v-model.number="service.timeout" type="number" class="form-control" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="card contain-card mb-4">
       <div class="card-header">{{ $t('notification_opts') }}</div>
       <div class="card-body">
@@ -494,6 +769,45 @@
       </div>
     </div>
 
+    <div class="card contain-card mb-4" v-if="service.type !== 'static'">
+      <div class="card-header">Connection Test</div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">Test connectivity and credentials before saving</p>
+        <button type="button" @click="testConnection" :disabled="testing" class="btn btn-outline-primary">
+          <span v-if="testing" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ testing ? 'Testing...' : 'Test Connection' }}
+        </button>
+        <div v-if="testResult" class="mt-3">
+          <div :class="['alert', testResult.success ? 'alert-success' : 'alert-danger']" role="alert">
+            <strong>{{ testResult.message }}</strong>
+            <div v-if="testResult.latency" class="mt-1">
+              <small>Latency: {{ Math.round(testResult.latency / 1000) }}ms</small>
+            </div>
+            <div v-if="testResult.info && Object.keys(testResult.info).length > 0" class="mt-2">
+              <small v-for="(value, key) in testResult.info" :key="key" class="d-block">
+                <strong>{{ formatInfoKey(key) }}:</strong> {{ value }}
+              </small>
+            </div>
+            <div v-if="testResult.details && !testResult.success" class="mt-2">
+              <small class="text-break">{{ truncateDetails(testResult.details) }}</small>
+            </div>
+            <div v-if="testResult.details && testResult.success" class="mt-2">
+              <small class="text-muted">Response Preview:</small>
+              <pre class="response-preview mt-1 mb-1">{{ showFullResponse ? testResult.details : truncateLines(testResult.details, 8) }}</pre>
+              <button
+                v-if="countLines(testResult.details) > 8"
+                type="button"
+                @click="showFullResponse = !showFullResponse"
+                class="btn btn-sm btn-link p-0"
+              >
+                {{ showFullResponse ? 'Show less' : `Show all ${countLines(testResult.details)} lines` }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-group row">
       <div class="col-6">
         <button type="button" @click="cancelEdit" class="btn btn-outline-secondary btn-block">
@@ -529,6 +843,9 @@ const store = useMainStore()
 
 const loading = ref(false)
 const use_tls = ref(false)
+const testing = ref(false)
+const testResult = ref(null)
+const showFullResponse = ref(false)
 
 const service = reactive({
   name: '',
@@ -556,6 +873,23 @@ const service = reactive({
   tls_cert: '',
   tls_cert_key: '',
   tls_cert_root: '',
+  // Cloud Storage fields
+  storage_backend: '',
+  storage_bucket: '',
+  storage_region: '',
+  storage_endpoint: '',
+  storage_access_key: '',
+  storage_secret_key: '',
+  storage_cred_file: '',
+  storage_project_id: '',
+  storage_allow_adc: false,
+  // Database fields
+  database_type: '',
+  database_dsn: '',
+  database_query: '',
+  // TLS Certificate fields
+  tls_min_days: 30,
+  tls_expected_san: '',
 })
 
 const cleanGroups = computed(() => store.groupsClean || [])
@@ -605,6 +939,18 @@ function updateDefaultValues() {
     service.port = 50051
     service.verify_ssl = false
     service.method = ''
+  } else if (service.type === 'storage') {
+    service.timeout = 30
+    service.storage_backend = 'gcs'
+  } else if (service.type === 'database') {
+    service.timeout = 30
+    service.database_type = 'postgres'
+    service.database_query = 'SELECT 1'
+  } else if (service.type === 'tls') {
+    service.port = 443
+    service.timeout = 10
+    service.verify_ssl = true
+    service.tls_min_days = 30
   } else {
     service.expected_status = 200
     service.expected = ''
@@ -612,6 +958,18 @@ function updateDefaultValues() {
     service.verify_ssl = true
     service.method = 'GET'
   }
+}
+
+function getDsnPlaceholder(dbType) {
+  const placeholders = {
+    postgres: 'postgres://user:pass@localhost:5432/dbname?sslmode=disable',
+    mysql: 'user:pass@tcp(localhost:3306)/dbname',
+    sqlite: 'file:/path/to/database.db',
+    sqlserver: 'sqlserver://user:pass@localhost:1433?database=dbname',
+    mongodb: 'mongodb://user:pass@localhost:27017/dbname',
+    oracle: 'oracle://user:pass@localhost:1521/service',
+  }
+  return placeholders[dbType] || 'connection-string'
 }
 
 function updatePermalink() {
@@ -660,6 +1018,61 @@ async function saveService() {
   loading.value = false
   router.push('/dashboard/services')
 }
+
+function truncateDetails(details, maxLen = 500) {
+  if (!details || details.length <= maxLen) return details
+  return details.substring(0, maxLen) + '...'
+}
+
+function truncateLines(text, maxLines = 8) {
+  if (!text) return ''
+  const lines = text.split('\n')
+  if (lines.length <= maxLines) return text
+  return lines.slice(0, maxLines).join('\n') + '\n...'
+}
+
+function countLines(text) {
+  if (!text) return 0
+  return text.split('\n').length
+}
+
+function formatInfoKey(key) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+async function testConnection() {
+  testing.value = true
+  testResult.value = null
+  showFullResponse.value = false
+  try {
+    const s = { ...service }
+    s.check_interval = parseInt(s.check_interval, 10) || 60
+    s.timeout = parseInt(s.timeout, 10) || 15
+    s.port = parseInt(s.port, 10) || 0
+    s.expected_status = parseInt(s.expected_status, 10) || 0
+    const result = await Api.service_test(s)
+    testResult.value = result
+  } catch (err) {
+    testResult.value = {
+      success: false,
+      message: 'Test failed',
+      details: err.message || 'An error occurred while testing the connection'
+    }
+  } finally {
+    testing.value = false
+  }
+}
 </script>
 
-<style scoped></style>
+<style scoped>
+.response-preview {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+</style>

@@ -55,12 +55,13 @@
         <div class="form-group row">
           <label class="col-sm-4 col-form-label">Use StartTLS</label>
           <div class="col-sm-8">
-            <div class="switch">
+            <div class="switch" style="margin-bottom: 0.25rem;">
               <input v-model="ldap.ldap_start_tls" type="checkbox" id="ldap_start_tls" />
-              <label for="ldap_start_tls">Upgrade connection to TLS (required for ports 389/3268)</label>
+              <label for="ldap_start_tls">Upgrade connection to TLS (for ports 389/3268)</label>
             </div>
-            <small class="form-text text-muted">
-              <strong>Encryption is mandatory.</strong> Use LDAPS (ports 636/3269) or enable StartTLS (ports 389/3268).
+            <small class="form-text text-muted" style="display: block; clear: both;">
+              <strong>Encryption is mandatory.</strong><br/>
+              Use LDAPS (ports 636/3269) or enable StartTLS (ports 389/3268).
             </small>
           </div>
         </div>
@@ -75,7 +76,7 @@
           </div>
         </div>
 
-        <hr />
+        <hr class="mt-4" />
         <h6 class="text-muted mb-3">Service Account (Bind DN)</h6>
 
         <div class="form-group row">

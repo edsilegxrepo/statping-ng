@@ -267,6 +267,18 @@ if $DO_BUILD; then
   go build -ldflags "$LDFLAGS" -o "testfiles/statping${BIN_EXT}" ./cmd
 
   log_success "Build complete (binary: testfiles/statping${BIN_EXT})"
+
+  log_success "Build complete (binary: testfiles/statping${BIN_EXT})"
+
+  # Auto-restart server (with 5s timeout to prevent hanging)
+  log_step "BUILD" "Starting server..."
+  if $IS_WINDOWS; then
+    timeout 5 powershell.exe -Command "Start-Process -FilePath 'testfiles/statping.exe' -WorkingDirectory 'testfiles'" 2>/dev/null || true
+  else
+    (cd testfiles && ./statping &)
+    sleep 2
+  fi
+  log_success "Server started (http://localhost:8080)"
 fi
 
 #=============================================================================

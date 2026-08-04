@@ -32,6 +32,10 @@ type hook struct {
 }
 
 func (t *hook) Fire(e *Logger.Entry) error {
+	// Skip empty messages
+	if strings.TrimSpace(e.Message) == "" {
+		return nil
+	}
 	pushLastLine(e.Message)
 	// Ship to external log system if configured
 	ShipLog(e)

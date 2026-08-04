@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 
@@ -76,6 +77,8 @@ func apiServiceHandler(r *http.Request) interface{} {
 	if srv.Type == "cmd" && srv.ExpectedStatus == math.MinInt32 {
 		srv.ExpectedStatus = 0
 	}
+	// Mask sensitive credentials before returning to API
+	srv.MaskSecrets()
 	return srv
 }
 
@@ -316,6 +319,8 @@ func apiAllServicesHandler(r *http.Request) interface{} {
 		if v.Type == "cmd" && v.ExpectedStatus == math.MinInt32 {
 			v.ExpectedStatus = 0
 		}
+		// Mask sensitive credentials before returning to API
+		v.MaskSecrets()
 		srvs = append(srvs, v)
 	}
 	return srvs
@@ -364,4 +369,98 @@ func apiServiceHitsHandler(r *http.Request) interface{} {
 		return err
 	}
 	return hts
+}
+
+// ServiceTestResponse contains the result of a service connectivity test
+type ServiceTestResponse struct {
+	Success bool              `json:"success"`
+	Message string            `json:"message"`
+	Latency int64             `json:"latency,omitempty"`
+	Details string            `json:"details,omitempty"`
+	Info    map[string]string `json:"info,omitempty"`
+}
+
+// apiServiceTestHandler tests connectivity for a service without saving
+func apiServiceTestHandler(w http.ResponseWriter, r *http.Request) {
+	var service services.Service
+	if err := DecodeJSON(r, &service); err != nil {
+		sendErrorJson(err, w, r)
+		return
+	}
+
+	// Set default timeout if not specified
+	if service.Timeout == 0 {
+		service.Timeout = 10
+	}
+
+	var testErr error
+	switch service.Type {
+	case "http":
+		_, testErr = services.CheckHttp(&service, false)
+	case "tcp", "udp":
+		_, testErr = services.CheckTcp(&service, false)
+	case "icmp":
+		_, testErr = services.CheckIcmp(&service, false)
+	case "grpc":
+		_, testErr = services.CheckGrpc(&service, false)
+	case "smtp":
+		_, testErr = services.CheckSmtp(&service, false)
+	case "imap":
+		_, testErr = services.CheckImap(&service, false)
+	case "storage":
+		_, testErr = services.CheckStorage(&service, false)
+	case "database":
+		_, testErr = services.CheckDatabase(&service, false)
+	case "tls":
+		_, testErr = services.CheckTLS(&service, false)
+	case "cmd":
+		_, testErr = services.CheckCmd(&service, false)
+	default:
+		sendErrorJson(fmt.Errorf("unsupported service type: %s", service.Type), w, r)
+		return
+	}
+
+	resp := ServiceTestResponse{
+		Success: testErr == nil,
+		Latency: service.Latency,
+		Info:    make(map[string]string),
+	}
+
+	if testErr != nil {
+		resp.Message = "Connection test failed"
+		resp.Details = testErr.Error()
+	} else {
+		resp.Message = "Connection test successful"
+		// Add type-specific technical details
+		switch service.Type {
+		case "http":
+			resp.Info["status_code"] = fmt.Sprintf("%d", service.LastStatusCode)
+			if len(service.LastResponse) > 0 {
+				resp.Info["response_size"] = fmt.Sprintf("%d bytes", len(service.LastResponse))
+				resp.Details = service.LastResponse
+			}
+		case "tls":
+			if !service.TLSExpiry.IsZero() {
+				resp.Info["issuer"] = service.TLSIssuer
+				resp.Info["expires"] = service.TLSExpiry.Format("2006-01-02")
+				resp.Info["days_remaining"] = fmt.Sprintf("%d", service.TLSDaysRemaining)
+			}
+		case "tcp", "udp":
+			resp.Info["endpoint"] = fmt.Sprintf("%s:%d", service.Domain, service.Port)
+		case "icmp":
+			resp.Info["host"] = service.Domain
+		case "grpc":
+			resp.Info["endpoint"] = fmt.Sprintf("%s:%d", service.Domain, service.Port)
+			if service.LastResponse != "" {
+				resp.Info["response"] = service.LastResponse
+			}
+		case "database":
+			resp.Info["type"] = service.DatabaseType.String
+		case "storage":
+			resp.Info["backend"] = service.StorageBackend.String
+			resp.Info["bucket"] = service.StorageBucket.String
+		}
+	}
+
+	returnJson(resp, w, r)
 }

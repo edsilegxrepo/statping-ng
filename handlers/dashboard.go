@@ -41,11 +41,11 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 func logsHandler(w http.ResponseWriter, r *http.Request) {
 	utils.LockLines.Lock()
-	logs := make([]string, 0)
 	length := len(utils.LastLines)
-	// We need string log lines from end to start.
+	logs := make([]string, 0, length)
+	// Return logs in reverse order (newest first)
 	for i := length - 1; i >= 0; i-- {
-		logs = append(logs, utils.LastLines[i].FormatForHtml()+"\r\n")
+		logs = append(logs, utils.LastLines[i].FormatForHtml())
 	}
 	utils.LockLines.Unlock()
 	returnJson(logs, w, r)

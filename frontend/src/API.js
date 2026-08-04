@@ -58,6 +58,10 @@ class Api {
     return axios.post(`api/services/${data.id}`, data).then((response) => response.data)
   }
 
+  async service_test(data) {
+    return axios.post('api/services/test', data).then((response) => response.data)
+  }
+
   async service_hits(id, start, end, group, fill = true) {
     return axios
       .get(`api/services/${id}/hits_data?start=${start}&end=${end}&group=${group}&fill=${fill}`)

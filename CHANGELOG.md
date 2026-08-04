@@ -1,4 +1,4 @@
-# 0.97.4 (08-03-2026)
+# 0.97.4 (08-04-2026)
 - **New: OIDC (OpenID Connect) Authentication**:
   - Full OIDC connector for enterprise identity providers (Keycloak, Okta, Azure AD, Auth0, etc.)
   - Automatic discovery via `.well-known/openid-configuration`
@@ -35,10 +35,24 @@
   - Service form: Priority dropdown (Critical/High/Normal/Low)
   - Settings: Polling Engine configuration page with live worker pool statistics
   - OIDC configuration card in OAuth settings
+  - **Logs page redesign**:
+    - Converted to Vue 3 Composition API
+    - Compact log display with tighter row spacing
+    - Export buttons for JSON and TSV formats with timestamped filenames
+    - Date range filters (From/To) with labels
+    - Wider search input
+    - Pagination with configurable page size (50/100/250)
+    - Live polling for new log entries
+    - Color-coded log levels (error, warning, debug)
+  - **Service test connectivity button**: Test any service type directly from the dashboard
+  - **Group test button**: Test all services in a group in parallel with summary results
 - **Bug Fixes**:
   - Fixed division by zero in rate limit delay calculation
   - Fixed IPv6 domain extraction for rate limiting
   - Removed broken Custom OAuth provider (use OIDC instead)
+  - Fixed empty log lines in Go backend logging hook
+  - Removed `\r\n` suffix from log API responses
+  - Fixed build.sh to auto-restart server after build
 - **Tests**:
   - 24 new worker pool tests (heap ordering, rate limiting, concurrency, panic recovery)
   - OIDC PKCE and claim extraction tests

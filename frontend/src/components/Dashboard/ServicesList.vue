@@ -78,14 +78,30 @@
             <td class="text-right">
               <div class="btn-group">
                 <button
+                  v-if="store.admin && service.type !== 'static'"
+                  :disabled="testingService === service.id"
+                  @click.prevent="testService(service)"
+                  class="btn btn-sm btn-outline-secondary"
+                  title="Test Connection"
+                >
+                  <font-awesome-icon v-if="testingService === service.id" icon="circle-notch" spin />
+                  <font-awesome-icon v-else icon="plug" />
+                </button>
+                <button
                   :disabled="loading"
                   v-if="store.admin"
                   @click.prevent="gotoEdit(service)"
                   class="btn btn-sm btn-outline-secondary"
+                  title="Edit Service"
                 >
                   <font-awesome-icon icon="edit" />
                 </button>
-                <button :disabled="loading" @click.prevent="gotoService(service)" class="btn btn-sm btn-outline-secondary">
+                <button
+                  :disabled="loading"
+                  @click.prevent="gotoService(service)"
+                  class="btn btn-sm btn-outline-secondary"
+                  title="View Statistics"
+                >
                   <font-awesome-icon icon="chart-area" />
                 </button>
                 <button
@@ -93,6 +109,7 @@
                   v-if="store.admin"
                   @click.prevent="deleteService(service)"
                   class="btn btn-sm btn-danger"
+                  title="Delete Service"
                 >
                   <font-awesome-icon v-if="!loading" icon="times" />
                   <font-awesome-icon v-if="loading" icon="circle-notch" spin />
@@ -119,6 +136,7 @@ const store = useMainStore()
 
 const loading = ref(false)
 const list_timeframe = ref('12h')
+const testingService = ref(null)
 
 const servicesList = computed({
   get() {
@@ -169,6 +187,53 @@ function serviceGroup(s) {
 async function update() {
   const services = await Api.services()
   store.setServices(services)
+}
+
+function formatLatency(microseconds) {
+  if (!microseconds) return ''
+  const ms = Math.round(microseconds / 1000)
+  return ` (${ms}ms)`
+}
+
+function formatInfoKey(key) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+async function testService(service) {
+  testingService.value = service.id
+  try {
+    const result = await Api.service_test(service)
+    const lines = [`${result.message}${formatLatency(result.latency)}`]
+    if (result.info) {
+      for (const [k, v] of Object.entries(result.info)) {
+        lines.push(`${formatInfoKey(k)}: ${v}`)
+      }
+    }
+    if (result.details && !result.success) {
+      lines.push(`Error: ${result.details}`)
+    }
+    store.setModal({
+      visible: true,
+      title: result.success ? 'Connection Successful' : 'Connection Failed',
+      body: lines.join('\n'),
+      btnColor: result.success ? 'btn-success' : 'btn-danger',
+      btnText: 'Close',
+      hideCancel: true,
+      func: () => {},
+    })
+  } catch (err) {
+    store.setModal({
+      visible: true,
+      title: 'Test Failed',
+      body: err.message || 'An error occurred while testing the connection',
+      btnColor: 'btn-danger',
+      btnText: 'Close',
+      hideCancel: true,
+      func: () => {},
+    })
+  } finally {
+    testingService.value = null
+  }
 }
 </script>
 

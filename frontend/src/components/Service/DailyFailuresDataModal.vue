@@ -63,10 +63,12 @@ const tableData = computed(() => {
     return []
   }
 
-  return props.series[0].data.map((failures, hour) => ({
-    hour: `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:59`,
-    failures,
-  }))
+  return props.series[0].data
+    .map((failures, hour) => ({
+      hour: `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:59`,
+      failures,
+    }))
+    .filter(row => row.failures > 0)
 })
 
 const totalFailures = computed(() => {

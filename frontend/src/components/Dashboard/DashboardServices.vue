@@ -62,10 +62,19 @@
                 </td>
                 <td class="text-right">
                   <div v-if="store.admin" class="action-buttons">
-                    <button @click.prevent="editGroup(group)" class="action-btn" title="Edit">
+                    <button
+                      @click.prevent="testGroup(group)"
+                      :disabled="testingGroup === group.id"
+                      class="action-btn"
+                      title="Test All Services in Group"
+                    >
+                      <font-awesome-icon v-if="testingGroup === group.id" icon="circle-notch" spin />
+                      <font-awesome-icon v-else icon="plug" />
+                    </button>
+                    <button @click.prevent="editGroup(group)" class="action-btn" title="Edit Group">
                       <font-awesome-icon icon="edit" />
                     </button>
-                    <button @click.prevent="deleteGroup(group)" class="action-btn action-btn-danger" title="Delete">
+                    <button @click.prevent="deleteGroup(group)" class="action-btn action-btn-danger" title="Delete Group">
                       <font-awesome-icon icon="trash-alt" />
                     </button>
                   </div>
@@ -79,7 +88,13 @@
 
     <!-- Create Group Form -->
     <section v-if="store.admin" class="page-section">
-      <FormGroup :edit="editChange" :in_group="group" />
+      <div v-if="!showGroupForm" class="text-center">
+        <button @click="openCreateForm" class="btn btn-outline-primary">
+          <font-awesome-icon icon="plus" class="me-2" />
+          Create New Group
+        </button>
+      </div>
+      <FormGroup v-else :edit="editChange" :in_group="group" @cancel="closeForm" />
     </section>
   </div>
 </template>
@@ -96,6 +111,8 @@ const store = useMainStore()
 
 const edit = ref(false)
 const group = ref({})
+const testingGroup = ref(null)
+const showGroupForm = ref(false)
 
 const groupsList = computed({
   get() {
@@ -116,11 +133,24 @@ async function reorderGroups(value) {
 function editChange(v) {
   group.value = {}
   edit.value = v
+  if (!v) {
+    showGroupForm.value = false
+  }
 }
 
 function editGroup(g) {
-  group.value = g
-  edit.value = !edit.value
+  group.value = { ...g }
+  showGroupForm.value = true
+}
+
+function openCreateForm() {
+  group.value = { name: '', public: true }
+  showGroupForm.value = true
+}
+
+function closeForm() {
+  group.value = {}
+  showGroupForm.value = false
 }
 
 async function deleteGroupConfirm(g) {
@@ -137,6 +167,82 @@ function deleteGroup(g) {
     btnColor: 'btn-danger',
     btnText: 'Delete Group',
     func: () => deleteGroupConfirm(g),
+  })
+}
+
+async function testGroup(g) {
+  const services = store.servicesInGroup(g.id).filter(s => s.type !== 'static')
+  if (services.length === 0) {
+    store.setModal({
+      visible: true,
+      title: 'No Services',
+      body: `Group "${g.name}" has no testable services.`,
+      btnColor: 'btn-secondary',
+      btnText: 'Close',
+      hideCancel: true,
+      func: () => {},
+    })
+    return
+  }
+
+  testingGroup.value = g.id
+
+  // Run all tests in parallel
+  const testPromises = services.map(async (service) => {
+    try {
+      const result = await Api.service_test(service)
+      return { name: service.name, success: result.success, latency: result.latency }
+    } catch (err) {
+      return { name: service.name, success: false, error: err.message }
+    }
+  })
+
+  const results = await Promise.all(testPromises)
+  testingGroup.value = null
+
+  const total = results.length
+  const passed = results.filter(r => r.success).length
+  const failed = total - passed
+  const failureRate = failed / total
+
+  // Determine button color based on failure rate
+  let btnColor = 'btn-success'  // All pass = green
+  if (failureRate === 1) {
+    btnColor = 'btn-danger'      // All fail = red
+  } else if (failureRate >= 0.5) {
+    btnColor = 'btn-warning'     // 50%+ fail = orange
+  } else if (failureRate >= 0.25) {
+    btnColor = 'btn-info'        // 25%+ fail = yellow/info
+  }
+
+  const formatLatency = (us) => us ? ` (${Math.round(us / 1000)}ms)` : ''
+
+  // Show failed services first, then limit total display
+  const maxDisplay = 15
+  const failedResults = results.filter(r => !r.success)
+  const passedResults = results.filter(r => r.success)
+
+  let displayResults = [...failedResults, ...passedResults]
+  let truncatedCount = 0
+  if (displayResults.length > maxDisplay) {
+    truncatedCount = displayResults.length - maxDisplay
+    displayResults = displayResults.slice(0, maxDisplay)
+  }
+
+  const summary = displayResults.map(r =>
+    `${r.success ? '✓' : '✗'} ${r.name}${formatLatency(r.latency)}${r.error ? `: ${r.error}` : ''}`
+  ).join('\n')
+
+  const truncatedNote = truncatedCount > 0 ? `\n... and ${truncatedCount} more services` : ''
+
+  store.setModal({
+    visible: true,
+    title: `Group Test: ${g.name}`,
+    body: `Passed: ${passed}/${total}, Failed: ${failed}/${total}\n\n${summary}${truncatedNote}`,
+    btnColor: btnColor,
+    btnText: 'Close',
+    hideCancel: true,
+    func: () => {},
   })
 }
 </script>

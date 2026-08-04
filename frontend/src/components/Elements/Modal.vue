@@ -6,10 +6,10 @@
           <h5 class="modal-title">{{ modal.title }}</h5>
         </div>
         <div class="modal-body">
-          <p>{{ modal.body }}</p>
+          <p class="modal-body-text">{{ modal.body }}</p>
         </div>
         <div class="modal-footer">
-          <button @click.prevent="close" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button v-if="!modal.hideCancel" @click.prevent="close" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           <button @click.prevent="runFunc" type="button" :class="`btn ${modal.btnColor}`">{{ modal.btnText }}</button>
         </div>
       </div>
@@ -37,4 +37,8 @@ function close() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.modal-body-text {
+  white-space: pre-line;
+}
+</style>

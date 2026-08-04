@@ -28,7 +28,16 @@
           </div>
         </div>
         <div class="form-group row">
-          <div class="col-sm-12">
+          <div class="col-6">
+            <button
+              @click.prevent="cancelEdit"
+              type="button"
+              class="btn btn-block btn-outline-secondary"
+            >
+              Cancel
+            </button>
+          </div>
+          <div class="col-6">
             <button
               @click.prevent="saveGroup"
               type="submit"
@@ -62,6 +71,8 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['cancel'])
+
 const store = useMainStore()
 const loading = ref(false)
 const group = ref({
@@ -84,6 +95,12 @@ function removeEdit() {
   props.edit(false)
 }
 
+function cancelEdit() {
+  group.value = { name: '', public: true }
+  props.edit(false)
+  emit('cancel')
+}
+
 async function saveGroup() {
   loading.value = true
   if (group.value.id) {
@@ -100,6 +117,7 @@ async function createGroup() {
   await Api.group_create(data)
   await update()
   group.value = { name: '', public: true }
+  emit('cancel')
 }
 
 async function updateGroup() {
