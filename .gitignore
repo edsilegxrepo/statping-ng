@@ -77,3 +77,4 @@ out/
 /testfiles/*
 !/testfiles/.gitkeep
 statping.exe~
+cookies.txt
