@@ -16,7 +16,6 @@ const testPassword = "Password123456789012345678901234567890"
 // setupTestDB creates an isolated in-memory SQLite database for testing.
 // Each workflow gets its own database - no shared state between workflows.
 // The database is automatically closed when the test completes.
-// Note: This modifies the package-level db, so workflows must run sequentially.
 func setupTestDB(t *testing.T) {
 	t.Helper()
 
@@ -27,15 +26,10 @@ func setupTestDB(t *testing.T) {
 	require.Nil(t, err)
 
 	testDb.CreateTable(&User{})
-
-	// Save original db and restore on cleanup
-	origDb := db
 	SetDB(testDb)
 
 	t.Cleanup(func() {
 		_ = testDb.Close()
-		// Restore original db (may be nil)
-		db = origDb
 	})
 }
 
