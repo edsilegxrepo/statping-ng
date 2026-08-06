@@ -97,9 +97,9 @@ type WorkerPool struct {
 	domainLimiterMu sync.Mutex
 
 	// Metrics
-	activeWorkers  int64
-	pendingJobs    int64
-	completedJobs  int64
+	activeWorkers   int64
+	pendingJobs     int64
+	completedJobs   int64
 	rateLimitedJobs int64
 
 	running atomic.Bool

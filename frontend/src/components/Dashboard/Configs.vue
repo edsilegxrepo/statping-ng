@@ -10,28 +10,28 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import Api from '@/API'
+import { onMounted, ref } from "vue";
+import Api from "@/API";
 
-const loaded = ref(false)
-const configs = ref(null)
+const loaded = ref(false);
+const configs = ref(null);
 
 onMounted(() => {
-  update()
-})
+	update();
+});
 
 async function update() {
-  loaded.value = false
-  configs.value = await Api.configs()
-  loaded.value = true
+	loaded.value = false;
+	configs.value = await Api.configs();
+	loaded.value = true;
 }
 
 async function save() {
-  try {
-    await Api.configs_save(configs.value)
-  } catch (e) {
-    console.error(e)
-  }
+	try {
+		await Api.configs_save(configs.value);
+	} catch (e) {
+		console.error(e);
+	}
 }
 </script>
 

@@ -54,9 +54,9 @@ type Core struct {
 
 // Polling configures the worker pool polling engine
 type Polling struct {
-	PollingWorkers            int `gorm:"column:polling_workers;default:50" json:"polling_workers"`             // Number of concurrent check workers
-	PollingQueueSize          int `gorm:"column:polling_queue_size;default:1000" json:"polling_queue_size"`     // Max pending checks before backpressure
-	PollingRateLimitPerDomain int `gorm:"column:polling_rate_limit;default:60" json:"polling_rate_limit"`       // Max checks per domain per minute
+	PollingWorkers            int `gorm:"column:polling_workers;default:50" json:"polling_workers"`         // Number of concurrent check workers
+	PollingQueueSize          int `gorm:"column:polling_queue_size;default:1000" json:"polling_queue_size"` // Max pending checks before backpressure
+	PollingRateLimitPerDomain int `gorm:"column:polling_rate_limit;default:60" json:"polling_rate_limit"`   // Max checks per domain per minute
 }
 
 type LDAP struct {
@@ -100,23 +100,23 @@ type ForwardAuth struct {
 }
 
 type OAuth struct {
-	Providers           string        `gorm:"column:oauth_providers;" json:"oauth_providers"`
-	GithubClientID      string        `gorm:"column:gh_client_id" json:"gh_client_id"`
-	GithubClientSecret  string        `gorm:"column:gh_client_secret" json:"gh_client_secret" scope:"admin"`
-	GithubUsers         string        `gorm:"column:gh_users" json:"gh_users" scope:"admin"`
-	GithubOrgs          string        `gorm:"column:gh_orgs" json:"gh_orgs" scope:"admin"`
-	GoogleClientID      string        `gorm:"column:google_client_id" json:"google_client_id"`
-	GoogleClientSecret  string        `gorm:"column:google_client_secret" json:"google_client_secret" scope:"admin"`
-	GoogleUsers         string        `gorm:"column:google_users" json:"google_users" scope:"admin"`
-	SlackClientID     string `gorm:"column:slack_client_id" json:"slack_client_id"`
-	SlackClientSecret string `gorm:"column:slack_client_secret" json:"slack_client_secret" scope:"admin"`
-	SlackTeam         string `gorm:"column:slack_team" json:"slack_team" scope:"admin"`
-	SlackUsers        string `gorm:"column:slack_users" json:"slack_users" scope:"admin"`
+	Providers          string `gorm:"column:oauth_providers;" json:"oauth_providers"`
+	GithubClientID     string `gorm:"column:gh_client_id" json:"gh_client_id"`
+	GithubClientSecret string `gorm:"column:gh_client_secret" json:"gh_client_secret" scope:"admin"`
+	GithubUsers        string `gorm:"column:gh_users" json:"gh_users" scope:"admin"`
+	GithubOrgs         string `gorm:"column:gh_orgs" json:"gh_orgs" scope:"admin"`
+	GoogleClientID     string `gorm:"column:google_client_id" json:"google_client_id"`
+	GoogleClientSecret string `gorm:"column:google_client_secret" json:"google_client_secret" scope:"admin"`
+	GoogleUsers        string `gorm:"column:google_users" json:"google_users" scope:"admin"`
+	SlackClientID      string `gorm:"column:slack_client_id" json:"slack_client_id"`
+	SlackClientSecret  string `gorm:"column:slack_client_secret" json:"slack_client_secret" scope:"admin"`
+	SlackTeam          string `gorm:"column:slack_team" json:"slack_team" scope:"admin"`
+	SlackUsers         string `gorm:"column:slack_users" json:"slack_users" scope:"admin"`
 
 	// OIDC Configuration - Standards-compliant OpenID Connect
 	OidcEnabled      null.NullBool `gorm:"column:oidc_enabled;default:false" json:"oidc_enabled"`
-	OidcName         string        `gorm:"column:oidc_name" json:"oidc_name"`                                // Display name (e.g., "Keycloak", "Azure AD")
-	OidcIssuerURL    string        `gorm:"column:oidc_issuer_url" json:"oidc_issuer_url"`                    // Issuer URL for discovery
+	OidcName         string        `gorm:"column:oidc_name" json:"oidc_name"`             // Display name (e.g., "Keycloak", "Azure AD")
+	OidcIssuerURL    string        `gorm:"column:oidc_issuer_url" json:"oidc_issuer_url"` // Issuer URL for discovery
 	OidcClientID     string        `gorm:"column:oidc_client_id" json:"oidc_client_id"`
 	OidcClientSecret string        `gorm:"column:oidc_client_secret" json:"oidc_client_secret" scope:"admin"`
 	OidcScopes       string        `gorm:"column:oidc_scopes;default:openid,profile,email" json:"oidc_scopes"` // Comma-separated

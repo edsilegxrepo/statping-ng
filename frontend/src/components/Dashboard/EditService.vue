@@ -13,29 +13,29 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import Api from '@/API'
-import FormService from '@/forms/Service.vue'
+import { onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import Api from "@/API";
+import FormService from "@/forms/Service.vue";
 
-const route = useRoute()
+const route = useRoute();
 
-const service = ref(null)
-const ready = ref(false)
+const service = ref(null);
+const ready = ref(false);
 
-watch(() => route.params.id, fetchData)
+watch(() => route.params.id, fetchData);
 
 onMounted(() => {
-  fetchData()
-})
+	fetchData();
+});
 
 async function fetchData() {
-  if (!route.params.id) {
-    ready.value = true
-    return
-  }
-  service.value = await Api.service(route.params.id)
-  ready.value = true
+	if (!route.params.id) {
+		ready.value = true;
+		return;
+	}
+	service.value = await Api.service(route.params.id);
+	ready.value = true;
 }
 </script>
 

@@ -20,31 +20,35 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed } from "vue";
 
 const props = defineProps({
-  service: {
-    type: Object,
-    required: true,
-  },
-})
+	service: {
+		type: Object,
+		required: true,
+	},
+});
 
-const showResponseTime = computed(() => props.service.avg_response !== 0 || props.service.type !== 'static')
-const statusClass = computed(() => props.service.online ? 'stat-online' : 'stat-offline')
+const showResponseTime = computed(
+	() => props.service.avg_response !== 0 || props.service.type !== "static",
+);
+const statusClass = computed(() =>
+	props.service.online ? "stat-online" : "stat-offline",
+);
 
 function humanTime(ms) {
-  if (ms < 1000) {
-    return `${Math.round(ms)}ms`
-  }
-  return `${(ms / 1000).toFixed(1)}s`
+	if (ms < 1000) {
+		return `${Math.round(ms)}ms`;
+	}
+	return `${(ms / 1000).toFixed(1)}s`;
 }
 
 function formatPercent(val) {
-  if (val === undefined || val === null) return '—'
-  const num = parseFloat(val)
-  if (isNaN(num)) return '—'
-  if (num === 100) return '100'
-  return num.toFixed(1)
+	if (val === undefined || val === null) return "—";
+	const num = parseFloat(val);
+	if (isNaN(num)) return "—";
+	if (num === 100) return "100";
+	return num.toFixed(1);
 }
 </script>
 

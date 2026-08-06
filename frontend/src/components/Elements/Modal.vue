@@ -18,22 +18,22 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useMainStore } from '@/stores/main'
+import { computed } from "vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const modal = computed(() => store.modal)
+const modal = computed(() => store.modal);
 
 function runFunc() {
-  if (store.modal.func) {
-    store.modal.func()
-  }
-  close()
+	if (store.modal.func) {
+		store.modal.func();
+	}
+	close();
 }
 
 function close() {
-  store.setModal({ visible: false })
+	store.setModal({ visible: false });
 }
 </script>
 

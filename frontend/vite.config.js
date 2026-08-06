@@ -1,112 +1,141 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'path'
-import fs from 'fs'
-import { fileURLToPath } from 'url'
+import vue from "@vitejs/plugin-vue";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { defineConfig } from "vite";
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function goTemplatePlugin() {
-  return {
-    name: 'go-template-plugin',
-    closeBundle() {
-      const frontendDistDir = path.resolve(__dirname, 'dist')
-      const sourceDistDir = path.resolve(__dirname, '..', 'source', 'dist')
-      const indexPath = path.join(frontendDistDir, 'index.html')
-      const basePath = path.join(sourceDistDir, 'base.gohtml')
+	return {
+		name: "go-template-plugin",
+		closeBundle() {
+			const frontendDistDir = path.resolve(__dirname, "dist");
+			const sourceDistDir = path.resolve(__dirname, "..", "source", "dist");
+			const indexPath = path.join(frontendDistDir, "index.html");
+			const basePath = path.join(sourceDistDir, "base.gohtml");
 
-      // Copy assets from frontend/dist to source/dist
-      const frontendAssetsDir = path.join(frontendDistDir, 'assets')
-      const sourceAssetsDir = path.join(sourceDistDir, 'assets')
+			// Copy assets from frontend/dist to source/dist
+			const frontendAssetsDir = path.join(frontendDistDir, "assets");
+			const sourceAssetsDir = path.join(sourceDistDir, "assets");
 
-      // Ensure source assets directory exists
-      if (!fs.existsSync(sourceAssetsDir)) {
-        fs.mkdirSync(sourceAssetsDir, { recursive: true })
-      }
+			// Ensure source assets directory exists
+			if (!fs.existsSync(sourceAssetsDir)) {
+				fs.mkdirSync(sourceAssetsDir, { recursive: true });
+			}
 
-      // Copy all asset files
-      if (fs.existsSync(frontendAssetsDir)) {
-        const files = fs.readdirSync(frontendAssetsDir)
-        for (const file of files) {
-          fs.copyFileSync(
-            path.join(frontendAssetsDir, file),
-            path.join(sourceAssetsDir, file)
-          )
-        }
-        console.log(`Copied ${files.length} asset files to source/dist/assets`)
-      }
+			// Copy all asset files
+			if (fs.existsSync(frontendAssetsDir)) {
+				const files = fs.readdirSync(frontendAssetsDir);
+				for (const file of files) {
+					fs.copyFileSync(
+						path.join(frontendAssetsDir, file),
+						path.join(sourceAssetsDir, file),
+					);
+				}
+				console.log(`Copied ${files.length} asset files to source/dist/assets`);
+			}
 
-      // Copy index.html
-      fs.copyFileSync(indexPath, path.join(sourceDistDir, 'index.html'))
+			// Copy index.html
+			fs.copyFileSync(indexPath, path.join(sourceDistDir, "index.html"));
 
-      const indexHtml = fs.readFileSync(indexPath, 'utf-8')
+			const indexHtml = fs.readFileSync(indexPath, "utf-8");
 
-      const cssMatch = indexHtml.match(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g) || []
-      const preloadMatch = indexHtml.match(/<link[^>]*rel="modulepreload"[^>]*href="([^"]+)"[^>]*>/g) || []
-      const jsMatch = indexHtml.match(/<script[^>]*src="([^"]+)"[^>]*><\/script>/g) || []
+			const cssMatch =
+				indexHtml.match(
+					/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g,
+				) || [];
+			const preloadMatch =
+				indexHtml.match(
+					/<link[^>]*rel="modulepreload"[^>]*href="([^"]+)"[^>]*>/g,
+				) || [];
+			const jsMatch =
+				indexHtml.match(/<script[^>]*src="([^"]+)"[^>]*><\/script>/g) || [];
 
-      const cssLinks = cssMatch.map(m => m.replace(/href="\//, 'href="')).join('\n    ')
-      const preloadLinks = preloadMatch.map(m => m.replace(/href="\//, 'href="')).join('\n    ')
-      const jsScripts = jsMatch.map(m => m.replace(/src="\//, 'src="')).join('\n    ')
+			const cssLinks = cssMatch
+				.map((m) => m.replace(/href="\//, 'href="'))
+				.join("\n    ");
+			const preloadLinks = preloadMatch
+				.map((m) => m.replace(/href="\//, 'href="'))
+				.join("\n    ");
+			const jsScripts = jsMatch
+				.map((m) => m.replace(/src="\//, 'src="'))
+				.join("\n    ");
 
-      let baseGohtml = fs.readFileSync(basePath, 'utf-8')
+			let baseGohtml = fs.readFileSync(basePath, "utf-8");
 
-      // Remove old asset tags (handles various formats from different Vite versions)
-      baseGohtml = baseGohtml.replace(/<script type="module"[^>]*src="assets\/[^"]+\.js"[^>]*><\/script>\s*/g, '')
-      baseGohtml = baseGohtml.replace(/<link rel="modulepreload"[^>]*href="assets\/[^"]+\.js"[^>]*>\s*/g, '')
-      baseGohtml = baseGohtml.replace(/<link rel="stylesheet"[^>]*href="assets\/[^"]+\.css"[^>]*>\s*/g, '')
+			// Remove old asset tags (handles various formats from different Vite versions)
+			baseGohtml = baseGohtml.replace(
+				/<script type="module"[^>]*src="assets\/[^"]+\.js"[^>]*><\/script>\s*/g,
+				"",
+			);
+			baseGohtml = baseGohtml.replace(
+				/<link rel="modulepreload"[^>]*href="assets\/[^"]+\.js"[^>]*>\s*/g,
+				"",
+			);
+			baseGohtml = baseGohtml.replace(
+				/<link rel="stylesheet"[^>]*href="assets\/[^"]+\.css"[^>]*>\s*/g,
+				"",
+			);
 
-      // Insert new asset tags before </head>
-      const assetTags = `    ${jsScripts}\n    ${preloadLinks}\n    ${cssLinks}\n`
-      baseGohtml = baseGohtml.replace(/(\s*)<\/head>/, `\n${assetTags}$1</head>`)
+			// Insert new asset tags before </head>
+			const assetTags = `    ${jsScripts}\n    ${preloadLinks}\n    ${cssLinks}\n`;
+			baseGohtml = baseGohtml.replace(
+				/(\s*)<\/head>/,
+				`\n${assetTags}$1</head>`,
+			);
 
-      fs.writeFileSync(basePath, baseGohtml)
-      console.log('Updated base.gohtml with Vite asset references')
-    }
-  }
+			fs.writeFileSync(basePath, baseGohtml);
+			console.log("Updated base.gohtml with Vite asset references");
+		},
+	};
 }
 
 export default defineConfig({
-  plugins: [vue(), goTemplatePlugin()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        additionalData: ``,
-      },
-    },
-  },
-  server: {
-    port: 8888,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        cookieDomainRewrite: 'localhost',
-      },
-      '/oauth': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
-  },
-  build: {
-    outDir: 'dist',
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('vue') || id.includes('pinia') || id.includes('axios')) {
-              return 'vendor'
-            }
-          }
-        },
-      },
-    },
-  },
-})
+	plugins: [vue(), goTemplatePlugin()],
+	resolve: {
+		alias: {
+			"@": path.resolve(__dirname, "./src"),
+		},
+	},
+	css: {
+		preprocessorOptions: {
+			scss: {
+				additionalData: ``,
+			},
+		},
+	},
+	server: {
+		port: 8888,
+		proxy: {
+			"/api": {
+				target: "http://localhost:8080",
+				changeOrigin: true,
+				cookieDomainRewrite: "localhost",
+			},
+			"/oauth": {
+				target: "http://localhost:8080",
+				changeOrigin: true,
+			},
+		},
+	},
+	build: {
+		outDir: "dist",
+		rollupOptions: {
+			output: {
+				manualChunks(id) {
+					if (id.includes("node_modules")) {
+						if (
+							id.includes("vue") ||
+							id.includes("pinia") ||
+							id.includes("axios")
+						) {
+							return "vendor";
+						}
+					}
+				},
+			},
+		},
+	},
+});

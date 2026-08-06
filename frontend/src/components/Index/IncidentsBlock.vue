@@ -13,34 +13,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import DOMPurify from 'dompurify'
-import IncidentUpdate from '@/components/Elements/IncidentUpdate.vue'
-import Api from '@/API'
+import DOMPurify from "dompurify";
+import { onMounted, ref } from "vue";
+import Api from "@/API";
+import IncidentUpdate from "@/components/Elements/IncidentUpdate.vue";
 
 const props = defineProps({
-  service: {
-    type: Object,
-    required: true,
-  },
-})
+	service: {
+		type: Object,
+		required: true,
+	},
+});
 
-const incidents = ref(null)
+const incidents = ref(null);
 
 onMounted(() => {
-  getIncidents()
-})
+	getIncidents();
+});
 
 function niceDate(date) {
-  return new Date(date).toLocaleDateString()
+	return new Date(date).toLocaleDateString();
 }
 
 function sanitizedDescription(desc) {
-  return DOMPurify.sanitize(desc || '')
+	return DOMPurify.sanitize(desc || "");
 }
 
 async function getIncidents() {
-  incidents.value = await Api.incidents_service(props.service.id)
+	incidents.value = await Api.incidents_service(props.service.id);
 }
 </script>
 

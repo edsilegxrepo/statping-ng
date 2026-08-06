@@ -139,171 +139,184 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import flatPickr from 'vue-flatpickr-component'
-import 'flatpickr/dist/flatpickr.css'
-import Api from '@/API'
-import MessageBlock from '@/components/Index/MessageBlock.vue'
-import TopNav from '@/components/Dashboard/TopNav.vue'
-import PublicTopNav from '@/components/Index/TopNav.vue'
-import ServiceTopStats from '@/components/Service/ServiceTopStats.vue'
-import ServiceHeatmap from '@/components/Service/ServiceHeatmap.vue'
-import AdvancedChart from '@/components/Service/AdvancedChart.vue'
-import DailyFailuresChart from '@/components/Service/DailyFailuresChart.vue'
+import { computed, onMounted, ref, watch } from "vue";
+import flatPickr from "vue-flatpickr-component";
+import { useRoute } from "vue-router";
+import { useMainStore } from "@/stores/main";
+import "flatpickr/dist/flatpickr.css";
+import Api from "@/API";
+import TopNav from "@/components/Dashboard/TopNav.vue";
+import MessageBlock from "@/components/Index/MessageBlock.vue";
+import PublicTopNav from "@/components/Index/TopNav.vue";
+import AdvancedChart from "@/components/Service/AdvancedChart.vue";
+import DailyFailuresChart from "@/components/Service/DailyFailuresChart.vue";
+import ServiceHeatmap from "@/components/Service/ServiceHeatmap.vue";
+import ServiceTopStats from "@/components/Service/ServiceTopStats.vue";
 
-const route = useRoute()
-const store = useMainStore()
+const route = useRoute();
+const store = useMainStore();
 
-const ready = ref(false)
-const loaded = ref(false)
-const group = ref('15m')
-const data = ref(null)
-const uptime_data = ref(null)
-const failures_data = ref(null)
-const selectedDay = ref(null)
+const ready = ref(false);
+const loaded = ref(false);
+const group = ref("15m");
+const data = ref(null);
+const uptime_data = ref(null);
+const failures_data = ref(null);
+const selectedDay = ref(null);
 
-const start_time = ref(beginningOf('day', nowSubtract(259200 * 3)))
-const end_time = ref(endOf('today'))
+const start_time = ref(beginningOf("day", nowSubtract(259200 * 3)));
+const end_time = ref(endOf("today"));
 
 const dateConfig = {
-  wrap: true,
-  allowInput: true,
-  enableTime: true,
-  dateFormat: 'Z',
-  altInput: true,
-  altFormat: 'Y-m-d h:i K',
-  maxDate: endOf('today'),
-}
+	wrap: true,
+	allowInput: true,
+	enableTime: true,
+	dateFormat: "Z",
+	altInput: true,
+	altFormat: "Y-m-d h:i K",
+	maxDate: endOf("today"),
+};
 
-const coreData = computed(() => store.core)
-const service = computed(() => store.serviceByAll(route.params.id))
-const servicesLoaded = computed(() => store.hasPublicData)
-const admin = computed(() => store.admin)
-const fromDashboard = computed(() => route.query.from === 'dashboard')
+const coreData = computed(() => store.core);
+const service = computed(() => store.serviceByAll(route.params.id));
+const servicesLoaded = computed(() => store.hasPublicData);
+const admin = computed(() => store.admin);
+const fromDashboard = computed(() => route.query.from === "dashboard");
 const hasData = computed(() => {
-  const s = service.value
-  if (!s || !s.stats) return true
-  return s.stats.hits > 0 || s.stats.failures > 0
-})
+	const s = service.value;
+	if (!s || !s.stats) return true;
+	return s.stats.hits > 0 || s.stats.failures > 0;
+});
 
 const params = computed(() => ({
-  start: toUnix(new Date(start_time.value)),
-  end: toUnix(new Date(end_time.value)),
-}))
+	start: toUnix(new Date(start_time.value)),
+	end: toUnix(new Date(end_time.value)),
+}));
 
 const messagesInRange = computed(() => {
-  if (!service.value) return []
-  return store.serviceMessages(service.value.id).filter((m) => inRange(m))
-})
+	if (!service.value) return [];
+	return store.serviceMessages(service.value.id).filter((m) => inRange(m));
+});
 
-watch(() => route.params.id, fetchData)
+watch(() => route.params.id, fetchData);
 
 onMounted(() => {
-  fetchData()
-})
+	fetchData();
+});
 
 function fetchData() {
-  if (!route.params.id) {
-    ready.value = false
-    return
-  }
-  reload()
-  ready.value = true
-  loaded.value = true
+	if (!route.params.id) {
+		ready.value = false;
+		return;
+	}
+	reload();
+	ready.value = true;
+	loaded.value = true;
 }
 
 async function reload() {
-  if (!ready.value || !service.value) {
-    return
-  }
-  await chartHits()
-  await chartFailures()
-  await fetchUptime()
+	if (!ready.value || !service.value) {
+		return;
+	}
+	await chartHits();
+	await chartFailures();
+	await fetchUptime();
 }
 
 async function updated_chart(start, end) {
-  loaded.value = false
-  start_time.value = start
-  end_time.value = end
-  loaded.value = true
+	loaded.value = false;
+	start_time.value = start;
+	end_time.value = end;
+	loaded.value = true;
 }
 
 async function fetchUptime() {
-  const uptime = await Api.service_uptime(service.value.id, params.value.start, params.value.end)
-  uptime_data.value = parse_uptime(uptime)
+	const uptime = await Api.service_uptime(
+		service.value.id,
+		params.value.start,
+		params.value.end,
+	);
+	uptime_data.value = parse_uptime(uptime);
 }
 
 function parse_uptime(timedata) {
-  if (!timedata.series) return []
-  const onData = timedata.series.filter((g) => g.online) || []
-  const offData = timedata.series.filter((g) => !g.online) || []
-  const arr = []
-  onData.forEach((d) => {
-    arr.push({
-      x: 'Online',
-      y: [new Date(d.start).getTime(), new Date(d.end).getTime()],
-      fillColor: '#0db407',
-    })
-  })
-  offData.forEach((d) => {
-    arr.push({
-      x: 'Offline',
-      y: [new Date(d.start).getTime(), new Date(d.end).getTime()],
-      fillColor: '#b40707',
-    })
-  })
-  return [{ data: arr }]
+	if (!timedata.series) return [];
+	const onData = timedata.series.filter((g) => g.online) || [];
+	const offData = timedata.series.filter((g) => !g.online) || [];
+	const arr = [];
+	onData.forEach((d) => {
+		arr.push({
+			x: "Online",
+			y: [new Date(d.start).getTime(), new Date(d.end).getTime()],
+			fillColor: "#0db407",
+		});
+	});
+	offData.forEach((d) => {
+		arr.push({
+			x: "Offline",
+			y: [new Date(d.start).getTime(), new Date(d.end).getTime()],
+			fillColor: "#b40707",
+		});
+	});
+	return [{ data: arr }];
 }
 
 function inRange(message) {
-  const now = new Date()
-  const start = new Date(message.start_on)
-  const end = message.start_on === message.end_on ? new Date(8640000000000000) : new Date(message.end_on)
-  return now >= start && now <= end
+	const now = new Date();
+	const start = new Date(message.start_on);
+	const end =
+		message.start_on === message.end_on
+			? new Date(8640000000000000)
+			: new Date(message.end_on);
+	return now >= start && now <= end;
 }
 
 async function chartHits() {
-  data.value = await Api.service_hits(service.value.id, params.value.start, params.value.end, group.value, false)
+	data.value = await Api.service_hits(
+		service.value.id,
+		params.value.start,
+		params.value.end,
+		group.value,
+		false,
+	);
 }
 
 async function chartFailures() {
-  failures_data.value = await Api.service_failures_data(
-    service.value.id,
-    params.value.start,
-    params.value.end,
-    group.value,
-    true
-  )
+	failures_data.value = await Api.service_failures_data(
+		service.value.id,
+		params.value.start,
+		params.value.end,
+		group.value,
+		true,
+	);
 }
 
 function showDailyBreakdown(date) {
-  selectedDay.value = date
+	selectedDay.value = date;
 }
 
 function formatDate(date) {
-  return date.toLocaleString()
+	return date.toLocaleString();
 }
 
 function toUnix(date) {
-  return Math.floor(date.getTime() / 1000)
+	return Math.floor(date.getTime() / 1000);
 }
 
 function nowSubtract(seconds) {
-  return new Date(Date.now() - seconds * 1000)
+	return new Date(Date.now() - seconds * 1000);
 }
 
 function beginningOf(period, date = new Date()) {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d.toISOString()
+	const d = new Date(date);
+	d.setHours(0, 0, 0, 0);
+	return d.toISOString();
 }
 
 function endOf(period) {
-  const d = new Date()
-  d.setHours(23, 59, 59, 999)
-  return d.toISOString()
+	const d = new Date();
+	d.setHours(23, 59, 59, 999);
+	return d.toISOString();
 }
 </script>
 

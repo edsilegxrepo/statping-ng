@@ -63,116 +63,124 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
-import FormIncidentUpdates from '@/forms/IncidentUpdates.vue'
+import { computed, onMounted, reactive, ref } from "vue";
+import { useRoute } from "vue-router";
+import Api from "@/API";
+import FormIncidentUpdates from "@/forms/IncidentUpdates.vue";
+import { useMainStore } from "@/stores/main";
 
-const route = useRoute()
-const store = useMainStore()
+const route = useRoute();
+const store = useMainStore();
 
-const serviceID = ref(0)
-const submitting = ref(false)
-const errorMessage = ref('')
-const incidents = ref([])
+const serviceID = ref(0);
+const submitting = ref(false);
+const errorMessage = ref("");
+const incidents = ref([]);
 const incident = reactive({
-  title: '',
-  description: '',
-  service: 0,
-})
+	title: "",
+	description: "",
+	service: 0,
+});
 
 const canCreateIncident = computed(() => {
-  return incident.title.trim().length > 0 && incident.description.trim().length > 0
-})
+	return (
+		incident.title.trim().length > 0 && incident.description.trim().length > 0
+	);
+});
 
 onMounted(async () => {
-  serviceID.value = Number(route.params.id)
-  incident.service = Number(route.params.id)
-  await loadIncidents()
-})
+	serviceID.value = Number(route.params.id);
+	incident.service = Number(route.params.id);
+	await loadIncidents();
+});
 
 function niceDate(date) {
-  return new Date(date).toLocaleString()
+	return new Date(date).toLocaleString();
 }
 
 function extractErrorMessage(error, fallback) {
-  const responseData = error?.response?.data || error
-  if (typeof responseData === 'string' && responseData.trim()) {
-    return responseData.trim()
-  }
-  if (typeof responseData?.error === 'string' && responseData.error.trim()) {
-    return responseData.error
-  }
-  if (responseData?.error?.message) {
-    return responseData.error.message
-  }
-  if (responseData?.message) {
-    return responseData.message
-  }
-  if (error?.message) {
-    return error.message
-  }
-  return fallback
+	const responseData = error?.response?.data || error;
+	if (typeof responseData === "string" && responseData.trim()) {
+		return responseData.trim();
+	}
+	if (typeof responseData?.error === "string" && responseData.error.trim()) {
+		return responseData.error;
+	}
+	if (responseData?.error?.message) {
+		return responseData.error.message;
+	}
+	if (responseData?.message) {
+		return responseData.message;
+	}
+	if (error?.message) {
+		return error.message;
+	}
+	return fallback;
 }
 
 async function deleteConfirm(i) {
-  const res = await Api.incident_delete(i)
-  if (res.status === 'success') {
-    incidents.value = incidents.value.filter((obj) => obj.id !== i.id)
-  }
+	const res = await Api.incident_delete(i);
+	if (res.status === "success") {
+		incidents.value = incidents.value.filter((obj) => obj.id !== i.id);
+	}
 }
 
 function deleteIncident(inc) {
-  store.setModal({
-    visible: true,
-    title: 'Delete Incident',
-    body: `Are you sure you want to delete Incident ${inc.title}?`,
-    btnColor: 'btn-danger',
-    btnText: 'Delete Incident',
-    func: () => deleteConfirm(inc),
-  })
+	store.setModal({
+		visible: true,
+		title: "Delete Incident",
+		body: `Are you sure you want to delete Incident ${inc.title}?`,
+		btnColor: "btn-danger",
+		btnText: "Delete Incident",
+		func: () => deleteConfirm(inc),
+	});
 }
 
 async function createIncident() {
-  if (submitting.value) return
+	if (submitting.value) return;
 
-  const title = incident.title.trim()
-  const description = incident.description.trim()
+	const title = incident.title.trim();
+	const description = incident.description.trim();
 
-  if (!title || !description) {
-    errorMessage.value = 'Incident title and description are required.'
-    return
-  }
+	if (!title || !description) {
+		errorMessage.value = "Incident title and description are required.";
+		return;
+	}
 
-  submitting.value = true
-  errorMessage.value = ''
+	submitting.value = true;
+	errorMessage.value = "";
 
-  try {
-    const response = await Api.incident_create(serviceID.value, {
-      ...incident,
-      title,
-      description,
-      service: serviceID.value,
-    })
+	try {
+		const response = await Api.incident_create(serviceID.value, {
+			...incident,
+			title,
+			description,
+			service: serviceID.value,
+		});
 
-    if (response?.status === 'success' && response.output) {
-      incidents.value.push(response.output)
-      incident.title = ''
-      incident.description = ''
-      incident.service = serviceID.value
-      return
-    }
+		if (response?.status === "success" && response.output) {
+			incidents.value.push(response.output);
+			incident.title = "";
+			incident.description = "";
+			incident.service = serviceID.value;
+			return;
+		}
 
-    errorMessage.value = extractErrorMessage(response, 'Unable to create the incident right now.')
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Unable to create the incident right now.')
-  } finally {
-    submitting.value = false
-  }
+		errorMessage.value = extractErrorMessage(
+			response,
+			"Unable to create the incident right now.",
+		);
+	} catch (error) {
+		errorMessage.value = extractErrorMessage(
+			error,
+			"Unable to create the incident right now.",
+		);
+	} finally {
+		submitting.value = false;
+	}
 }
 
 async function loadIncidents() {
-  incidents.value = await Api.incidents_service(serviceID.value)
+	incidents.value = await Api.incidents_service(serviceID.value);
 }
 </script>

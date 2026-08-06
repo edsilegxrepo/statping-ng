@@ -194,71 +194,71 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import Api from '@/API'
+import { reactive, ref } from "vue";
+import Api from "@/API";
 
-const error = ref(null)
-const file = ref(null)
-const loaded = ref(false)
-const output = ref(null)
+const error = ref(null);
+const file = ref(null);
+const loaded = ref(false);
+const output = ref(null);
 
 function clean_elem(elem) {
-  if (!elem) return null
-  return elem.map((e) => {
-    const { enabled, id, ...rest } = e
-    return rest
-  })
+	if (!elem) return null;
+	return elem.map((e) => {
+		const { enabled, id, ...rest } = e;
+		return rest;
+	});
 }
 
 async function import_all() {
-  error.value = null
-  const outgoing = {
-    core: output.value.core,
-    users: clean_elem(output.value.users),
-    services: clean_elem(output.value.services),
-    groups: clean_elem(output.value.groups),
-    notifiers: clean_elem(output.value.notifiers),
-    checkins: clean_elem(output.value.checkins),
-  }
-  try {
-    await Api.import(outgoing)
-  } catch (e) {
-    error.value = e
-  }
+	error.value = null;
+	const outgoing = {
+		core: output.value.core,
+		users: clean_elem(output.value.users),
+		services: clean_elem(output.value.services),
+		groups: clean_elem(output.value.groups),
+		notifiers: clean_elem(output.value.notifiers),
+		checkins: clean_elem(output.value.checkins),
+	};
+	try {
+		await Api.import(outgoing);
+	} catch (e) {
+		error.value = e;
+	}
 }
 
 function toggle_all(elem) {
-  if (elem) {
-    elem.forEach((s) => (s.enabled = true))
-    update()
-  }
+	if (elem) {
+		elem.forEach((s) => (s.enabled = true));
+		update();
+	}
 }
 
 function update() {
-  output.value = {
-    core: file.value.core.enabled ? file.value.core : null,
-    users: file.value.users?.filter((s) => s.enabled) || [],
-    services: file.value.services?.filter((s) => s.enabled) || [],
-    groups: file.value.groups?.filter((s) => s.enabled) || [],
-    notifiers: file.value.notifiers?.filter((s) => s.enabled) || [],
-    checkins: file.value.checkins?.filter((s) => s.enabled) || [],
-  }
+	output.value = {
+		core: file.value.core.enabled ? file.value.core : null,
+		users: file.value.users?.filter((s) => s.enabled) || [],
+		services: file.value.services?.filter((s) => s.enabled) || [],
+		groups: file.value.groups?.filter((s) => s.enabled) || [],
+		notifiers: file.value.notifiers?.filter((s) => s.enabled) || [],
+		checkins: file.value.checkins?.filter((s) => s.enabled) || [],
+	};
 }
 
 function onFileChange(e) {
-  const files = e.target.files || e.dataTransfer.files
-  if (!files.length) return
-  processJSON(files[0])
+	const files = e.target.files || e.dataTransfer.files;
+	if (!files.length) return;
+	processJSON(files[0]);
 }
 
 function processJSON(jsonFile) {
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    file.value = JSON.parse(e.target.result)
-    file.value.core.enabled = false
-  }
-  reader.readAsText(jsonFile)
-  loaded.value = true
+	const reader = new FileReader();
+	reader.onload = (e) => {
+		file.value = JSON.parse(e.target.result);
+		file.value.core.enabled = false;
+	};
+	reader.readAsText(jsonFile);
+	loaded.value = true;
 }
 </script>
 

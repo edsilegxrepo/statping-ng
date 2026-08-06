@@ -49,15 +49,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Api from '@/API'
+import { computed, onMounted, ref } from "vue";
+import Api from "@/API";
 
-const css = ref('')
-const error = ref(null)
-const success = ref(null)
-const loaded = ref(false)
-const pending = ref(false)
-const hasCSS = ref(false)
+const css = ref("");
+const error = ref(null);
+const success = ref(null);
+const loaded = ref(false);
+const pending = ref(false);
+const hasCSS = ref(false);
 
 const placeholderCSS = `/* ============================================
    STATPING CUSTOM CSS EXAMPLES
@@ -275,57 +275,61 @@ body {
 .status-indicator.online {
   animation: pulse 2s infinite;
 }
-`
+`;
 
 onMounted(async () => {
-  await fetchTheme()
-})
+	await fetchTheme();
+});
 
 async function fetchTheme() {
-  pending.value = true
-  try {
-    const theme = await Api.theme()
-    css.value = theme.css || ''
-    hasCSS.value = theme.enabled || false
-  } catch (e) {
-    error.value = e.response?.data?.error || e.message
-  }
-  pending.value = false
-  loaded.value = true
+	pending.value = true;
+	try {
+		const theme = await Api.theme();
+		css.value = theme.css || "";
+		hasCSS.value = theme.enabled || false;
+	} catch (e) {
+		error.value = e.response?.data?.error || e.message;
+	}
+	pending.value = false;
+	loaded.value = true;
 }
 
 async function saveCSS() {
-  pending.value = true
-  error.value = null
-  success.value = null
+	pending.value = true;
+	error.value = null;
+	success.value = null;
 
-  try {
-    await Api.theme_save({ css: css.value })
-    success.value = 'Custom CSS saved successfully'
-    hasCSS.value = css.value.trim().length > 0
-    // Clear success message after 3 seconds
-    setTimeout(() => { success.value = null }, 3000)
-  } catch (e) {
-    error.value = e.response?.data?.error || e.message
-  }
-  pending.value = false
+	try {
+		await Api.theme_save({ css: css.value });
+		success.value = "Custom CSS saved successfully";
+		hasCSS.value = css.value.trim().length > 0;
+		// Clear success message after 3 seconds
+		setTimeout(() => {
+			success.value = null;
+		}, 3000);
+	} catch (e) {
+		error.value = e.response?.data?.error || e.message;
+	}
+	pending.value = false;
 }
 
 async function deleteCSS() {
-  pending.value = true
-  error.value = null
-  success.value = null
+	pending.value = true;
+	error.value = null;
+	success.value = null;
 
-  try {
-    await Api.theme_generate(false) // false = delete
-    css.value = ''
-    hasCSS.value = false
-    success.value = 'Custom CSS deleted'
-    setTimeout(() => { success.value = null }, 3000)
-  } catch (e) {
-    error.value = e.response?.data?.error || e.message
-  }
-  pending.value = false
+	try {
+		await Api.theme_generate(false); // false = delete
+		css.value = "";
+		hasCSS.value = false;
+		success.value = "Custom CSS deleted";
+		setTimeout(() => {
+			success.value = null;
+		}, 3000);
+	} catch (e) {
+		error.value = e.response?.data?.error || e.message;
+	}
+	pending.value = false;
 }
 </script>
 

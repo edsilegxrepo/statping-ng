@@ -215,115 +215,118 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useMainStore } from '@/stores/main'
-import { sanitizeHtml, isNumeric } from '@/mixins'
-import Api from '@/API'
+import { computed, onMounted, reactive, ref } from "vue";
+import Api from "@/API";
+import { isNumeric, sanitizeHtml } from "@/mixins";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  notifier: {
-    type: Object,
-    required: true,
-  },
-})
+	notifier: {
+		type: Object,
+		required: true,
+	},
+});
 
-const store = useMainStore()
+const store = useMainStore();
 
-const loading = ref(false)
-const loadingTest = ref(false)
-const error = ref(null)
-const response = ref(null)
-const success = ref(false)
-const saved = ref(false)
-const expanded = ref(false)
-const expanded_logs = ref(false)
-const success_data = ref(null)
-const failure_data = ref(null)
-const form = reactive({})
+const loading = ref(false);
+const loadingTest = ref(false);
+const error = ref(null);
+const response = ref(null);
+const success = ref(false);
+const saved = ref(false);
+const expanded = ref(false);
+const expanded_logs = ref(false);
+const success_data = ref(null);
+const failure_data = ref(null);
+const form = reactive({});
 
-const coreData = computed(() => store.core)
+const coreData = computed(() => store.core);
 
 const qrcode = computed(() => {
-  const u = `statping://setup?domain=${coreData.value.domain}&api=${coreData.value.api_secret}`
-  return 'https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl=' + encodeURIComponent(u)
-})
+	const u = `statping://setup?domain=${coreData.value.domain}&api=${coreData.value.api_secret}`;
+	return (
+		"https://chart.googleapis.com/chart?chs=500x500&cht=qr&chl=" +
+		encodeURIComponent(u)
+	);
+});
 
 onMounted(() => {
-  success_data.value = props.notifier.success_data
-  failure_data.value = props.notifier.failure_data
-})
+	success_data.value = props.notifier.success_data;
+	failure_data.value = props.notifier.failure_data;
+});
 
 function formVisible(want, formField) {
-  return want.includes(formField.type)
+	return want.includes(formField.type);
 }
 
 async function copyText(text) {
-  await navigator.clipboard.writeText(text)
+	await navigator.clipboard.writeText(text);
 }
 
 function niceDate(date) {
-  return new Date(date).toLocaleString()
+	return new Date(date).toLocaleString();
 }
 
 async function enableToggle() {
-  props.notifier.enabled = !!props.notifier.enabled
-  const formData = {
-    enabled: !props.notifier.enabled,
-    method: props.notifier.method,
-  }
-  await Api.notifier_save(formData)
+	props.notifier.enabled = !!props.notifier.enabled;
+	const formData = {
+		enabled: !props.notifier.enabled,
+		method: props.notifier.method,
+	};
+	await Api.notifier_save(formData);
 }
 
 async function saveNotifier() {
-  loading.value = true
-  form.enabled = props.notifier.enabled
-  form.limits = parseInt(props.notifier.limits, 10)
-  form.method = props.notifier.method
-  if (props.notifier.form) {
-    props.notifier.form.forEach((f) => {
-      const field = f.field.toLowerCase()
-      let val = props.notifier[field]
-      if (isNumeric(val) && form.method !== 'telegram') {
-        val = parseInt(val, 10)
-      }
-      form[field] = val
-    })
-  }
-  form.success_data = success_data.value
-  form.failure_data = failure_data.value
-  await Api.notifier_save(form)
-  const notifiers = await Api.notifiers()
-  store.setNotifiers(notifiers)
-  saved.value = true
-  loading.value = false
+	loading.value = true;
+	form.enabled = props.notifier.enabled;
+	form.limits = parseInt(props.notifier.limits, 10);
+	form.method = props.notifier.method;
+	if (props.notifier.form) {
+		props.notifier.form.forEach((f) => {
+			const field = f.field.toLowerCase();
+			let val = props.notifier[field];
+			if (isNumeric(val) && form.method !== "telegram") {
+				val = parseInt(val, 10);
+			}
+			form[field] = val;
+		});
+	}
+	form.success_data = success_data.value;
+	form.failure_data = failure_data.value;
+	await Api.notifier_save(form);
+	const notifiers = await Api.notifiers();
+	store.setNotifiers(notifiers);
+	saved.value = true;
+	loading.value = false;
 }
 
-async function testNotifier(method = 'success') {
-  success.value = false
-  loadingTest.value = true
-  form.method = props.notifier.method
-  if (props.notifier.form) {
-    props.notifier.form.forEach((f) => {
-      const field = f.field.toLowerCase()
-      let val = props.notifier[field]
-      if (isNumeric(val) && form.method !== 'telegram') {
-        val = parseInt(val, 10)
-      }
-      form[field] = val
-    })
-  }
-  const req = {
-    notifier: form,
-    method: method,
-  }
-  const tested = await Api.notifier_test(props.notifier.method, req)
-  if (tested.success) {
-    success.value = true
-  } else {
-    error.value = tested.error
-  }
-  response.value = tested.response
-  loadingTest.value = false
+async function testNotifier(method = "success") {
+	success.value = false;
+	loadingTest.value = true;
+	form.method = props.notifier.method;
+	if (props.notifier.form) {
+		props.notifier.form.forEach((f) => {
+			const field = f.field.toLowerCase();
+			let val = props.notifier[field];
+			if (isNumeric(val) && form.method !== "telegram") {
+				val = parseInt(val, 10);
+			}
+			form[field] = val;
+		});
+	}
+	const req = {
+		notifier: form,
+		method: method,
+	};
+	const tested = await Api.notifier_test(props.notifier.method, req);
+	if (tested.success) {
+		success.value = true;
+	} else {
+		error.value = tested.error;
+	}
+	response.value = tested.response;
+	loadingTest.value = false;
 }
 </script>
 

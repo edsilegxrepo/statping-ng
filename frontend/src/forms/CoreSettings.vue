@@ -79,25 +79,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
-const { locale } = useI18n()
+const store = useMainStore();
+const { locale } = useI18n();
 
-const loading = ref(false)
+const loading = ref(false);
 
-const coreData = computed(() => store.core)
+const coreData = computed(() => store.core);
 
 async function saveSettings() {
-  loading.value = true
-  const c = coreData.value
-  await Api.core_save(c)
-  store.setCore(c)
-  locale.value = c.language || 'en'
-  loading.value = false
+	loading.value = true;
+	const c = coreData.value;
+	await Api.core_save(c);
+	store.setCore(c);
+	locale.value = c.language || "en";
+	loading.value = false;
 }
 </script>
 

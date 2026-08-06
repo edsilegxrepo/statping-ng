@@ -18,14 +18,14 @@
 
 <script setup>
 defineProps({
-  message: {
-    type: Object,
-    required: true,
-  },
-})
+	message: {
+		type: Object,
+		required: true,
+	},
+});
 
 function niceDate(date) {
-  return new Date(date).toLocaleDateString()
+	return new Date(date).toLocaleDateString();
 }
 </script>
 

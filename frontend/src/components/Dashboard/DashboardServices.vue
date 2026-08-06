@@ -100,150 +100,160 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useMainStore } from '@/stores/main'
-import draggable from 'vuedraggable'
-import Api from '@/API'
-import ServicesList from '@/components/Dashboard/ServicesList.vue'
-import FormGroup from '@/forms/Group.vue'
+import { computed, ref, watch } from "vue";
+import draggable from "vuedraggable";
+import Api from "@/API";
+import ServicesList from "@/components/Dashboard/ServicesList.vue";
+import FormGroup from "@/forms/Group.vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const edit = ref(false)
-const group = ref({})
-const testingGroup = ref(null)
-const showGroupForm = ref(false)
+const edit = ref(false);
+const group = ref({});
+const testingGroup = ref(null);
+const showGroupForm = ref(false);
 
 const groupsList = computed({
-  get() {
-    return store.groupsClean
-  },
-  set(value) {
-    reorderGroups(value)
-  },
-})
+	get() {
+		return store.groupsClean;
+	},
+	set(value) {
+		reorderGroups(value);
+	},
+});
 
 async function reorderGroups(value) {
-  const data = value.map((s, k) => ({ group: s.id, order: k + 1 }))
-  await Api.groups_reorder(data)
-  const groups = await Api.groups()
-  store.setGroups(groups)
+	const data = value.map((s, k) => ({ group: s.id, order: k + 1 }));
+	await Api.groups_reorder(data);
+	const groups = await Api.groups();
+	store.setGroups(groups);
 }
 
 function editChange(v) {
-  group.value = {}
-  edit.value = v
-  if (!v) {
-    showGroupForm.value = false
-  }
+	group.value = {};
+	edit.value = v;
+	if (!v) {
+		showGroupForm.value = false;
+	}
 }
 
 function editGroup(g) {
-  group.value = { ...g }
-  showGroupForm.value = true
+	group.value = { ...g };
+	showGroupForm.value = true;
 }
 
 function openCreateForm() {
-  group.value = { name: '', public: true }
-  showGroupForm.value = true
+	group.value = { name: "", public: true };
+	showGroupForm.value = true;
 }
 
 function closeForm() {
-  group.value = {}
-  showGroupForm.value = false
+	group.value = {};
+	showGroupForm.value = false;
 }
 
 async function deleteGroupConfirm(g) {
-  await Api.group_delete(g.id)
-  const groups = await Api.groups()
-  store.setGroups(groups)
+	await Api.group_delete(g.id);
+	const groups = await Api.groups();
+	store.setGroups(groups);
 }
 
 function deleteGroup(g) {
-  store.setModal({
-    visible: true,
-    title: 'Delete Group',
-    body: `Are you sure you want to delete group ${g.name}? All services attached will be removed from this group.`,
-    btnColor: 'btn-danger',
-    btnText: 'Delete Group',
-    func: () => deleteGroupConfirm(g),
-  })
+	store.setModal({
+		visible: true,
+		title: "Delete Group",
+		body: `Are you sure you want to delete group ${g.name}? All services attached will be removed from this group.`,
+		btnColor: "btn-danger",
+		btnText: "Delete Group",
+		func: () => deleteGroupConfirm(g),
+	});
 }
 
 async function testGroup(g) {
-  const services = store.servicesInGroup(g.id).filter(s => s.type !== 'static')
-  if (services.length === 0) {
-    store.setModal({
-      visible: true,
-      title: 'No Services',
-      body: `Group "${g.name}" has no testable services.`,
-      btnColor: 'btn-secondary',
-      btnText: 'Close',
-      hideCancel: true,
-      func: () => {},
-    })
-    return
-  }
+	const services = store
+		.servicesInGroup(g.id)
+		.filter((s) => s.type !== "static");
+	if (services.length === 0) {
+		store.setModal({
+			visible: true,
+			title: "No Services",
+			body: `Group "${g.name}" has no testable services.`,
+			btnColor: "btn-secondary",
+			btnText: "Close",
+			hideCancel: true,
+			func: () => {},
+		});
+		return;
+	}
 
-  testingGroup.value = g.id
+	testingGroup.value = g.id;
 
-  // Run all tests in parallel
-  const testPromises = services.map(async (service) => {
-    try {
-      const result = await Api.service_test(service)
-      return { name: service.name, success: result.success, latency: result.latency }
-    } catch (err) {
-      return { name: service.name, success: false, error: err.message }
-    }
-  })
+	// Run all tests in parallel
+	const testPromises = services.map(async (service) => {
+		try {
+			const result = await Api.service_test(service);
+			return {
+				name: service.name,
+				success: result.success,
+				latency: result.latency,
+			};
+		} catch (err) {
+			return { name: service.name, success: false, error: err.message };
+		}
+	});
 
-  const results = await Promise.all(testPromises)
-  testingGroup.value = null
+	const results = await Promise.all(testPromises);
+	testingGroup.value = null;
 
-  const total = results.length
-  const passed = results.filter(r => r.success).length
-  const failed = total - passed
-  const failureRate = failed / total
+	const total = results.length;
+	const passed = results.filter((r) => r.success).length;
+	const failed = total - passed;
+	const failureRate = failed / total;
 
-  // Determine button color based on failure rate
-  let btnColor = 'btn-success'  // All pass = green
-  if (failureRate === 1) {
-    btnColor = 'btn-danger'      // All fail = red
-  } else if (failureRate >= 0.5) {
-    btnColor = 'btn-warning'     // 50%+ fail = orange
-  } else if (failureRate >= 0.25) {
-    btnColor = 'btn-info'        // 25%+ fail = yellow/info
-  }
+	// Determine button color based on failure rate
+	let btnColor = "btn-success"; // All pass = green
+	if (failureRate === 1) {
+		btnColor = "btn-danger"; // All fail = red
+	} else if (failureRate >= 0.5) {
+		btnColor = "btn-warning"; // 50%+ fail = orange
+	} else if (failureRate >= 0.25) {
+		btnColor = "btn-info"; // 25%+ fail = yellow/info
+	}
 
-  const formatLatency = (us) => us ? ` (${Math.round(us / 1000)}ms)` : ''
+	const formatLatency = (us) => (us ? ` (${Math.round(us / 1000)}ms)` : "");
 
-  // Show failed services first, then limit total display
-  const maxDisplay = 15
-  const failedResults = results.filter(r => !r.success)
-  const passedResults = results.filter(r => r.success)
+	// Show failed services first, then limit total display
+	const maxDisplay = 15;
+	const failedResults = results.filter((r) => !r.success);
+	const passedResults = results.filter((r) => r.success);
 
-  let displayResults = [...failedResults, ...passedResults]
-  let truncatedCount = 0
-  if (displayResults.length > maxDisplay) {
-    truncatedCount = displayResults.length - maxDisplay
-    displayResults = displayResults.slice(0, maxDisplay)
-  }
+	let displayResults = [...failedResults, ...passedResults];
+	let truncatedCount = 0;
+	if (displayResults.length > maxDisplay) {
+		truncatedCount = displayResults.length - maxDisplay;
+		displayResults = displayResults.slice(0, maxDisplay);
+	}
 
-  const summary = displayResults.map(r =>
-    `${r.success ? '✓' : '✗'} ${r.name}${formatLatency(r.latency)}${r.error ? `: ${r.error}` : ''}`
-  ).join('\n')
+	const summary = displayResults
+		.map(
+			(r) =>
+				`${r.success ? "✓" : "✗"} ${r.name}${formatLatency(r.latency)}${r.error ? `: ${r.error}` : ""}`,
+		)
+		.join("\n");
 
-  const truncatedNote = truncatedCount > 0 ? `\n... and ${truncatedCount} more services` : ''
+	const truncatedNote =
+		truncatedCount > 0 ? `\n... and ${truncatedCount} more services` : "";
 
-  store.setModal({
-    visible: true,
-    title: `Group Test: ${g.name}`,
-    body: `Passed: ${passed}/${total}, Failed: ${failed}/${total}\n\n${summary}${truncatedNote}`,
-    btnColor: btnColor,
-    btnText: 'Close',
-    hideCancel: true,
-    func: () => {},
-  })
+	store.setModal({
+		visible: true,
+		title: `Group Test: ${g.name}`,
+		body: `Passed: ${passed}/${total}, Failed: ${failed}/${total}\n\n${summary}${truncatedNote}`,
+		btnColor: btnColor,
+		btnText: "Close",
+		hideCancel: true,
+		func: () => {},
+	});
 }
 </script>
 

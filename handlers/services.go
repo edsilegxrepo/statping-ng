@@ -407,10 +407,10 @@ func apiServiceTestHandler(w http.ResponseWriter, r *http.Request) {
 		_, testErr = services.CheckSmtp(&service, false)
 	case "imap":
 		_, testErr = services.CheckImap(&service, false)
-	case "storage":
-		_, testErr = services.CheckStorage(&service, false)
 	case "database":
 		_, testErr = services.CheckDatabase(&service, false)
+	case "storage":
+		_, testErr = services.CheckStorage(&service, false)
 	case "tls":
 		_, testErr = services.CheckTLS(&service, false)
 	case "cmd":
@@ -439,12 +439,6 @@ func apiServiceTestHandler(w http.ResponseWriter, r *http.Request) {
 				resp.Info["response_size"] = fmt.Sprintf("%d bytes", len(service.LastResponse))
 				resp.Details = service.LastResponse
 			}
-		case "tls":
-			if !service.TLSExpiry.IsZero() {
-				resp.Info["issuer"] = service.TLSIssuer
-				resp.Info["expires"] = service.TLSExpiry.Format("2006-01-02")
-				resp.Info["days_remaining"] = fmt.Sprintf("%d", service.TLSDaysRemaining)
-			}
 		case "tcp", "udp":
 			resp.Info["endpoint"] = fmt.Sprintf("%s:%d", service.Domain, service.Port)
 		case "icmp":
@@ -459,6 +453,14 @@ func apiServiceTestHandler(w http.ResponseWriter, r *http.Request) {
 		case "storage":
 			resp.Info["backend"] = service.StorageBackend.String
 			resp.Info["bucket"] = service.StorageBucket.String
+		case "tls":
+			if service.TLSExpiry != nil {
+				resp.Info["expiry"] = service.TLSExpiry.Format("2006-01-02")
+				resp.Info["days_remaining"] = fmt.Sprintf("%d", service.TLSDaysRemaining)
+			}
+			if service.TLSIssuer != "" {
+				resp.Info["issuer"] = service.TLSIssuer
+			}
 		}
 	}
 

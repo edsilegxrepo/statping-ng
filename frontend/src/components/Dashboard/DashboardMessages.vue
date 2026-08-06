@@ -65,81 +65,81 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
-import FormMessage from '@/forms/Message.vue'
+import { computed, ref } from "vue";
+import Api from "@/API";
+import FormMessage from "@/forms/Message.vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const edit = ref(false)
-const message = ref({})
+const edit = ref(false);
+const message = ref({});
 
-const messages = computed(() => store.messages)
+const messages = computed(() => store.messages);
 
 function niceDate(date) {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString()
+	if (!date) return "";
+	return new Date(date).toLocaleDateString();
 }
 
 function getStatusClass(msg) {
-  const now = new Date()
-  const start = new Date(msg.start_on)
-  const end = new Date(msg.end_on)
+	const now = new Date();
+	const start = new Date(msg.start_on);
+	const end = new Date(msg.end_on);
 
-  if (now < start) return 'status-scheduled'
-  if (now >= start && now <= end) return 'status-active'
-  return 'status-expired'
+	if (now < start) return "status-scheduled";
+	if (now >= start && now <= end) return "status-active";
+	return "status-expired";
 }
 
 function getStatusText(msg) {
-  const now = new Date()
-  const start = new Date(msg.start_on)
-  const end = new Date(msg.end_on)
+	const now = new Date();
+	const start = new Date(msg.start_on);
+	const end = new Date(msg.end_on);
 
-  if (now < start) return 'Scheduled'
-  if (now >= start && now <= end) return 'Active'
-  return 'Expired'
+	if (now < start) return "Scheduled";
+	if (now >= start && now <= end) return "Active";
+	return "Expired";
 }
 
 function editChange(v) {
-  message.value = {}
-  edit.value = v
+	message.value = {};
+	edit.value = v;
 }
 
 function editMessage(m) {
-  message.value = m
-  edit.value = !edit.value
+	message.value = m;
+	edit.value = !edit.value;
 }
 
 function getService(id) {
-  return store.serviceById(id) || {}
+	return store.serviceById(id) || {};
 }
 
 function serviceName(service) {
-  return service.name || 'Global'
+	return service.name || "Global";
 }
 
 function serviceLink(service) {
-  if (!service.id) return '/'
-  return `/service/${service.permalink || service.id}`
+	if (!service.id) return "/";
+	return `/service/${service.permalink || service.id}`;
 }
 
 async function deleteMessageConfirm(m) {
-  await Api.message_delete(m.id)
-  const messagesData = await Api.messages()
-  store.setMessages(messagesData)
+	await Api.message_delete(m.id);
+	const messagesData = await Api.messages();
+	store.setMessages(messagesData);
 }
 
 function deleteMessage(m) {
-  store.setModal({
-    visible: true,
-    title: 'Delete Announcement',
-    body: `Are you sure you want to delete Announcement ${m.title}?`,
-    btnColor: 'btn-danger',
-    btnText: 'Delete Announcement',
-    func: () => deleteMessageConfirm(m),
-  })
+	store.setModal({
+		visible: true,
+		title: "Delete Announcement",
+		body: `Are you sure you want to delete Announcement ${m.title}?`,
+		btnColor: "btn-danger",
+		btnText: "Delete Announcement",
+		func: () => deleteMessageConfirm(m),
+	});
 }
 </script>
 

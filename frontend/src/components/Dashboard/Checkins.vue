@@ -124,107 +124,109 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { computed, onMounted, reactive, ref } from "vue";
+import { useRoute } from "vue-router";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
-const route = useRoute()
-const store = useMainStore()
+const route = useRoute();
+const store = useMainStore();
 
-const service = ref({})
-const ready = ref(false)
-const expanded = ref(false)
-const curl_expanded = ref(false)
+const service = ref({});
+const ready = ref(false);
+const expanded = ref(false);
+const curl_expanded = ref(false);
 const checkin = reactive({
-  name: '',
-  interval: 1,
-  service_id: 0,
-  hits: [],
-  failures: [],
-})
+	name: "",
+	interval: 1,
+	service_id: 0,
+	hits: [],
+	failures: [],
+});
 
-const checkins = computed(() => store.serviceCheckins(service.value.id))
-const coreData = computed(() => store.core)
+const checkins = computed(() => store.serviceCheckins(service.value.id));
+const coreData = computed(() => store.core);
 
 const btn_disabled = computed(() => {
-  return checkin.name === '' || checkin.interval <= 0
-})
+	return checkin.name === "" || checkin.interval <= 0;
+});
 
 onMounted(async () => {
-  if (route.params.id) {
-    service.value = await Api.service(route.params.id)
-    checkin.service_id = service.value.id
-    ready.value = true
-  }
-})
+	if (route.params.id) {
+		service.value = await Api.service(route.params.id);
+		checkin.service_id = service.value.id;
+		ready.value = true;
+	}
+});
 
 function parseISO(date) {
-  return new Date(date)
+	return new Date(date);
 }
 
 function ago(date) {
-  if (!date) return 'never'
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000)
-  if (seconds < 60) return `${seconds} seconds`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minutes`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hours`
-  const days = Math.floor(hours / 24)
-  return `${days} days`
+	if (!date) return "never";
+	const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+	if (seconds < 60) return `${seconds} seconds`;
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes} minutes`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours} hours`;
+	const days = Math.floor(hours / 24);
+	return `${days} days`;
 }
 
 function records(chk) {
-  const hits = (chk.hits || []).map((hit) => ({
-    success: true,
-    created_at: parseISO(hit.created_at),
-    id: hit.id,
-  }))
-  const failures = (chk.failures || []).map((failure) => ({
-    success: false,
-    created_at: parseISO(failure.created_at),
-    id: failure.id,
-  }))
-  return hits
-    .concat(failures)
-    .sort((a, b) => a.created_at - b.created_at)
-    .reverse()
-    .slice(0, 32)
+	const hits = (chk.hits || []).map((hit) => ({
+		success: true,
+		created_at: parseISO(hit.created_at),
+		id: hit.id,
+	}));
+	const failures = (chk.failures || []).map((failure) => ({
+		success: false,
+		created_at: parseISO(failure.created_at),
+		id: failure.id,
+	}));
+	return hits
+		.concat(failures)
+		.sort((a, b) => a.created_at - b.created_at)
+		.reverse()
+		.slice(0, 32);
 }
 
 function last_record(chk) {
-  const r = records(chk)
-  if (r.length === 0) return { success: false }
-  return r[0]
+	const r = records(chk);
+	if (r.length === 0) return { success: false };
+	return r[0];
 }
 
 function getCronJob(chk) {
-  return `${chk.interval} * * * * /usr/bin/curl ${coreData.value.domain}/checkin/${chk.api_key} >/dev/null 2>&1`
+	return `${chk.interval} * * * * /usr/bin/curl ${coreData.value.domain}/checkin/${chk.api_key} >/dev/null 2>&1`;
 }
 
 async function copyUrl(chk) {
-  await navigator.clipboard.writeText(`${coreData.value.domain}/checkin/${chk.api_key}`)
+	await navigator.clipboard.writeText(
+		`${coreData.value.domain}/checkin/${chk.api_key}`,
+	);
 }
 
 async function copyCron(chk) {
-  await navigator.clipboard.writeText(getCronJob(chk))
+	await navigator.clipboard.writeText(getCronJob(chk));
 }
 
 async function saveCheckin() {
-  checkin.interval = parseInt(checkin.interval, 10)
-  await Api.checkin_create(checkin)
-  checkin.name = ''
-  await load()
+	checkin.interval = parseInt(checkin.interval, 10);
+	await Api.checkin_create(checkin);
+	checkin.name = "";
+	await load();
 }
 
 async function deleteCheckin(chk) {
-  await Api.checkin_delete(chk)
-  await load()
+	await Api.checkin_delete(chk);
+	await load();
 }
 
 async function load() {
-  const chks = await Api.checkins()
-  store.setCheckins(chks)
+	const chks = await Api.checkins();
+	store.setCheckins(chks);
 }
 </script>

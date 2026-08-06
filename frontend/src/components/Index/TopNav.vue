@@ -60,80 +60,86 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useMainStore } from '@/stores/main'
+import { computed } from "vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const core = computed(() => store.core)
-const messages = computed(() => store.messages || [])
+const core = computed(() => store.core);
+const messages = computed(() => store.messages || []);
 
-const services = computed(() => store.services || [])
-const totalCount = computed(() => services.value.length)
-const onlineCount = computed(() => services.value.filter(s => s.online).length)
+const services = computed(() => store.services || []);
+const totalCount = computed(() => services.value.length);
+const onlineCount = computed(
+	() => services.value.filter((s) => s.online).length,
+);
 
 const statusClass = computed(() => {
-  if (totalCount.value === 0) return 'status-unknown'
-  if (onlineCount.value === totalCount.value) return 'status-all-online'
-  if (onlineCount.value === 0) return 'status-all-offline'
-  return 'status-partial'
-})
+	if (totalCount.value === 0) return "status-unknown";
+	if (onlineCount.value === totalCount.value) return "status-all-online";
+	if (onlineCount.value === 0) return "status-all-offline";
+	return "status-partial";
+});
 
 // 24h uptime percentage
 const uptimePercent = computed(() => {
-  if (services.value.length === 0) return '—'
-  const total = services.value.reduce((sum, s) => sum + (s.online_24_hours || 0), 0)
-  const avg = total / services.value.length
-  return avg.toFixed(1)
-})
+	if (services.value.length === 0) return "—";
+	const total = services.value.reduce(
+		(sum, s) => sum + (s.online_24_hours || 0),
+		0,
+	);
+	const avg = total / services.value.length;
+	return avg.toFixed(1);
+});
 
 const uptimeClass = computed(() => {
-  const pct = parseFloat(uptimePercent.value)
-  if (isNaN(pct)) return ''
-  if (pct >= 99) return 'uptime-good'
-  if (pct >= 95) return 'uptime-warn'
-  return 'uptime-bad'
-})
+	const pct = parseFloat(uptimePercent.value);
+	if (isNaN(pct)) return "";
+	if (pct >= 99) return "uptime-good";
+	if (pct >= 95) return "uptime-warn";
+	return "uptime-bad";
+});
 
 // Last check timestamp
 const lastCheckText = computed(() => {
-  if (services.value.length === 0) return '—'
+	if (services.value.length === 0) return "—";
 
-  // Find the most recent check across all services
-  let mostRecent = null
-  for (const s of services.value) {
-    if (s.last_success) {
-      const d = new Date(s.last_success)
-      if (!mostRecent || d > mostRecent) mostRecent = d
-    }
-  }
+	// Find the most recent check across all services
+	let mostRecent = null;
+	for (const s of services.value) {
+		if (s.last_success) {
+			const d = new Date(s.last_success);
+			if (!mostRecent || d > mostRecent) mostRecent = d;
+		}
+	}
 
-  if (!mostRecent) return '—'
+	if (!mostRecent) return "—";
 
-  const now = new Date()
-  const diffMs = now - mostRecent
-  const diffSec = Math.floor(diffMs / 1000)
-  const diffMin = Math.floor(diffSec / 60)
-  const diffHour = Math.floor(diffMin / 60)
+	const now = new Date();
+	const diffMs = now - mostRecent;
+	const diffSec = Math.floor(diffMs / 1000);
+	const diffMin = Math.floor(diffSec / 60);
+	const diffHour = Math.floor(diffMin / 60);
 
-  if (diffSec < 60) return 'just now'
-  if (diffMin < 60) return `${diffMin}m ago`
-  if (diffHour < 24) return `${diffHour}h ago`
-  return '>24h ago'
-})
+	if (diffSec < 60) return "just now";
+	if (diffMin < 60) return `${diffMin}m ago`;
+	if (diffHour < 24) return `${diffHour}h ago`;
+	return ">24h ago";
+});
 
 // Active incidents/messages
 const activeIncidents = computed(() => {
-  const now = new Date()
-  return messages.value.filter(m => {
-    const start = new Date(m.start_on)
-    const end = m.start_on === m.end_on ? new Date(8640000000000000) : new Date(m.end_on)
-    return now >= start && now <= end
-  })
-})
+	const now = new Date();
+	return messages.value.filter((m) => {
+		const start = new Date(m.start_on);
+		const end =
+			m.start_on === m.end_on ? new Date(8640000000000000) : new Date(m.end_on);
+		return now >= start && now <= end;
+	});
+});
 
-const hasActiveIncidents = computed(() => activeIncidents.value.length > 0)
-const activeIncidentCount = computed(() => activeIncidents.value.length)
+const hasActiveIncidents = computed(() => activeIncidents.value.length > 0);
+const activeIncidentCount = computed(() => activeIncidents.value.length);
 </script>
 
 <style scoped>

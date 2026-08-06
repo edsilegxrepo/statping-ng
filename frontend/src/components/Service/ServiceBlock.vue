@@ -71,105 +71,114 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import ServiceChart from './ServiceChart.vue'
-import ServiceTopStats from '@/components/Service/ServiceTopStats.vue'
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import ServiceTopStats from "@/components/Service/ServiceTopStats.vue";
+import { useMainStore } from "@/stores/main";
+import ServiceChart from "./ServiceChart.vue";
 
 const props = defineProps({
-  service: {
-    type: Object,
-    required: true,
-  },
-})
+	service: {
+		type: Object,
+		required: true,
+	},
+});
 
-const router = useRouter()
-const store = useMainStore()
+const router = useRouter();
+const store = useMainStore();
 
-const expanded = ref(false)
-const visible = ref(true)
-const dropDownMenu = ref(false)
-const intervalMenu = ref(false)
-const interval_val = ref('60m')
+const expanded = ref(false);
+const visible = ref(true);
+const dropDownMenu = ref(false);
+const intervalMenu = ref(false);
+const interval_val = ref("60m");
 
 function timeset(seconds) {
-  return Math.floor((Date.now() - seconds * 1000) / 1000)
+	return Math.floor((Date.now() - seconds * 1000) / 1000);
 }
 
-const timeframe_val = ref(timeset(259200))
+const timeframe_val = ref(timeset(259200));
 
 const timeframes = [
-  { value: timeset(1800), text: '30 Minutes', set: 1 },
-  { value: timeset(3600), text: '1 Hour', set: 2 },
-  { value: timeset(21600), text: '6 Hours', set: 3 },
-  { value: timeset(43200), text: '12 Hours', set: 4 },
-  { value: timeset(86400), text: '1 Day', set: 5 },
-  { value: timeset(259200), text: '3 Days', set: 6 },
-  { value: timeset(604800), text: '7 Days', set: 7 },
-  { value: timeset(1209600), text: '14 Days', set: 8 },
-  { value: timeset(2592000), text: '1 Month', set: 9 },
-  { value: timeset(7776000), text: '3 Months', set: 10 },
-  { value: 0, text: 'All Records' },
-]
+	{ value: timeset(1800), text: "30 Minutes", set: 1 },
+	{ value: timeset(3600), text: "1 Hour", set: 2 },
+	{ value: timeset(21600), text: "6 Hours", set: 3 },
+	{ value: timeset(43200), text: "12 Hours", set: 4 },
+	{ value: timeset(86400), text: "1 Day", set: 5 },
+	{ value: timeset(259200), text: "3 Days", set: 6 },
+	{ value: timeset(604800), text: "7 Days", set: 7 },
+	{ value: timeset(1209600), text: "14 Days", set: 8 },
+	{ value: timeset(2592000), text: "1 Month", set: 9 },
+	{ value: timeset(7776000), text: "3 Months", set: 10 },
+	{ value: 0, text: "All Records" },
+];
 
 const intervals = [
-  { value: '1m', text: '1/min', set: 1 },
-  { value: '5m', text: '5/min', set: 2 },
-  { value: '15m', text: '15/min', set: 3 },
-  { value: '30m', text: '30/min', set: 4 },
-  { value: '60m', text: '1/hr', set: 5 },
-  { value: '180m', text: '3/hr', set: 6 },
-  { value: '360m', text: '6/hr', set: 7 },
-  { value: '720m', text: '12/hr', set: 8 },
-  { value: '1440m', text: '1/day', set: 9 },
-  { value: '4320m', text: '3/day', set: 10 },
-  { value: '10080m', text: '7/day', set: 11 },
-]
+	{ value: "1m", text: "1/min", set: 1 },
+	{ value: "5m", text: "5/min", set: 2 },
+	{ value: "15m", text: "15/min", set: 3 },
+	{ value: "30m", text: "30/min", set: 4 },
+	{ value: "60m", text: "1/hr", set: 5 },
+	{ value: "180m", text: "3/hr", set: 6 },
+	{ value: "360m", text: "6/hr", set: 7 },
+	{ value: "720m", text: "12/hr", set: 8 },
+	{ value: "1440m", text: "1/day", set: 9 },
+	{ value: "4320m", text: "3/day", set: 10 },
+	{ value: "10080m", text: "7/day", set: 11 },
+];
 
-const serviceLink = computed(() => `/service/${props.service.permalink || props.service.id}`)
+const serviceLink = computed(
+	() => `/service/${props.service.permalink || props.service.id}`,
+);
 
-const timeframepick = computed(() => timeframes.find((s) => s.value === timeframe_val.value) || timeframes[5])
+const timeframepick = computed(
+	() =>
+		timeframes.find((s) => s.value === timeframe_val.value) || timeframes[5],
+);
 
-const intervalpick = computed(() => intervals.find((s) => s.value === interval_val.value) || intervals[4])
+const intervalpick = computed(
+	() => intervals.find((s) => s.value === interval_val.value) || intervals[4],
+);
 
 const chartTimeframe = computed(() => ({
-  start_time: timeframe_val.value,
-  interval: interval_val.value,
-}))
+	start_time: timeframe_val.value,
+	interval: interval_val.value,
+}));
 
-const smallText = computed(() => (props.service.online ? 'Operational' : 'Degraded'))
+const smallText = computed(() =>
+	props.service.online ? "Operational" : "Degraded",
+);
 
 function disabledInterval(interval) {
-  const min = timeframepick.value.set - interval.set - 1
-  return min >= interval.set
+	const min = timeframepick.value.set - interval.set - 1;
+	return min >= interval.set;
 }
 
 function openMenu(tm) {
-  if (tm === 'interval') {
-    intervalMenu.value = !intervalMenu.value
-    dropDownMenu.value = false
-  } else if (tm === 'timeframe') {
-    dropDownMenu.value = !dropDownMenu.value
-    intervalMenu.value = false
-  }
+	if (tm === "interval") {
+		intervalMenu.value = !intervalMenu.value;
+		dropDownMenu.value = false;
+	} else if (tm === "timeframe") {
+		dropDownMenu.value = !dropDownMenu.value;
+		intervalMenu.value = false;
+	}
 }
 
 function changeInterval(tm) {
-  interval_val.value = tm.value
-  intervalMenu.value = false
-  dropDownMenu.value = false
+	interval_val.value = tm.value;
+	intervalMenu.value = false;
+	dropDownMenu.value = false;
 }
 
 function changeTimeframe(tm) {
-  timeframe_val.value = tm.value
-  dropDownMenu.value = false
-  intervalMenu.value = false
+	timeframe_val.value = tm.value;
+	dropDownMenu.value = false;
+	intervalMenu.value = false;
 }
 
 function goToService() {
-  store.setService(props.service)
-  router.push(`/service/${props.service.id}`)
+	store.setService(props.service);
+	router.push(`/service/${props.service.id}`);
 }
 </script>
 

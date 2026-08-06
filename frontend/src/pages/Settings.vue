@@ -215,94 +215,94 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import { useCookies } from 'vue3-cookies'
-import Api from '@/API'
-import CoreSettings from '@/forms/CoreSettings.vue'
-import Notifier from '@/forms/Notifier.vue'
-import OAuth from '@/forms/OAuth.vue'
-import LdapSettings from '@/forms/LdapSettings.vue'
-import DigestSettings from '@/forms/DigestSettings.vue'
-import LogShipSettings from '@/forms/LogShipSettings.vue'
-import PollingSettings from '@/forms/PollingSettings.vue'
-import ThemeEditor from '@/components/Dashboard/ThemeEditor.vue'
-import Importer from '@/components/Dashboard/Importer.vue'
-import Variables from '@/components/Dashboard/Variables.vue'
-import Configs from '@/components/Dashboard/Configs.vue'
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { useCookies } from "vue3-cookies";
+import Api from "@/API";
+import Configs from "@/components/Dashboard/Configs.vue";
+import Importer from "@/components/Dashboard/Importer.vue";
+import ThemeEditor from "@/components/Dashboard/ThemeEditor.vue";
+import Variables from "@/components/Dashboard/Variables.vue";
+import CoreSettings from "@/forms/CoreSettings.vue";
+import DigestSettings from "@/forms/DigestSettings.vue";
+import LdapSettings from "@/forms/LdapSettings.vue";
+import LogShipSettings from "@/forms/LogShipSettings.vue";
+import Notifier from "@/forms/Notifier.vue";
+import OAuth from "@/forms/OAuth.vue";
+import PollingSettings from "@/forms/PollingSettings.vue";
+import { useMainStore } from "@/stores/main";
 
-const router = useRouter()
-const store = useMainStore()
-const { cookies } = useCookies()
+const router = useRouter();
+const store = useMainStore();
+const { cookies } = useCookies();
 
-const tab = ref('v-pills-home-tab')
+const tab = ref("v-pills-home-tab");
 
-const coreData = computed(() => store.core)
-const notifiers = computed(() => store.notifiers)
+const coreData = computed(() => store.core);
+const notifiers = computed(() => store.notifiers);
 
 onMounted(() => {
-  // GitHub version check removed (update command depended on defunct statping.com)
-})
+	// GitHub version check removed (update command depended on defunct statping.com)
+});
 
 function changeTab(tabId) {
-  tab.value = tabId
+	tab.value = tabId;
 }
 
 function isActive(id) {
-  return tab.value === id
+	return tab.value === id;
 }
 
 function iconName(icon) {
-  return icon || 'bell'
+	return icon || "bell";
 }
 
 async function copySecret() {
-  if (coreData.value.api_secret) {
-    await navigator.clipboard.writeText(coreData.value.api_secret)
-  }
+	if (coreData.value.api_secret) {
+		await navigator.clipboard.writeText(coreData.value.api_secret);
+	}
 }
 
 async function renew() {
-  await Api.renewApiKeys()
-  const core = await Api.core()
-  store.setCore(core)
-  await logout()
+	await Api.renewApiKeys();
+	const core = await Api.core();
+	store.setCore(core);
+	await logout();
 }
 
 function renewApiKeys() {
-  store.setModal({
-    visible: true,
-    title: 'Reset API Key',
-    body: `Are you sure you want to reset the API keys? You will be logged out.`,
-    btnColor: 'btn-danger',
-    btnText: 'Reset',
-    func: () => renew(),
-  })
+	store.setModal({
+		visible: true,
+		title: "Reset API Key",
+		body: `Are you sure you want to reset the API keys? You will be logged out.`,
+		btnColor: "btn-danger",
+		btnText: "Reset",
+		func: () => renew(),
+	});
 }
 
 async function logout() {
-  let redirectUrl = null
-  try {
-    const response = await Api.logout()
-    if (response.redirect) {
-      redirectUrl = response.redirect
-    }
-  } catch (e) {
-    console.error('Backend logout failed', e)
-  }
-  store.setHasAllData(false)
-  store.setToken(null)
-  store.setAdmin(false)
-  store.setUser(false)
-  store.setLoggedIn(false)
-  cookies.remove('statping_auth')
+	let redirectUrl = null;
+	try {
+		const response = await Api.logout();
+		if (response.redirect) {
+			redirectUrl = response.redirect;
+		}
+	} catch (e) {
+		console.error("Backend logout failed", e);
+	}
+	store.setHasAllData(false);
+	store.setToken(null);
+	store.setAdmin(false);
+	store.setUser(false);
+	store.setLoggedIn(false);
+	cookies.remove("statping_auth");
 
-  if (redirectUrl) {
-    window.location.href = redirectUrl
-  } else {
-    await router.push('/logout')
-  }
+	if (redirectUrl) {
+		window.location.href = redirectUrl;
+	} else {
+		await router.push("/logout");
+	}
 }
 </script>
 

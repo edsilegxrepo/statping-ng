@@ -74,113 +74,122 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import Api from '@/API'
-import ServiceSparkLine from './ServiceSparkLine.vue'
-import ServiceEvents from '@/components/Dashboard/ServiceEvents.vue'
+import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import Api from "@/API";
+import ServiceEvents from "@/components/Dashboard/ServiceEvents.vue";
+import ServiceSparkLine from "./ServiceSparkLine.vue";
 
 const props = defineProps({
-  service: {
-    type: Object,
-    required: true,
-  },
-})
+	service: {
+		type: Object,
+		required: true,
+	},
+});
 
-const router = useRouter()
-const { t } = useI18n()
+const router = useRouter();
+const { t } = useI18n();
 
-const uptime = ref(null)
-const hoverbtn = ref('')
-const set2 = ref([])
-const loaded = ref(false)
-const set2_name = ref('')
-const failures = ref(null)
-const visible = ref(false)
+const uptime = ref(null);
+const hoverbtn = ref("");
+const set2 = ref([]);
+const loaded = ref(false);
+const set2_name = ref("");
+const failures = ref(null);
+const visible = ref(false);
 
-const serviceLink = computed(() => `/service/${props.service.permalink || props.service.id}?from=dashboard`)
+const serviceLink = computed(
+	() =>
+		`/service/${props.service.permalink || props.service.id}?from=dashboard`,
+);
 
 onMounted(async () => {
-  unsetHover()
-  await loadInfo()
-})
+	unsetHover();
+	await loadInfo();
+});
 
 function setHover(name) {
-  hoverbtn.value = name
+	hoverbtn.value = name;
 }
 
 function unsetHover() {
-  hoverbtn.value = `Avg: ${set2_name.value || '—'}`
+	hoverbtn.value = `Avg: ${set2_name.value || "—"}`;
 }
 
 function goToIncidents() {
-  router.push({ path: `/dashboard/service/${props.service.id}/incidents` })
+	router.push({ path: `/dashboard/service/${props.service.id}/incidents` });
 }
 
 function goToCheckins() {
-  router.push({ path: `/dashboard/service/${props.service.id}/checkins` })
+	router.push({ path: `/dashboard/service/${props.service.id}/checkins` });
 }
 
 function goToFailures() {
-  router.push({ path: `/dashboard/service/${props.service.id}/failures` })
+	router.push({ path: `/dashboard/service/${props.service.id}/failures` });
 }
 
 async function loadInfo() {
-  set2.value = await getHits(86400 * 3, '60m')
-  set2_name.value = calc(set2.value)
-  loaded.value = true
-  unsetHover()
+	set2.value = await getHits(86400 * 3, "60m");
+	set2_name.value = calc(set2.value);
+	loaded.value = true;
+	unsetHover();
 }
 
 function nowSubtract(seconds) {
-  return new Date(Date.now() - seconds * 1000)
+	return new Date(Date.now() - seconds * 1000);
 }
 
 function endOfToday() {
-  const d = new Date()
-  d.setHours(23, 59, 59, 999)
-  return d
+	const d = new Date();
+	d.setHours(23, 59, 59, 999);
+	return d;
 }
 
 function toUnix(date) {
-  return Math.floor(date.getTime() / 1000)
+	return Math.floor(date.getTime() / 1000);
 }
 
 async function getHits(seconds, group) {
-  const start = nowSubtract(seconds)
-  const end = endOfToday()
+	const start = nowSubtract(seconds);
+	const end = endOfToday();
 
-  try {
-    const fetched = await Api.service_hits(props.service.id, toUnix(start), toUnix(end), group, true)
-    const data = convertToChartData(fetched)
-    return [{ name: 'Latency', ...data }]
-  } catch (e) {
-    return [{ name: 'Latency', data: [] }]
-  }
+	try {
+		const fetched = await Api.service_hits(
+			props.service.id,
+			toUnix(start),
+			toUnix(end),
+			group,
+			true,
+		);
+		const data = convertToChartData(fetched);
+		return [{ name: "Latency", ...data }];
+	} catch (e) {
+		return [{ name: "Latency", data: [] }];
+	}
 }
 
 function convertToChartData(arr) {
-  if (!arr || !arr.length) return { data: [] }
-  return {
-    data: arr.map((d) => ({
-      x: new Date(d.timeframe).getTime(),
-      y: Math.round(d.amount * 0.001),
-    })),
-  }
+	if (!arr || !arr.length) return { data: [] };
+	return {
+		data: arr.map((d) => ({
+			x: new Date(d.timeframe).getTime(),
+			y: Math.round(d.amount * 0.001),
+		})),
+	};
 }
 
 function calc(s) {
-  const data = s[0]?.data
-  if (data && data.length) {
-    let total = 0
-    data.forEach((f) => {
-      total += parseInt(f.y, 10)
-    })
-    total = total / data.length
-    return `${Math.round(total)} ms`
-  }
-  return 'Offline'
+	const data = s[0]?.data;
+	if (data && data.length) {
+		let total = 0;
+		data.forEach((f) => {
+			total += parseInt(f.y, 10);
+		});
+		total = total / data.length;
+		return `${Math.round(total)} ms`;
+	}
+	return "Offline";
 }
 </script>
 

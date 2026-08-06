@@ -418,200 +418,211 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { computed, onMounted, reactive, ref } from "vue";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const coreData = computed(() => store.core)
+const coreData = computed(() => store.core);
 
-const google_enabled = ref(false)
-const slack_enabled = ref(false)
-const github_enabled = ref(false)
-const local_enabled = ref(false)
-const oidc_enabled = ref(false)
-const loading = ref(false)
-const forwardAuthLoading = ref(false)
+const google_enabled = ref(false);
+const slack_enabled = ref(false);
+const github_enabled = ref(false);
+const local_enabled = ref(false);
+const oidc_enabled = ref(false);
+const loading = ref(false);
+const forwardAuthLoading = ref(false);
 
 const expanded = reactive({
-  github: false,
-  google: false,
-  slack: false,
-  oidc: false,
-  forwardauth: false,
-})
+	github: false,
+	google: false,
+	slack: false,
+	oidc: false,
+	forwardauth: false,
+});
 
 const forwardauth = reactive({
-  enabled: false,
-  header_user: 'Remote-User',
-  header_email: 'Remote-Email',
-  header_groups: 'Remote-Groups',
-  header_name: 'Remote-Name',
-  admin_groups: '',
-  trusted_proxies: '',
-  logout_url: '',
-})
+	enabled: false,
+	header_user: "Remote-User",
+	header_email: "Remote-Email",
+	header_groups: "Remote-Groups",
+	header_name: "Remote-Name",
+	admin_groups: "",
+	trusted_proxies: "",
+	logout_url: "",
+});
 
 const oauth = reactive({
-  gh_client_id: '',
-  gh_client_secret: '',
-  gh_users: '',
-  gh_orgs: '',
-  google_client_id: '',
-  google_client_secret: '',
-  google_users: '',
-  oauth_providers: '',
-  slack_client_id: '',
-  slack_client_secret: '',
-  slack_team: '',
-  slack_users: '',
-  // OIDC fields
-  oidc_enabled: false,
-  oidc_name: '',
-  oidc_issuer_url: '',
-  oidc_client_id: '',
-  oidc_client_secret: '',
-  oidc_scopes: 'openid,profile,email',
-  oidc_allowed_users: '',
-  oidc_admin_groups: '',
-  oidc_claim_username: 'preferred_username',
-  oidc_claim_email: 'email',
-  oidc_claim_groups: 'groups',
-  oidc_use_pkce: true,
-  oidc_skip_discovery: false,
-  oidc_manual_auth_endpoint: '',
-  oidc_manual_token_endpoint: '',
-  oidc_manual_userinfo_endpoint: '',
-  oidc_manual_jwks_url: '',
-})
+	gh_client_id: "",
+	gh_client_secret: "",
+	gh_users: "",
+	gh_orgs: "",
+	google_client_id: "",
+	google_client_secret: "",
+	google_users: "",
+	oauth_providers: "",
+	slack_client_id: "",
+	slack_client_secret: "",
+	slack_team: "",
+	slack_users: "",
+	// OIDC fields
+	oidc_enabled: false,
+	oidc_name: "",
+	oidc_issuer_url: "",
+	oidc_client_id: "",
+	oidc_client_secret: "",
+	oidc_scopes: "openid,profile,email",
+	oidc_allowed_users: "",
+	oidc_admin_groups: "",
+	oidc_claim_username: "preferred_username",
+	oidc_claim_email: "email",
+	oidc_claim_groups: "groups",
+	oidc_use_pkce: true,
+	oidc_skip_discovery: false,
+	oidc_manual_auth_endpoint: "",
+	oidc_manual_token_endpoint: "",
+	oidc_manual_userinfo_endpoint: "",
+	oidc_manual_jwks_url: "",
+});
 
 onMounted(async () => {
-  const data = await Api.oauth()
-  Object.assign(oauth, data)
-  local_enabled.value = has('local')
-  github_enabled.value = has('github')
-  google_enabled.value = has('google')
-  slack_enabled.value = has('slack')
-  oidc_enabled.value = has('oidc') || oauth.oidc_enabled
+	const data = await Api.oauth();
+	Object.assign(oauth, data);
+	local_enabled.value = has("local");
+	github_enabled.value = has("github");
+	google_enabled.value = has("google");
+	slack_enabled.value = has("slack");
+	oidc_enabled.value = has("oidc") || oauth.oidc_enabled;
 
-  // Load forward auth settings
-  try {
-    const faData = await Api.forwardauth()
-    forwardauth.enabled = faData.forward_auth_enabled || false
-    forwardauth.header_user = faData.forward_auth_header_user || 'Remote-User'
-    forwardauth.header_email = faData.forward_auth_header_email || 'Remote-Email'
-    forwardauth.header_groups = faData.forward_auth_header_groups || 'Remote-Groups'
-    forwardauth.header_name = faData.forward_auth_header_name || 'Remote-Name'
-    forwardauth.admin_groups = faData.forward_auth_admin_groups || ''
-    forwardauth.trusted_proxies = faData.forward_auth_trusted_proxies || ''
-    forwardauth.logout_url = faData.forward_auth_logout_url || ''
-  } catch (e) {
-    console.log('Forward auth settings not available')
-  }
-})
+	// Load forward auth settings
+	try {
+		const faData = await Api.forwardauth();
+		forwardauth.enabled = faData.forward_auth_enabled || false;
+		forwardauth.header_user = faData.forward_auth_header_user || "Remote-User";
+		forwardauth.header_email =
+			faData.forward_auth_header_email || "Remote-Email";
+		forwardauth.header_groups =
+			faData.forward_auth_header_groups || "Remote-Groups";
+		forwardauth.header_name = faData.forward_auth_header_name || "Remote-Name";
+		forwardauth.admin_groups = faData.forward_auth_admin_groups || "";
+		forwardauth.trusted_proxies = faData.forward_auth_trusted_proxies || "";
+		forwardauth.logout_url = faData.forward_auth_logout_url || "";
+	} catch (e) {
+		console.log("Forward auth settings not available");
+	}
+});
 
 function providers() {
-  const list = []
-  if (github_enabled.value) list.push('github')
-  if (local_enabled.value) list.push('local')
-  if (google_enabled.value) list.push('google')
-  if (slack_enabled.value) list.push('slack')
-  if (oidc_enabled.value) list.push('oidc')
-  return list.join(',')
+	const list = [];
+	if (github_enabled.value) list.push("github");
+	if (local_enabled.value) list.push("local");
+	if (google_enabled.value) list.push("google");
+	if (slack_enabled.value) list.push("slack");
+	if (oidc_enabled.value) list.push("oidc");
+	return list.join(",");
 }
 
 function has(val) {
-  if (!oauth.oauth_providers) return false
-  return oauth.oauth_providers.split(',').includes(val)
+	if (!oauth.oauth_providers) return false;
+	return oauth.oauth_providers.split(",").includes(val);
 }
 
 async function copyCallback(provider) {
-  const url = `${coreData.value.domain}/oauth/${provider}`
-  await navigator.clipboard.writeText(url)
+	const url = `${coreData.value.domain}/oauth/${provider}`;
+	await navigator.clipboard.writeText(url);
 }
 
 async function saveOAuth() {
-  loading.value = true
-  oauth.oauth_providers = providers()
-  oauth.oidc_enabled = oidc_enabled.value
-  await Api.oauth_save(oauth)
-  const data = await Api.oauth()
-  store.setOAuth(data)
-  loading.value = false
+	loading.value = true;
+	oauth.oauth_providers = providers();
+	oauth.oidc_enabled = oidc_enabled.value;
+	await Api.oauth_save(oauth);
+	const data = await Api.oauth();
+	store.setOAuth(data);
+	loading.value = false;
 }
 
-const forwardAuthError = ref('')
+const forwardAuthError = ref("");
 
 function validateForwardAuth() {
-  forwardAuthError.value = ''
+	forwardAuthError.value = "";
 
-  if (forwardauth.enabled) {
-    // Trusted proxies required when enabled
-    if (!forwardauth.trusted_proxies.trim()) {
-      forwardAuthError.value = 'Trusted proxies are required when Forward Auth is enabled'
-      return false
-    }
+	if (forwardauth.enabled) {
+		// Trusted proxies required when enabled
+		if (!forwardauth.trusted_proxies.trim()) {
+			forwardAuthError.value =
+				"Trusted proxies are required when Forward Auth is enabled";
+			return false;
+		}
 
-    // Validate CIDR format
-    const cidrs = forwardauth.trusted_proxies.split(';').map(s => s.trim()).filter(s => s)
-    const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$|^[0-9a-fA-F:]+(:\/\d{1,3})?$/
-    for (const cidr of cidrs) {
-      if (!cidrRegex.test(cidr)) {
-        forwardAuthError.value = `Invalid CIDR format: ${cidr}`
-        return false
-      }
-    }
-  }
+		// Validate CIDR format
+		const cidrs = forwardauth.trusted_proxies
+			.split(";")
+			.map((s) => s.trim())
+			.filter((s) => s);
+		const cidrRegex =
+			/^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$|^[0-9a-fA-F:]+(:\/\d{1,3})?$/;
+		for (const cidr of cidrs) {
+			if (!cidrRegex.test(cidr)) {
+				forwardAuthError.value = `Invalid CIDR format: ${cidr}`;
+				return false;
+			}
+		}
+	}
 
-  // Validate logout URL format if provided
-  if (forwardauth.logout_url.trim()) {
-    if (!forwardauth.logout_url.startsWith('http://') && !forwardauth.logout_url.startsWith('https://')) {
-      forwardAuthError.value = 'Logout URL must start with http:// or https://'
-      return false
-    }
-  }
+	// Validate logout URL format if provided
+	if (forwardauth.logout_url.trim()) {
+		if (
+			!forwardauth.logout_url.startsWith("http://") &&
+			!forwardauth.logout_url.startsWith("https://")
+		) {
+			forwardAuthError.value = "Logout URL must start with http:// or https://";
+			return false;
+		}
+	}
 
-  // Validate field lengths
-  if (forwardauth.trusted_proxies.length > 4096) {
-    forwardAuthError.value = 'Trusted proxies too long (max 4096 characters)'
-    return false
-  }
-  if (forwardauth.admin_groups.length > 1024) {
-    forwardAuthError.value = 'Admin groups too long (max 1024 characters)'
-    return false
-  }
-  if (forwardauth.logout_url.length > 2048) {
-    forwardAuthError.value = 'Logout URL too long (max 2048 characters)'
-    return false
-  }
+	// Validate field lengths
+	if (forwardauth.trusted_proxies.length > 4096) {
+		forwardAuthError.value = "Trusted proxies too long (max 4096 characters)";
+		return false;
+	}
+	if (forwardauth.admin_groups.length > 1024) {
+		forwardAuthError.value = "Admin groups too long (max 1024 characters)";
+		return false;
+	}
+	if (forwardauth.logout_url.length > 2048) {
+		forwardAuthError.value = "Logout URL too long (max 2048 characters)";
+		return false;
+	}
 
-  return true
+	return true;
 }
 
 async function saveForwardAuth() {
-  if (!validateForwardAuth()) {
-    return
-  }
+	if (!validateForwardAuth()) {
+		return;
+	}
 
-  forwardAuthLoading.value = true
-  forwardAuthError.value = ''
-  try {
-    await Api.forwardauth_save({
-      forward_auth_enabled: forwardauth.enabled,
-      forward_auth_header_user: forwardauth.header_user,
-      forward_auth_header_email: forwardauth.header_email,
-      forward_auth_header_groups: forwardauth.header_groups,
-      forward_auth_header_name: forwardauth.header_name,
-      forward_auth_admin_groups: forwardauth.admin_groups,
-      forward_auth_trusted_proxies: forwardauth.trusted_proxies,
-      forward_auth_logout_url: forwardauth.logout_url,
-    })
-  } catch (e) {
-    console.error('Failed to save forward auth settings:', e)
-    forwardAuthError.value = e.response?.data?.error || 'Failed to save settings'
-  }
-  forwardAuthLoading.value = false
+	forwardAuthLoading.value = true;
+	forwardAuthError.value = "";
+	try {
+		await Api.forwardauth_save({
+			forward_auth_enabled: forwardauth.enabled,
+			forward_auth_header_user: forwardauth.header_user,
+			forward_auth_header_email: forwardauth.header_email,
+			forward_auth_header_groups: forwardauth.header_groups,
+			forward_auth_header_name: forwardauth.header_name,
+			forward_auth_admin_groups: forwardauth.admin_groups,
+			forward_auth_trusted_proxies: forwardauth.trusted_proxies,
+			forward_auth_logout_url: forwardauth.logout_url,
+		});
+	} catch (e) {
+		console.error("Failed to save forward auth settings:", e);
+		forwardAuthError.value =
+			e.response?.data?.error || "Failed to save settings";
+	}
+	forwardAuthLoading.value = false;
 }
 </script>
 

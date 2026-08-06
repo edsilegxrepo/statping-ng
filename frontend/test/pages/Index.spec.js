@@ -1,17 +1,8 @@
-// import { mount } from '@vue/test-utils';
-// import Index from '../../src/pages/Index';
-//
-// const wrapper = mount(Index);
+// Index.spec.js - Index page component tests
+// TODO: Implement Index page tests when component is finalized
 
-// describe('MyName test', () => {
-//     it('Displays my name when I write it', () => {
-//
-//         expect(wrapper.vm.$data.logged_in).toBe('My name');
-//
-//         const input = wrapper.find('input');
-//         input.element.value = 'Stefan';
-//         input.trigger('input');
-//
-//         expect(wrapper.vm.$data.name).toBe('Stefan');
-//     })
-// });
+describe("Index Page", () => {
+	it("placeholder test - implement Index page tests", () => {
+		expect(true).toBe(true);
+	});
+});

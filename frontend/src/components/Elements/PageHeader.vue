@@ -7,22 +7,22 @@
 </template>
 
 <script setup>
-import { useMainStore } from '@/stores/main'
-import { storeToRefs } from 'pinia'
+import { storeToRefs } from "pinia";
+import { useMainStore } from "@/stores/main";
 
 defineProps({
-  title: {
-    type: String,
-    default: '',
-  },
-  description: {
-    type: String,
-    default: '',
-  },
-})
+	title: {
+		type: String,
+		default: "",
+	},
+	description: {
+		type: String,
+		default: "",
+	},
+});
 
-const store = useMainStore()
-const { core } = storeToRefs(store)
+const store = useMainStore();
+const { core } = storeToRefs(store);
 </script>
 
 <style scoped>

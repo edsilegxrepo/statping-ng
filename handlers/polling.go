@@ -84,11 +84,7 @@ func apiPollingSaveHandler(w http.ResponseWriter, r *http.Request) {
 	log.Infof("Polling settings updated: workers=%d, queue_size=%d, rate_limit=%d",
 		req.Workers, req.QueueSize, req.RateLimitPerDomain)
 
-	returnJson(PollingSettingsResponse{
-		Workers:            req.Workers,
-		QueueSize:          req.QueueSize,
-		RateLimitPerDomain: req.RateLimitPerDomain,
-	}, w, r)
+	returnJson(PollingSettingsResponse(req), w, r)
 }
 
 // apiPollingStatsHandler returns worker pool statistics (GET /api/polling/stats)

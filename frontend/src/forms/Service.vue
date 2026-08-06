@@ -826,241 +826,243 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { computed, onMounted, reactive, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  in_service: {
-    type: Object,
-    default: null,
-  },
-})
+	in_service: {
+		type: Object,
+		default: null,
+	},
+});
 
-const router = useRouter()
-const store = useMainStore()
+const router = useRouter();
+const store = useMainStore();
 
-const loading = ref(false)
-const use_tls = ref(false)
-const testing = ref(false)
-const testResult = ref(null)
-const showFullResponse = ref(false)
+const loading = ref(false);
+const use_tls = ref(false);
+const testing = ref(false);
+const testResult = ref(null);
+const showFullResponse = ref(false);
 
 const service = reactive({
-  name: '',
-  type: 'cmd',
-  domain: '',
-  group_id: 0,
-  method: 'GET',
-  post_data: '',
-  headers: '',
-  expected: '',
-  expected_status: 0,
-  port: 80,
-  check_interval: 60,
-  timeout: 15,
-  permalink: '',
-  order: 1,
-  priority: 3,
-  verify_ssl: true,
-  grpc_health_check: false,
-  redirect: true,
-  allow_notifications: true,
-  notify_all_changes: true,
-  notify_after: 2,
-  public: true,
-  tls_cert: '',
-  tls_cert_key: '',
-  tls_cert_root: '',
-  // Cloud Storage fields
-  storage_backend: '',
-  storage_bucket: '',
-  storage_region: '',
-  storage_endpoint: '',
-  storage_access_key: '',
-  storage_secret_key: '',
-  storage_cred_file: '',
-  storage_project_id: '',
-  storage_allow_adc: false,
-  // Database fields
-  database_type: '',
-  database_dsn: '',
-  database_query: '',
-  // TLS Certificate fields
-  tls_min_days: 30,
-  tls_expected_san: '',
-})
+	name: "",
+	type: "cmd",
+	domain: "",
+	group_id: 0,
+	method: "GET",
+	post_data: "",
+	headers: "",
+	expected: "",
+	expected_status: 0,
+	port: 80,
+	check_interval: 60,
+	timeout: 15,
+	permalink: "",
+	order: 1,
+	priority: 3,
+	verify_ssl: true,
+	grpc_health_check: false,
+	redirect: true,
+	allow_notifications: true,
+	notify_all_changes: true,
+	notify_after: 2,
+	public: true,
+	tls_cert: "",
+	tls_cert_key: "",
+	tls_cert_root: "",
+	// Cloud Storage fields
+	storage_backend: "",
+	storage_bucket: "",
+	storage_region: "",
+	storage_endpoint: "",
+	storage_access_key: "",
+	storage_secret_key: "",
+	storage_cred_file: "",
+	storage_project_id: "",
+	storage_allow_adc: false,
+	// Database fields
+	database_type: "",
+	database_dsn: "",
+	database_query: "",
+	// TLS Certificate fields
+	tls_min_days: 30,
+	tls_expected_san: "",
+});
 
-const cleanGroups = computed(() => store.groupsClean || [])
+const cleanGroups = computed(() => store.groupsClean || []);
 
 watch(
-  () => props.in_service,
-  (svr) => {
-    if (svr) {
-      Object.assign(service, svr)
-      use_tls.value = !!svr.tls_cert
-    }
-  },
-  { immediate: true }
-)
+	() => props.in_service,
+	(svr) => {
+		if (svr) {
+			Object.assign(service, svr);
+			use_tls.value = !!svr.tls_cert;
+		}
+	},
+	{ immediate: true },
+);
 
 onMounted(async () => {
-  if (!store.groups) {
-    const groups = await Api.groups()
-    store.setGroups(groups)
-  }
-  update()
-})
+	if (!store.groups) {
+		const groups = await Api.groups();
+		store.setGroups(groups);
+	}
+	update();
+});
 
 function update() {
-  if (props.in_service) {
-    Object.assign(service, props.in_service)
-  }
-  use_tls.value = service.tls_cert !== ''
+	if (props.in_service) {
+		Object.assign(service, props.in_service);
+	}
+	use_tls.value = service.tls_cert !== "";
 }
 
 function secondsHumanize(seconds) {
-  if (seconds < 60) return `${seconds} seconds`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes`
-  return `${Math.floor(seconds / 3600)} hours`
+	if (seconds < 60) return `${seconds} seconds`;
+	if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes`;
+	return `${Math.floor(seconds / 3600)} hours`;
 }
 
 function updateDefaultValues() {
-  if (service.type === 'cmd') {
-    service.expected_status = 0
-    service.expected = ''
-    service.port = 0
-    service.verify_ssl = false
-    service.method = ''
-  } else if (service.type === 'grpc') {
-    service.expected_status = 1
-    service.expected = 'status:SERVING'
-    service.port = 50051
-    service.verify_ssl = false
-    service.method = ''
-  } else if (service.type === 'storage') {
-    service.timeout = 30
-    service.storage_backend = 'gcs'
-  } else if (service.type === 'database') {
-    service.timeout = 30
-    service.database_type = 'postgres'
-    service.database_query = 'SELECT 1'
-  } else if (service.type === 'tls') {
-    service.port = 443
-    service.timeout = 10
-    service.verify_ssl = true
-    service.tls_min_days = 30
-  } else {
-    service.expected_status = 200
-    service.expected = ''
-    service.port = 80
-    service.verify_ssl = true
-    service.method = 'GET'
-  }
+	if (service.type === "cmd") {
+		service.expected_status = 0;
+		service.expected = "";
+		service.port = 0;
+		service.verify_ssl = false;
+		service.method = "";
+	} else if (service.type === "grpc") {
+		service.expected_status = 1;
+		service.expected = "status:SERVING";
+		service.port = 50051;
+		service.verify_ssl = false;
+		service.method = "";
+	} else if (service.type === "storage") {
+		service.timeout = 30;
+		service.storage_backend = "gcs";
+	} else if (service.type === "database") {
+		service.timeout = 30;
+		service.database_type = "postgres";
+		service.database_query = "SELECT 1";
+	} else if (service.type === "tls") {
+		service.port = 443;
+		service.timeout = 10;
+		service.verify_ssl = true;
+		service.tls_min_days = 30;
+	} else {
+		service.expected_status = 200;
+		service.expected = "";
+		service.port = 80;
+		service.verify_ssl = true;
+		service.method = "GET";
+	}
 }
 
 function getDsnPlaceholder(dbType) {
-  const placeholders = {
-    postgres: 'postgres://user:pass@localhost:5432/dbname?sslmode=disable',
-    mysql: 'user:pass@tcp(localhost:3306)/dbname',
-    sqlite: 'file:/path/to/database.db',
-    sqlserver: 'sqlserver://user:pass@localhost:1433?database=dbname',
-    mongodb: 'mongodb://user:pass@localhost:27017/dbname',
-    oracle: 'oracle://user:pass@localhost:1521/service',
-  }
-  return placeholders[dbType] || 'connection-string'
+	const placeholders = {
+		postgres: "postgres://user:pass@localhost:5432/dbname?sslmode=disable",
+		mysql: "user:pass@tcp(localhost:3306)/dbname",
+		sqlite: "file:/path/to/database.db",
+		sqlserver: "sqlserver://user:pass@localhost:1433?database=dbname",
+		mongodb: "mongodb://user:pass@localhost:27017/dbname",
+		oracle: "oracle://user:pass@localhost:1521/service",
+	};
+	return placeholders[dbType] || "connection-string";
 }
 
 function updatePermalink() {
-  const a = 'àáâäæãåāăąçćčđďèéêëēėęěğǵḧîïíīįìłḿñńǹňôöòóœøōõőṕŕřßśšşșťțûüùúūǘůűųẃẍÿýžźż·/_,:;'
-  const b = 'aaaaaaaaaacccddeeeeeeeegghiiiiiilmnnnnoooooooooprrsssssttuuuuuuuuuwxyyzzz------'
-  const p = new RegExp(a.split('').join('|'), 'g')
+	const a =
+		"àáâäæãåāăąçćčđďèéêëēėęěğǵḧîïíīįìłḿñńǹňôöòóœøōõőṕŕřßśšşșťțûüùúūǘůűųẃẍÿýžźż·/_,:;";
+	const b =
+		"aaaaaaaaaacccddeeeeeeeegghiiiiiilmnnnnoooooooooprrsssssttuuuuuuuuuwxyyzzz------";
+	const p = new RegExp(a.split("").join("|"), "g");
 
-  service.permalink = service.name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(p, (c) => b.charAt(a.indexOf(c)))
-    .replace(/&/g, '-and-')
-    .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '')
+	service.permalink = service.name
+		.toLowerCase()
+		.replace(/\s+/g, "-")
+		.replace(p, (c) => b.charAt(a.indexOf(c)))
+		.replace(/&/g, "-and-")
+		.replace(/[^\w-]+/g, "")
+		.replace(/--+/g, "-")
+		.replace(/^-+/, "")
+		.replace(/-+$/, "");
 }
 
 function cancelEdit() {
-  router.push('/dashboard/services')
+	router.push("/dashboard/services");
 }
 
 async function saveService() {
-  const s = { ...service }
-  loading.value = true
-  delete s.failures
-  delete s.created_at
-  delete s.updated_at
-  delete s.last_success
-  delete s.latency
-  delete s.online_24_hours
-  s.check_interval = parseInt(s.check_interval, 10)
-  s.timeout = parseInt(s.timeout, 10)
-  s.port = parseInt(s.port, 10)
-  s.notify_after = parseInt(s.notify_after, 10)
-  s.expected_status = parseInt(s.expected_status, 10)
-  s.order = parseInt(s.order, 10)
+	const s = { ...service };
+	loading.value = true;
+	delete s.failures;
+	delete s.created_at;
+	delete s.updated_at;
+	delete s.last_success;
+	delete s.latency;
+	delete s.online_24_hours;
+	s.check_interval = parseInt(s.check_interval, 10);
+	s.timeout = parseInt(s.timeout, 10);
+	s.port = parseInt(s.port, 10);
+	s.notify_after = parseInt(s.notify_after, 10);
+	s.expected_status = parseInt(s.expected_status, 10);
+	s.order = parseInt(s.order, 10);
 
-  if (s.id) {
-    await Api.service_update(s)
-  } else {
-    await Api.service_create(s)
-  }
-  const services = await Api.services()
-  store.setServices(services)
-  loading.value = false
-  router.push('/dashboard/services')
+	if (s.id) {
+		await Api.service_update(s);
+	} else {
+		await Api.service_create(s);
+	}
+	const services = await Api.services();
+	store.setServices(services);
+	loading.value = false;
+	router.push("/dashboard/services");
 }
 
 function truncateDetails(details, maxLen = 500) {
-  if (!details || details.length <= maxLen) return details
-  return details.substring(0, maxLen) + '...'
+	if (!details || details.length <= maxLen) return details;
+	return details.substring(0, maxLen) + "...";
 }
 
 function truncateLines(text, maxLines = 8) {
-  if (!text) return ''
-  const lines = text.split('\n')
-  if (lines.length <= maxLines) return text
-  return lines.slice(0, maxLines).join('\n') + '\n...'
+	if (!text) return "";
+	const lines = text.split("\n");
+	if (lines.length <= maxLines) return text;
+	return lines.slice(0, maxLines).join("\n") + "\n...";
 }
 
 function countLines(text) {
-  if (!text) return 0
-  return text.split('\n').length
+	if (!text) return 0;
+	return text.split("\n").length;
 }
 
 function formatInfoKey(key) {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+	return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 async function testConnection() {
-  testing.value = true
-  testResult.value = null
-  showFullResponse.value = false
-  try {
-    const s = { ...service }
-    s.check_interval = parseInt(s.check_interval, 10) || 60
-    s.timeout = parseInt(s.timeout, 10) || 15
-    s.port = parseInt(s.port, 10) || 0
-    s.expected_status = parseInt(s.expected_status, 10) || 0
-    const result = await Api.service_test(s)
-    testResult.value = result
-  } catch (err) {
-    testResult.value = {
-      success: false,
-      message: 'Test failed',
-      details: err.message || 'An error occurred while testing the connection'
-    }
-  } finally {
-    testing.value = false
-  }
+	testing.value = true;
+	testResult.value = null;
+	showFullResponse.value = false;
+	try {
+		const s = { ...service };
+		s.check_interval = parseInt(s.check_interval, 10) || 60;
+		s.timeout = parseInt(s.timeout, 10) || 15;
+		s.port = parseInt(s.port, 10) || 0;
+		s.expected_status = parseInt(s.expected_status, 10) || 0;
+		const result = await Api.service_test(s);
+		testResult.value = result;
+	} catch (err) {
+		testResult.value = {
+			success: false,
+			message: "Test failed",
+			details: err.message || "An error occurred while testing the connection",
+		};
+	} finally {
+		testing.value = false;
+	}
 }
 </script>
 

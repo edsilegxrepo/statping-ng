@@ -101,155 +101,163 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
-import LoadButton from '@/components/Elements/LoadButton.vue'
+import { computed, ref, watch } from "vue";
+import Api from "@/API";
+import LoadButton from "@/components/Elements/LoadButton.vue";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  in_user: {
-    type: Object,
-    default: () => ({}),
-  },
-  edit: {
-    type: Function,
-    default: () => {},
-  },
-})
+	in_user: {
+		type: Object,
+		default: () => ({}),
+	},
+	edit: {
+		type: Function,
+		default: () => {},
+	},
+});
 
-const store = useMainStore()
-const loading = ref(false)
-const passTooWeak = ref(false)
-const authProviders = ref([{ value: 'local', label: 'Local' }])
+const store = useMainStore();
+const loading = ref(false);
+const passTooWeak = ref(false);
+const authProviders = ref([{ value: "local", label: "Local" }]);
 
 // Fetch auth providers on mount
 async function loadAuthProviders() {
-  try {
-    const providers = await Api.auth_providers()
-    if (providers && providers.length) {
-      authProviders.value = providers
-    }
-  } catch (e) {
-    console.error('Failed to load auth providers:', e)
-  }
+	try {
+		const providers = await Api.auth_providers();
+		if (providers && providers.length) {
+			authProviders.value = providers;
+		}
+	} catch (e) {
+		console.error("Failed to load auth providers:", e);
+	}
 }
-loadAuthProviders()
+loadAuthProviders();
 
 const user = ref({
-  username: '',
-  admin: false,
-  email: '',
-  password: '',
-  confirm_password: '',
-  api_key: '',
-  auth_provider: 'local',
-})
+	username: "",
+	admin: false,
+	email: "",
+	password: "",
+	confirm_password: "",
+	api_key: "",
+	auth_provider: "local",
+});
 
 const canSubmit = computed(() => {
-  const u = user.value
-  const isLocalAuth = !u.auth_provider || u.auth_provider === 'local'
+	const u = user.value;
+	const isLocalAuth = !u.auth_provider || u.auth_provider === "local";
 
-  // For non-local auth, only need username and email
-  if (!isLocalAuth) {
-    return u.username && u.email
-  }
+	// For non-local auth, only need username and email
+	if (!isLocalAuth) {
+		return u.username && u.email;
+	}
 
-  // For local auth, need strong password
-  const hasUpper = /[A-Z]/.test(u.password)
-  const hasLower = /[a-z]/.test(u.password)
-  const hasDigit = /[0-9]/.test(u.password)
-  const isStrong = u.password && u.password.length >= 30 && hasUpper && hasLower && hasDigit
-  const match = u.password === u.confirm_password
+	// For local auth, need strong password
+	const hasUpper = /[A-Z]/.test(u.password);
+	const hasLower = /[a-z]/.test(u.password);
+	const hasDigit = /[0-9]/.test(u.password);
+	const isStrong =
+		u.password && u.password.length >= 30 && hasUpper && hasLower && hasDigit;
+	const match = u.password === u.confirm_password;
 
-  if (u.id) {
-    if (!u.password) return u.username && u.email
-    return u.username && u.email && isStrong && match
-  }
-  return u.username && u.email && u.password && isStrong && match
-})
+	if (u.id) {
+		if (!u.password) return u.username && u.email;
+		return u.username && u.email && isStrong && match;
+	}
+	return u.username && u.email && u.password && isStrong && match;
+});
 
 watch(
-  () => props.in_user,
-  (val) => {
-    if (val && Object.keys(val).length > 0) {
-      user.value = { ...val }
-    }
-  },
-  { immediate: true }
-)
+	() => props.in_user,
+	(val) => {
+		if (val && Object.keys(val).length > 0) {
+			user.value = { ...val };
+		}
+	},
+	{ immediate: true },
+);
 
 function removeEdit() {
-  user.value = {
-    username: '',
-    admin: false,
-    email: '',
-    password: '',
-    confirm_password: '',
-    api_key: '',
-    auth_provider: 'local',
-  }
-  props.edit(false)
+	user.value = {
+		username: "",
+		admin: false,
+		email: "",
+		password: "",
+		confirm_password: "",
+		api_key: "",
+		auth_provider: "local",
+	};
+	props.edit(false);
 }
 
 async function copyApiKey() {
-  if (user.value.api_key) {
-    await navigator.clipboard.writeText(user.value.api_key)
-  }
+	if (user.value.api_key) {
+		await navigator.clipboard.writeText(user.value.api_key);
+	}
 }
 
 async function saveUser() {
-  loading.value = true
-  const hasUpper = /[A-Z]/.test(user.value.password)
-  const hasLower = /[a-z]/.test(user.value.password)
-  const hasDigit = /[0-9]/.test(user.value.password)
-  if (user.value.password && (user.value.password.length < 30 || !hasUpper || !hasLower || !hasDigit)) {
-    passTooWeak.value = true
-    loading.value = false
-    return
-  }
-  passTooWeak.value = false
-  if (user.value.id) {
-    await updateUser()
-  } else {
-    await createUser()
-  }
-  loading.value = false
+	loading.value = true;
+	const hasUpper = /[A-Z]/.test(user.value.password);
+	const hasLower = /[a-z]/.test(user.value.password);
+	const hasDigit = /[0-9]/.test(user.value.password);
+	if (
+		user.value.password &&
+		(user.value.password.length < 30 || !hasUpper || !hasLower || !hasDigit)
+	) {
+		passTooWeak.value = true;
+		loading.value = false;
+		return;
+	}
+	passTooWeak.value = false;
+	if (user.value.id) {
+		await updateUser();
+	} else {
+		await createUser();
+	}
+	loading.value = false;
 }
 
 async function createUser() {
-  const userData = { ...user.value }
-  delete userData.confirm_password
-  // For non-local auth, generate a random password (user won't use it)
-  if (userData.auth_provider && userData.auth_provider !== 'local' && !userData.password) {
-    userData.password = Math.random().toString(36).slice(-32) + 'Aa1!'
-  }
-  await Api.user_create(userData)
-  await update()
-  user.value = {
-    username: '',
-    admin: false,
-    email: '',
-    password: '',
-    confirm_password: '',
-    api_key: '',
-    auth_provider: 'local',
-  }
+	const userData = { ...user.value };
+	delete userData.confirm_password;
+	// For non-local auth, generate a random password (user won't use it)
+	if (
+		userData.auth_provider &&
+		userData.auth_provider !== "local" &&
+		!userData.password
+	) {
+		userData.password = Math.random().toString(36).slice(-32) + "Aa1!";
+	}
+	await Api.user_create(userData);
+	await update();
+	user.value = {
+		username: "",
+		admin: false,
+		email: "",
+		password: "",
+		confirm_password: "",
+		api_key: "",
+		auth_provider: "local",
+	};
 }
 
 async function updateUser() {
-  const userData = { ...user.value }
-  if (!userData.password) {
-    delete userData.password
-  }
-  delete userData.confirm_password
-  await Api.user_update(userData)
-  await update()
-  props.edit(false)
+	const userData = { ...user.value };
+	if (!userData.password) {
+		delete userData.password;
+	}
+	delete userData.confirm_password;
+	await Api.user_update(userData);
+	await update();
+	props.edit(false);
 }
 
 async function update() {
-  const users = await Api.users()
-  store.setUsers(users)
+	const users = await Api.users();
+	store.setUsers(users);
 }
 </script>
 

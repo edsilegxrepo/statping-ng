@@ -46,60 +46,68 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { exportTSV, exportJSON } from '@/composables/useExport'
+import { computed } from "vue";
+import { exportJSON, exportTSV } from "@/composables/useExport";
 
 const props = defineProps({
-  show: Boolean,
-  series: Array,
-  selectedDate: Date,
-  serviceName: String,
-})
+	show: Boolean,
+	series: Array,
+	selectedDate: Date,
+	serviceName: String,
+});
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(["close"]);
 
 const tableData = computed(() => {
-  if (!props.series || props.series.length === 0 || !props.series[0].data) {
-    return []
-  }
+	if (!props.series || props.series.length === 0 || !props.series[0].data) {
+		return [];
+	}
 
-  return props.series[0].data
-    .map((failures, hour) => ({
-      hour: `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:59`,
-      failures,
-    }))
-    .filter(row => row.failures > 0)
-})
+	return props.series[0].data
+		.map((failures, hour) => ({
+			hour: `${hour.toString().padStart(2, "0")}:00 - ${hour.toString().padStart(2, "0")}:59`,
+			failures,
+		}))
+		.filter((row) => row.failures > 0);
+});
 
 const totalFailures = computed(() => {
-  return tableData.value.reduce((sum, row) => sum + row.failures, 0)
-})
+	return tableData.value.reduce((sum, row) => sum + row.failures, 0);
+});
 
 function formatDate(date) {
-  if (!date) return ''
-  const options = { year: 'numeric', month: 'long', day: 'numeric' }
-  return date.toLocaleDateString('en-us', options)
+	if (!date) return "";
+	const options = { year: "numeric", month: "long", day: "numeric" };
+	return date.toLocaleDateString("en-us", options);
 }
 
 function doExportTSV() {
-  const dateStr = props.selectedDate ? props.selectedDate.toISOString().split('T')[0] : 'unknown'
-  const headers = ['Hour (UTC)', 'Failures']
-  const rows = tableData.value.map(row => [row.hour, row.failures])
-  exportTSV(headers, rows, `${props.serviceName || 'service'}-failures-${dateStr}`)
+	const dateStr = props.selectedDate
+		? props.selectedDate.toISOString().split("T")[0]
+		: "unknown";
+	const headers = ["Hour (UTC)", "Failures"];
+	const rows = tableData.value.map((row) => [row.hour, row.failures]);
+	exportTSV(
+		headers,
+		rows,
+		`${props.serviceName || "service"}-failures-${dateStr}`,
+	);
 }
 
 function doExportJSON() {
-  const dateStr = props.selectedDate ? props.selectedDate.toISOString().split('T')[0] : 'unknown'
-  const data = {
-    date: dateStr,
-    service: props.serviceName,
-    totalFailures: totalFailures.value,
-    hourly: tableData.value.map(row => ({
-      hour: row.hour,
-      failures: row.failures,
-    })),
-  }
-  exportJSON(data, `${props.serviceName || 'service'}-failures-${dateStr}`)
+	const dateStr = props.selectedDate
+		? props.selectedDate.toISOString().split("T")[0]
+		: "unknown";
+	const data = {
+		date: dateStr,
+		service: props.serviceName,
+		totalFailures: totalFailures.value,
+		hourly: tableData.value.map((row) => ({
+			hour: row.hour,
+			failures: row.failures,
+		})),
+	};
+	exportJSON(data, `${props.serviceName || "service"}-failures-${dateStr}`);
 }
 </script>
 

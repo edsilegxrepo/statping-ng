@@ -39,84 +39,84 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { computed, onMounted, ref } from "vue";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  service: {
-    type: Object,
-    required: true,
-  },
-})
+	service: {
+		type: Object,
+		required: true,
+	},
+});
 
-const store = useMainStore()
-const incidents = ref(null)
-const loaded = ref(false)
+const store = useMainStore();
+const incidents = ref(null);
+const loaded = ref(false);
 
 const lastFailure = computed(() => {
-  if (!props.service.failures || !props.service.failures.length) {
-    return null
-  }
-  return props.service.failures[0]
-})
+	if (!props.service.failures || !props.service.failures.length) {
+		return null;
+	}
+	return props.service.failures[0];
+});
 
 const failureBefore = computed(() => {
-  if (!props.service.last_error) return false
-  const lastError = new Date(props.service.last_error)
-  const threshold = new Date(Date.now() - 43200 * 1000)
-  return lastError > threshold
-})
+	if (!props.service.last_error) return false;
+	const lastError = new Date(props.service.last_error);
+	const threshold = new Date(Date.now() - 43200 * 1000);
+	return lastError > threshold;
+});
 
-const messages = computed(() => store.serviceMessages(props.service.id))
+const messages = computed(() => store.serviceMessages(props.service.id));
 
 const successEvent = computed(() => {
-  if (
-    props.service.online &&
-    (!props.service.messages || props.service.messages.length === 0) &&
-    (!props.service.incidents || props.service.incidents.length === 0)
-  ) {
-    return true
-  }
-  return false
-})
+	if (
+		props.service.online &&
+		(!props.service.messages || props.service.messages.length === 0) &&
+		(!props.service.incidents || props.service.incidents.length === 0)
+	) {
+		return true;
+	}
+	return false;
+});
 
 onMounted(() => {
-  load()
-})
+	load();
+});
 
 async function load() {
-  loaded.value = false
-  await getIncidents()
-  loaded.value = true
+	loaded.value = false;
+	await getIncidents();
+	loaded.value = true;
 }
 
 async function getIncidents() {
-  try {
-    incidents.value = await Api.incidents_service(props.service.id)
-  } catch (e) {
-    incidents.value = []
-  }
+	try {
+		incidents.value = await Api.incidents_service(props.service.id);
+	} catch (e) {
+		incidents.value = [];
+	}
 }
 
 function niceDate(date) {
-  return new Date(date).toLocaleDateString()
+	return new Date(date).toLocaleDateString();
 }
 
 function timeAgo(date) {
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000)
-  if (seconds < 60) return `${seconds} seconds`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minutes`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hours`
-  const days = Math.floor(hours / 24)
-  return `${days} days`
+	const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+	if (seconds < 60) return `${seconds} seconds`;
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes} minutes`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours} hours`;
+	const days = Math.floor(hours / 24);
+	return `${days} days`;
 }
 
 function isZeroDate(date) {
-  if (!date) return true
-  const d = new Date(date)
-  return d.getFullYear() < 2000
+	if (!date) return true;
+	const d = new Date(date);
+	return d.getFullYear() < 2000;
 }
 </script>

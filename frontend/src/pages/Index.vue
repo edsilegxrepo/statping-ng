@@ -69,94 +69,95 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import { useCookies } from 'vue3-cookies'
-import Api from '@/API'
+import { computed, ref } from "vue";
+import { useCookies } from "vue3-cookies";
+import Api from "@/API";
+import Group from "@/components/Index/Group.vue";
+import GroupServiceFailures from "@/components/Index/GroupServiceFailures.vue";
+import Header from "@/components/Index/Header.vue";
+import IncidentsBlock from "@/components/Index/IncidentsBlock.vue";
+import MessageBlock from "@/components/Index/MessageBlock.vue";
+import MessagesIcon from "@/components/Index/MessagesIcon.vue";
+import TopNav from "@/components/Index/TopNav.vue";
+import ServiceBlock from "@/components/Service/ServiceBlock.vue";
+import { useMainStore } from "@/stores/main";
 
-import Group from '@/components/Index/Group.vue'
-import Header from '@/components/Index/Header.vue'
-import TopNav from '@/components/Index/TopNav.vue'
-import MessageBlock from '@/components/Index/MessageBlock.vue'
-import ServiceBlock from '@/components/Service/ServiceBlock.vue'
-import GroupServiceFailures from '@/components/Index/GroupServiceFailures.vue'
-import IncidentsBlock from '@/components/Index/IncidentsBlock.vue'
-import MessagesIcon from '@/components/Index/MessagesIcon.vue'
+const store = useMainStore();
+const { cookies } = useCookies();
 
-const store = useMainStore()
-const { cookies } = useCookies()
+const serviceRefs = ref({});
 
-const serviceRefs = ref({})
-
-const loaded = computed(() => store.hasPublicData)
-const core = computed(() => store.core)
-const messages = computed(() => store.messages)
-const groups = computed(() => store.groupsInOrder)
-const services = computed(() => store.servicesInOrder)
-const servicesNoGroup = computed(() => store.servicesNoGroup)
+const loaded = computed(() => store.hasPublicData);
+const core = computed(() => store.core);
+const messages = computed(() => store.messages);
+const groups = computed(() => store.groupsInOrder);
+const services = computed(() => store.servicesInOrder);
+const servicesNoGroup = computed(() => store.servicesNoGroup);
 
 const loadingText = computed(() => {
-  if (store.groups.length === 0) {
-    return 'Loading Groups'
-  } else if (store.services.length === 0) {
-    return 'Loading Services'
-  } else if (store.messages == null) {
-    return 'Loading Announcements'
-  }
-  return 'Loading...'
-})
+	if (store.groups.length === 0) {
+		return "Loading Groups";
+	} else if (store.services.length === 0) {
+		return "Loading Services";
+	} else if (store.messages == null) {
+		return "Loading Announcements";
+	}
+	return "Loading...";
+});
 
 const visibleMessages = computed(() => {
-  return messages.value.filter((m) => inRange(m) && m.service === 0)
-})
+	return messages.value.filter((m) => inRange(m) && m.service === 0);
+});
 
 function setServiceRef(id, el) {
-  if (el) {
-    serviceRefs.value[id] = el
-  }
+	if (el) {
+		serviceRefs.value[id] = el;
+	}
 }
 
 function serviceLink(service) {
-  return `/service/${service.permalink || service.id}`
+	return `/service/${service.permalink || service.id}`;
 }
 
 function now() {
-  return new Date()
+	return new Date();
 }
 
 function maxDate() {
-  return new Date(8640000000000000)
+	return new Date(8640000000000000);
 }
 
 function isBetween(date, start, end) {
-  const d = new Date(date)
-  const s = new Date(start)
-  const e = new Date(end)
-  return d >= s && d <= e
+	const d = new Date(date);
+	const s = new Date(start);
+	const e = new Date(end);
+	return d >= s && d <= e;
 }
 
 function inRange(message) {
-  return isBetween(
-    now(),
-    message.start_on,
-    message.start_on === message.end_on ? maxDate().toISOString() : message.end_on
-  )
+	return isBetween(
+		now(),
+		message.start_on,
+		message.start_on === message.end_on
+			? maxDate().toISOString()
+			: message.end_on,
+	);
 }
 
 async function checkLogin() {
-  const token = cookies.get('statping_auth')
-  if (!token) {
-    store.setLoggedIn(false)
-    return
-  }
-  try {
-    const jwt = await Api.check_token(token)
-    store.setAdmin(jwt.admin)
-    if (jwt.username) {
-      store.setLoggedIn(true)
-    }
-  } catch (e) {
-    console.error(e)
-  }
+	const token = cookies.get("statping_auth");
+	if (!token) {
+		store.setLoggedIn(false);
+		return;
+	}
+	try {
+		const jwt = await Api.check_token(token);
+		store.setAdmin(jwt.admin);
+		if (jwt.username) {
+			store.setLoggedIn(true);
+		}
+	} catch (e) {
+		console.error(e);
+	}
 }
 </script>

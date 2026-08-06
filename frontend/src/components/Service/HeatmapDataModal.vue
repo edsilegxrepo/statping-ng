@@ -50,76 +50,80 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { exportTSV, exportJSON } from '@/composables/useExport'
+import { computed } from "vue";
+import { exportJSON, exportTSV } from "@/composables/useExport";
 
 const props = defineProps({
-  show: Boolean,
-  series: Array,
-  serviceName: String,
-})
+	show: Boolean,
+	series: Array,
+	serviceName: String,
+});
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(["close"]);
 
 const tableData = computed(() => {
-  if (!props.series) return []
+	if (!props.series) return [];
 
-  const rows = []
-  const year = new Date().getFullYear()
+	const rows = [];
+	const year = new Date().getFullYear();
 
-  props.series.forEach(monthData => {
-    const monthName = monthData.name
-    monthData.data.forEach(dayData => {
-      const day = parseInt(dayData.x)
-      const failures = dayData.y
-      if (failures > 0) {
-        rows.push({
-          date: `${monthName} ${day}, ${year}`,
-          failures,
-          severity: getSeverity(failures),
-          severityClass: getSeverityClass(failures),
-          sortKey: new Date(`${monthName} ${day}, ${year}`).getTime(),
-        })
-      }
-    })
-  })
+	props.series.forEach((monthData) => {
+		const monthName = monthData.name;
+		monthData.data.forEach((dayData) => {
+			const day = parseInt(dayData.x);
+			const failures = dayData.y;
+			if (failures > 0) {
+				rows.push({
+					date: `${monthName} ${day}, ${year}`,
+					failures,
+					severity: getSeverity(failures),
+					severityClass: getSeverityClass(failures),
+					sortKey: new Date(`${monthName} ${day}, ${year}`).getTime(),
+				});
+			}
+		});
+	});
 
-  return rows.sort((a, b) => b.sortKey - a.sortKey)
-})
+	return rows.sort((a, b) => b.sortKey - a.sortKey);
+});
 
 const totalFailures = computed(() => {
-  return tableData.value.reduce((sum, row) => sum + row.failures, 0)
-})
+	return tableData.value.reduce((sum, row) => sum + row.failures, 0);
+});
 
 function getSeverity(failures) {
-  if (failures === 0) return 'Healthy'
-  if (failures <= 30) return 'Minor'
-  if (failures <= 120) return 'Moderate'
-  if (failures <= 240) return 'Major'
-  return 'Critical'
+	if (failures === 0) return "Healthy";
+	if (failures <= 30) return "Minor";
+	if (failures <= 120) return "Moderate";
+	if (failures <= 240) return "Major";
+	return "Critical";
 }
 
 function getSeverityClass(failures) {
-  if (failures === 0) return 'severity-healthy'
-  if (failures <= 30) return 'severity-minor'
-  if (failures <= 120) return 'severity-moderate'
-  if (failures <= 240) return 'severity-major'
-  return 'severity-critical'
+	if (failures === 0) return "severity-healthy";
+	if (failures <= 30) return "severity-minor";
+	if (failures <= 120) return "severity-moderate";
+	if (failures <= 240) return "severity-major";
+	return "severity-critical";
 }
 
 function doExportTSV() {
-  const headers = ['Date', 'Failures', 'Severity']
-  const rows = tableData.value.map(row => [row.date, row.failures, row.severity])
-  exportTSV(headers, rows, `${props.serviceName || 'service'}-failures`)
+	const headers = ["Date", "Failures", "Severity"];
+	const rows = tableData.value.map((row) => [
+		row.date,
+		row.failures,
+		row.severity,
+	]);
+	exportTSV(headers, rows, `${props.serviceName || "service"}-failures`);
 }
 
 function doExportJSON() {
-  const data = tableData.value.map(row => ({
-    date: row.date,
-    failures: row.failures,
-    severity: row.severity,
-  }))
-  exportJSON(data, `${props.serviceName || 'service'}-failures`)
+	const data = tableData.value.map((row) => ({
+		date: row.date,
+		failures: row.failures,
+		severity: row.severity,
+	}));
+	exportJSON(data, `${props.serviceName || "service"}-failures`);
 }
 </script>
 

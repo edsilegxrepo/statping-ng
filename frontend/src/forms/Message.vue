@@ -141,114 +141,114 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useMainStore } from '@/stores/main'
-import flatPickr from 'vue-flatpickr-component'
-import 'flatpickr/dist/flatpickr.css'
-import Api from '@/API'
+import { computed, onMounted, ref, watch } from "vue";
+import flatPickr from "vue-flatpickr-component";
+import { useMainStore } from "@/stores/main";
+import "flatpickr/dist/flatpickr.css";
+import Api from "@/API";
 
 const props = defineProps({
-  in_message: {
-    type: Object,
-    default: () => ({}),
-  },
-  service: {
-    type: Object,
-    default: null,
-  },
-  edit: {
-    type: Function,
-    default: () => {},
-  },
-})
+	in_message: {
+		type: Object,
+		default: () => ({}),
+	},
+	service: {
+		type: Object,
+		default: null,
+	},
+	edit: {
+		type: Function,
+		default: () => {},
+	},
+});
 
-const store = useMainStore()
+const store = useMainStore();
 
 const message = ref({
-  title: '',
-  description: '',
-  start_on: new Date(),
-  end_on: new Date(),
-  service_id: 0,
-  service: 0,
-  notify_method: '',
-  notify: false,
-  notify_before: 0,
-  notify_before_scale: 'minute',
-})
+	title: "",
+	description: "",
+	start_on: new Date(),
+	end_on: new Date(),
+	service_id: 0,
+	service: 0,
+	notify_method: "",
+	notify: false,
+	notify_before: 0,
+	notify_before_scale: "minute",
+});
 
 const config = {
-  altFormat: 'l M J, \\at h:iK',
-  altInput: true,
-  enableTime: true,
-  dateFormat: 'Z',
-}
+	altFormat: "l M J, \\at h:iK",
+	altInput: true,
+	enableTime: true,
+	dateFormat: "Z",
+};
 
-const services = computed(() => store.services)
+const services = computed(() => store.services);
 
 watch(
-  () => props.in_message,
-  (val) => {
-    if (val && Object.keys(val).length > 0) {
-      message.value = { ...val }
-    }
-  },
-  { immediate: true }
-)
+	() => props.in_message,
+	(val) => {
+		if (val && Object.keys(val).length > 0) {
+			message.value = { ...val };
+		}
+	},
+	{ immediate: true },
+);
 
 onMounted(() => {
-  if (props.service) {
-    message.value.service = props.service.id
-  }
-})
+	if (props.service) {
+		message.value.service = props.service.id;
+	}
+});
 
 function removeEdit() {
-  message.value = {
-    title: '',
-    description: '',
-    start_on: new Date(),
-    end_on: new Date(),
-    service_id: 0,
-    service: 0,
-    notify_method: '',
-    notify: false,
-    notify_before: 0,
-    notify_before_scale: 'minute',
-  }
-  props.edit(false)
+	message.value = {
+		title: "",
+		description: "",
+		start_on: new Date(),
+		end_on: new Date(),
+		service_id: 0,
+		service: 0,
+		notify_method: "",
+		notify: false,
+		notify_before: 0,
+		notify_before_scale: "minute",
+	};
+	props.edit(false);
 }
 
 async function saveMessage() {
-  if (message.value.id) {
-    await updateMessage()
-  } else {
-    await createMessage()
-  }
+	if (message.value.id) {
+		await updateMessage();
+	} else {
+		await createMessage();
+	}
 }
 
 async function createMessage() {
-  await Api.message_create(message.value)
-  const messages = await Api.messages()
-  store.setMessages(messages)
-  message.value = {
-    title: '',
-    description: '',
-    start_on: new Date(),
-    end_on: new Date(),
-    service_id: 0,
-    service: 0,
-    notify_method: '',
-    notify: false,
-    notify_before: 0,
-    notify_before_scale: 'minute',
-  }
+	await Api.message_create(message.value);
+	const messages = await Api.messages();
+	store.setMessages(messages);
+	message.value = {
+		title: "",
+		description: "",
+		start_on: new Date(),
+		end_on: new Date(),
+		service_id: 0,
+		service: 0,
+		notify_method: "",
+		notify: false,
+		notify_before: 0,
+		notify_before_scale: "minute",
+	};
 }
 
 async function updateMessage() {
-  await Api.message_update(message.value)
-  const messages = await Api.messages()
-  store.setMessages(messages)
-  props.edit(false)
+	await Api.message_update(message.value);
+	const messages = await Api.messages();
+	store.setMessages(messages);
+	props.edit(false);
 }
 </script>
 

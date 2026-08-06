@@ -92,52 +92,55 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import GroupedServices from '@/components/Dashboard/GroupedServices.vue'
-import ServiceInfo from '@/components/Dashboard/ServiceInfo.vue'
+import { computed } from "vue";
+import GroupedServices from "@/components/Dashboard/GroupedServices.vue";
+import ServiceInfo from "@/components/Dashboard/ServiceInfo.vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const services = computed(() => store.services)
-const servicesNoGroup = computed(() => store.servicesNoGroup)
-const groups = computed(() => store.groupsInOrder)
-const onlineServicesCount = computed(() => store.onlineServices(true).length)
+const services = computed(() => store.services);
+const servicesNoGroup = computed(() => store.servicesNoGroup);
+const groups = computed(() => store.groupsInOrder);
+const onlineServicesCount = computed(() => store.onlineServices(true).length);
 
 const failuresLast24Hours = computed(() => {
-  let total = 0
-  services.value.forEach((s) => {
-    total += s.failures_24_hours || 0
-  })
-  return total
-})
+	let total = 0;
+	services.value.forEach((s) => {
+		total += s.failures_24_hours || 0;
+	});
+	return total;
+});
 
 const uptimePercentage = computed(() => {
-  if (services.value.length === 0) return '—'
-  const total = services.value.reduce((sum, s) => sum + (s.online_24_hours || 0), 0)
-  const avg = total / services.value.length
-  return avg.toFixed(1)
-})
+	if (services.value.length === 0) return "—";
+	const total = services.value.reduce(
+		(sum, s) => sum + (s.online_24_hours || 0),
+		0,
+	);
+	const avg = total / services.value.length;
+	return avg.toFixed(1);
+});
 
 const messagesInRange = computed(() => {
-  const now = new Date()
-  return store.globalMessages.filter((m) => {
-    const start = new Date(m.start_on)
-    const end = new Date(m.end_on)
-    return now >= start && now <= end
-  })
-})
+	const now = new Date();
+	return store.globalMessages.filter((m) => {
+		const start = new Date(m.start_on);
+		const end = new Date(m.end_on);
+		return now >= start && now <= end;
+	});
+});
 
 function niceDate(date) {
-  return new Date(date).toLocaleDateString()
+	return new Date(date).toLocaleDateString();
 }
 
 function duration(start, end) {
-  const ms = new Date(end) - new Date(start)
-  const hours = Math.floor(ms / (1000 * 60 * 60))
-  if (hours < 24) return `${hours} hours`
-  const days = Math.floor(hours / 24)
-  return `${days} days`
+	const ms = new Date(end) - new Date(start);
+	const hours = Math.floor(ms / (1000 * 60 * 60));
+	if (hours < 24) return `${hours} hours`;
+	const days = Math.floor(hours / 24);
+	return `${days} days`;
 }
 </script>
 

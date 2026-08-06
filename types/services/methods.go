@@ -444,3 +444,20 @@ func (s *Service) Uptime() utils.Duration {
 func (s *Service) Downtime() utils.Duration {
 	return utils.Duration{Duration: utils.Now().Sub(s.LastOnline)}
 }
+
+// MaskSecrets replaces sensitive fields with masked values for API responses
+func (s *Service) MaskSecrets() {
+	const masked = "********"
+	// Mask database DSN
+	if s.DatabaseDSN.Valid && s.DatabaseDSN.String != "" {
+		s.DatabaseDSN.String = masked
+	}
+	// Mask storage credentials
+	if s.StorageCredentials.Valid && s.StorageCredentials.String != "" {
+		s.StorageCredentials.String = masked
+	}
+	// Mask TLS private key
+	if s.TLSCertKey.Valid && s.TLSCertKey.String != "" {
+		s.TLSCertKey.String = masked
+	}
+}

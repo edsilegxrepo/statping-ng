@@ -380,3 +380,213 @@ func TestCheckImap(t *testing.T) {
 		_ = result
 	})
 }
+
+func TestCheckDatabase(t *testing.T) {
+	t.Run("Database check with missing type", func(t *testing.T) {
+		s := &Service{
+			Name:    "Test DB Missing Type",
+			Type:    "database",
+			Timeout: 5,
+		}
+
+		_, err := CheckDatabase(s, false)
+		if err == nil {
+			t.Error("Expected error for missing database type")
+		}
+	})
+
+	t.Run("Database check with missing DSN", func(t *testing.T) {
+		s := &Service{
+			Name:         "Test DB Missing DSN",
+			Type:         "database",
+			Timeout:      5,
+			DatabaseType: null.NewNullString("postgres"),
+		}
+
+		_, err := CheckDatabase(s, false)
+		if err == nil {
+			t.Error("Expected error for missing DSN")
+		}
+	})
+
+	t.Run("Database check with unsupported type", func(t *testing.T) {
+		s := &Service{
+			Name:         "Test DB Unsupported",
+			Type:         "database",
+			Timeout:      5,
+			DatabaseType: null.NewNullString("oracle"),
+			DatabaseDSN:  null.NewNullString("oracle://localhost:1521/orcl"),
+		}
+
+		_, err := CheckDatabase(s, false)
+		if err == nil {
+			t.Error("Expected error for unsupported database type")
+		}
+	})
+
+	t.Run("Database check with invalid connection", func(t *testing.T) {
+		s := &Service{
+			Name:         "Test DB Invalid Connection",
+			Type:         "database",
+			Timeout:      2,
+			DatabaseType: null.NewNullString("postgres"),
+			DatabaseDSN:  null.NewNullString("postgres://localhost:5432/nonexistent?connect_timeout=1"),
+		}
+
+		_, err := CheckDatabase(s, false)
+		if err == nil {
+			t.Error("Expected error for invalid database connection")
+		}
+	})
+}
+
+func TestCheckStorage(t *testing.T) {
+	t.Run("Storage check with missing backend", func(t *testing.T) {
+		s := &Service{
+			Name:    "Test Storage Missing Backend",
+			Type:    "storage",
+			Timeout: 5,
+		}
+
+		_, err := CheckStorage(s, false)
+		if err == nil {
+			t.Error("Expected error for missing storage backend")
+		}
+	})
+
+	t.Run("Storage check with missing bucket", func(t *testing.T) {
+		s := &Service{
+			Name:           "Test Storage Missing Bucket",
+			Type:           "storage",
+			Timeout:        5,
+			StorageBackend: null.NewNullString("gcs"),
+		}
+
+		_, err := CheckStorage(s, false)
+		if err == nil {
+			t.Error("Expected error for missing bucket")
+		}
+	})
+
+	t.Run("Storage check with unsupported backend", func(t *testing.T) {
+		s := &Service{
+			Name:           "Test Storage Unsupported",
+			Type:           "storage",
+			Timeout:        5,
+			StorageBackend: null.NewNullString("azure"),
+			StorageBucket:  null.NewNullString("my-bucket"),
+		}
+
+		_, err := CheckStorage(s, false)
+		if err == nil {
+			t.Error("Expected error for unsupported storage backend")
+		}
+	})
+
+	t.Run("GCS check with missing credentials", func(t *testing.T) {
+		s := &Service{
+			Name:           "Test GCS Missing Creds",
+			Type:           "storage",
+			Timeout:        5,
+			StorageBackend: null.NewNullString("gcs"),
+			StorageBucket:  null.NewNullString("my-bucket"),
+		}
+
+		_, err := CheckStorage(s, false)
+		if err == nil {
+			t.Error("Expected error for missing GCS credentials")
+		}
+	})
+}
+
+func TestCheckTLS(t *testing.T) {
+	t.Run("TLS check with missing target", func(t *testing.T) {
+		s := &Service{
+			Name:    "Test TLS Missing Target",
+			Type:    "tls",
+			Timeout: 5,
+		}
+
+		_, err := CheckTLS(s, false)
+		if err == nil {
+			t.Error("Expected error for missing TLS target")
+		}
+	})
+
+	t.Run("TLS check with invalid host", func(t *testing.T) {
+		s := &Service{
+			Name:      "Test TLS Invalid Host",
+			Type:      "tls",
+			Timeout:   2,
+			TLSTarget: null.NewNullString("invalid.nonexistent.domain.local:443"),
+		}
+
+		_, err := CheckTLS(s, false)
+		if err == nil {
+			t.Error("Expected error for invalid TLS host")
+		}
+	})
+
+	t.Run("TLS check against google.com", func(t *testing.T) {
+		s := &Service{
+			Name:       "Test TLS Google",
+			Type:       "tls",
+			Timeout:    10,
+			TLSTarget:  null.NewNullString("google.com:443"),
+			TLSMinDays: 7,
+		}
+
+		result, err := CheckTLS(s, false)
+		if err != nil {
+			t.Errorf("TLS check failed for google.com: %v", err)
+		}
+		if result.TLSExpiry == nil {
+			t.Error("Expected TLS expiry to be set")
+		}
+		if result.TLSIssuer == "" {
+			t.Error("Expected TLS issuer to be set")
+		}
+		if result.TLSDaysRemaining <= 0 {
+			t.Error("Expected positive days remaining")
+		}
+		if !result.Online {
+			t.Error("Expected service to be online")
+		}
+	})
+
+	t.Run("TLS check uses Domain as fallback", func(t *testing.T) {
+		s := &Service{
+			Name:       "Test TLS Domain Fallback",
+			Type:       "tls",
+			Domain:     "github.com",
+			Timeout:    10,
+			TLSMinDays: 7,
+		}
+
+		result, err := CheckTLS(s, false)
+		if err != nil {
+			t.Errorf("TLS check failed for github.com: %v", err)
+		}
+		if !result.Online {
+			t.Error("Expected service to be online")
+		}
+	})
+
+	t.Run("TLS check adds default port", func(t *testing.T) {
+		s := &Service{
+			Name:       "Test TLS Default Port",
+			Type:       "tls",
+			TLSTarget:  null.NewNullString("cloudflare.com"),
+			Timeout:    10,
+			TLSMinDays: 7,
+		}
+
+		result, err := CheckTLS(s, false)
+		if err != nil {
+			t.Errorf("TLS check failed: %v", err)
+		}
+		if !result.Online {
+			t.Error("Expected service to be online")
+		}
+	})
+}

@@ -239,8 +239,8 @@ func TestCheckOIDCAdminGroups(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			auth := core.OAuth{
-				OidcAdminGroups:  tc.adminGroups,
-				OidcClaimGroups:  tc.groupClaim,
+				OidcAdminGroups: tc.adminGroups,
+				OidcClaimGroups: tc.groupClaim,
 			}
 			result := checkOIDCAdminGroups(tc.claims, auth)
 			assert.Equal(t, tc.expected, result)

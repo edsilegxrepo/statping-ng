@@ -6,42 +6,42 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useMainStore } from './stores/main'
-import { useFaviconStatus } from './composables/useFaviconStatus'
-import Footer from './components/Index/Footer.vue'
+import { computed, onBeforeMount, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRoute, useRouter } from "vue-router";
+import Footer from "./components/Index/Footer.vue";
+import { useFaviconStatus } from "./composables/useFaviconStatus";
+import { useMainStore } from "./stores/main";
 
-const router = useRouter()
-const route = useRoute()
-const store = useMainStore()
-const { locale } = useI18n()
+const router = useRouter();
+const route = useRoute();
+const store = useMainStore();
+const { locale } = useI18n();
 
-useFaviconStatus()
+useFaviconStatus();
 
-const loaded = ref(false)
+const loaded = ref(false);
 
-const core = computed(() => store.core)
+const core = computed(() => store.core);
 
 onBeforeMount(async () => {
-  await store.loadCore()
+	await store.loadCore();
 
-  locale.value = core.value.language || 'en'
+	locale.value = core.value.language || "en";
 
-  if (!core.value.setup) {
-    router.push('/setup')
-  }
+	if (!core.value.setup) {
+		router.push("/setup");
+	}
 
-  if (route.path !== '/setup') {
-    if (store.admin) {
-      await store.loadAdmin()
-    } else {
-      await store.loadRequired()
-    }
-    loaded.value = true
-  }
-})
+	if (route.path !== "/setup") {
+		if (store.admin) {
+			await store.loadAdmin();
+		} else {
+			await store.loadRequired();
+		}
+		loaded.value = true;
+	}
+});
 </script>
 
 <style lang="scss">

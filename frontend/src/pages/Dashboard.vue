@@ -10,15 +10,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Modal from '@/components/Elements/Modal.vue'
-import TopNav from '@/components/Dashboard/TopNav.vue'
+import { computed } from "vue";
+import TopNav from "@/components/Dashboard/TopNav.vue";
+import Modal from "@/components/Elements/Modal.vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const modal = computed(() => store.modal.visible)
-const admin = computed(() => store.admin)
+const modal = computed(() => store.modal.visible);
+const admin = computed(() => store.admin);
 </script>
 
 <style scoped>

@@ -73,45 +73,45 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useMainStore } from '@/stores/main'
-import { sanitizeHtml } from '@/mixins'
-import Api from '@/API'
+import { ref } from "vue";
+import Api from "@/API";
+import { sanitizeHtml } from "@/mixins";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  integration: {
-    type: Object,
-    required: true,
-  },
-})
+	integration: {
+		type: Object,
+		required: true,
+	},
+});
 
-const store = useMainStore()
-const services = ref([])
+const store = useMainStore();
+const services = ref([]);
 
 async function addService(s) {
-  const data = {
-    name: s.name,
-    type: s.type,
-    domain: s.domain,
-    port: s.port,
-    check_interval: s.check_interval,
-    timeout: s.timeout,
-  }
-  await Api.service_create(data)
-  const svcList = await Api.services()
-  store.setServices(svcList)
-  s.added = true
+	const data = {
+		name: s.name,
+		type: s.type,
+		domain: s.domain,
+		port: s.port,
+		check_interval: s.check_interval,
+		timeout: s.timeout,
+	};
+	await Api.service_create(data);
+	const svcList = await Api.services();
+	store.setServices(svcList);
+	s.added = true;
 }
 
 async function updateIntegration() {
-  const i = props.integration
-  const data = { name: i.name, enabled: i.enabled, fields: i.fields }
-  const out = await Api.integration_save(data)
-  if (out != null) {
-    services.value = out
-  }
-  const integrations = await Api.integrations()
-  store.setIntegrations(integrations)
+	const i = props.integration;
+	const data = { name: i.name, enabled: i.enabled, fields: i.fields };
+	const out = await Api.integration_save(data);
+	if (out != null) {
+		services.value = out;
+	}
+	const integrations = await Api.integrations();
+	store.setIntegrations(integrations);
 }
 </script>
 

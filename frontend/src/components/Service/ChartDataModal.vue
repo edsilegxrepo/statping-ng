@@ -52,81 +52,81 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { exportTSV, exportJSON } from '@/composables/useExport'
+import { computed } from "vue";
+import { exportJSON, exportTSV } from "@/composables/useExport";
 
 const props = defineProps({
-  show: Boolean,
-  latencyData: Array,
-  pingData: Array,
-  failureData: Array,
-  serviceName: String,
-})
+	show: Boolean,
+	latencyData: Array,
+	pingData: Array,
+	failureData: Array,
+	serviceName: String,
+});
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(["close"]);
 
 const tableData = computed(() => {
-  const latency = props.latencyData || []
-  const ping = props.pingData || []
-  const failures = props.failureData || []
+	const latency = props.latencyData || [];
+	const ping = props.pingData || [];
+	const failures = props.failureData || [];
 
-  const map = new Map()
+	const map = new Map();
 
-  latency.forEach(d => {
-    const ts = new Date(d.timeframe).getTime()
-    if (!map.has(ts)) map.set(ts, { timestamp: ts })
-    map.get(ts).latency = d.amount
-  })
+	latency.forEach((d) => {
+		const ts = new Date(d.timeframe).getTime();
+		if (!map.has(ts)) map.set(ts, { timestamp: ts });
+		map.get(ts).latency = d.amount;
+	});
 
-  ping.forEach(d => {
-    const ts = new Date(d.timeframe).getTime()
-    if (!map.has(ts)) map.set(ts, { timestamp: ts })
-    map.get(ts).ping = d.amount
-  })
+	ping.forEach((d) => {
+		const ts = new Date(d.timeframe).getTime();
+		if (!map.has(ts)) map.set(ts, { timestamp: ts });
+		map.get(ts).ping = d.amount;
+	});
 
-  failures.forEach(d => {
-    const ts = new Date(d.timeframe).getTime()
-    if (!map.has(ts)) map.set(ts, { timestamp: ts })
-    map.get(ts).failures = d.amount
-  })
+	failures.forEach((d) => {
+		const ts = new Date(d.timeframe).getTime();
+		if (!map.has(ts)) map.set(ts, { timestamp: ts });
+		map.get(ts).failures = d.amount;
+	});
 
-  return Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp)
-})
+	return Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
+});
 
 function formatTimestamp(ts) {
-  return new Date(ts).toLocaleString()
+	return new Date(ts).toLocaleString();
 }
 
 function formatTime(microseconds) {
-  if (!microseconds) return '—'
-  if (microseconds >= 1000000) {
-    return `${(microseconds / 1000000).toFixed(1)}s`
-  }
-  if (microseconds >= 1000) {
-    return `${(microseconds / 1000).toFixed(1)}ms`
-  }
-  return `${microseconds}μs`
+	if (!microseconds) return "—";
+	if (microseconds >= 1000000) {
+		return `${(microseconds / 1000000).toFixed(1)}s`;
+	}
+	if (microseconds >= 1000) {
+		return `${(microseconds / 1000).toFixed(1)}ms`;
+	}
+	return `${microseconds}μs`;
 }
 
 function doExportTSV() {
-  const headers = ['Timestamp', 'Latency (μs)', 'Ping (μs)', 'Failures']
-  const rows = tableData.value.map(row => [
-    new Date(row.timestamp).toISOString(),
-    row.latency || '',
-    row.ping || '',
-    row.failures || 0,
-  ])
-  exportTSV(headers, rows, `${props.serviceName || 'chart'}-data`)
+	const headers = ["Timestamp", "Latency (μs)", "Ping (μs)", "Failures"];
+	const rows = tableData.value.map((row) => [
+		new Date(row.timestamp).toISOString(),
+		row.latency || "",
+		row.ping || "",
+		row.failures || 0,
+	]);
+	exportTSV(headers, rows, `${props.serviceName || "chart"}-data`);
 }
 
 function doExportJSON() {
-  const data = tableData.value.map(row => ({
-    timestamp: new Date(row.timestamp).toISOString(),
-    latency_us: row.latency || null,
-    ping_us: row.ping || null,
-    failures: row.failures || 0,
-  }))
-  exportJSON(data, `${props.serviceName || 'chart'}-data`)
+	const data = tableData.value.map((row) => ({
+		timestamp: new Date(row.timestamp).toISOString(),
+		latency_us: row.latency || null,
+		ping_us: row.ping || null,
+		failures: row.failures || 0,
+	}));
+	exportJSON(data, `${props.serviceName || "chart"}-data`);
 }
 </script>
 

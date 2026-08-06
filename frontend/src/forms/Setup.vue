@@ -303,141 +303,162 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onBeforeMount } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { onBeforeMount, onMounted, reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
-const router = useRouter()
-const store = useMainStore()
-const { locale } = useI18n()
+const router = useRouter();
+const store = useMainStore();
+const { locale } = useI18n();
 
-const error = ref(null)
-const loading = ref(false)
-const disabled = ref(true)
-const passnomatch = ref(false)
-const passTooWeak = ref(false)
-const finished = ref(false)
-const generatedAdmin = ref('')
-const generatedSamples = ref({})
+const error = ref(null);
+const loading = ref(false);
+const disabled = ref(true);
+const passnomatch = ref(false);
+const passTooWeak = ref(false);
+const finished = ref(false);
+const generatedAdmin = ref("");
+const generatedSamples = ref({});
 
 const setup = reactive({
-  language: 'en',
-  db_connection: 'sqlite',
-  db_host: '',
-  db_port: '',
-  db_user: '',
-  db_password: '',
-  db_database: '',
-  project: '',
-  description: '',
-  domain: '',
-  username: '',
-  password: '',
-  confirm_password: '',
-  sample_data: false,
-  send_reports: false,
-  email: '',
-})
+	language: "en",
+	db_connection: "sqlite",
+	db_host: "",
+	db_port: "",
+	db_user: "",
+	db_password: "",
+	db_database: "",
+	project: "",
+	description: "",
+	domain: "",
+	username: "",
+	password: "",
+	confirm_password: "",
+	sample_data: false,
+	send_reports: false,
+	email: "",
+});
 
 onBeforeMount(async () => {
-  const core = await Api.core()
-  if (core.setup) {
-    if (!store.hasPublicData) {
-      await store.loadRequired()
-    }
-    router.push('/')
-  }
-})
+	const core = await Api.core();
+	if (core.setup) {
+		if (!store.hasPublicData) {
+			await store.loadRequired();
+		}
+		router.push("/");
+	}
+});
 
 onMounted(() => {
-  changeLanguages()
-  setup.domain =
-    window.location.protocol +
-    '//' +
-    window.location.hostname +
-    (window.location.port ? `:${window.location.port}` : '')
-})
+	changeLanguages();
+	setup.domain =
+		window.location.protocol +
+		"//" +
+		window.location.hostname +
+		(window.location.port ? `:${window.location.port}` : "");
+});
 
 function changeLanguages() {
-  locale.value = setup.language
+	locale.value = setup.language;
 }
 
 function canSubmit() {
-  error.value = null
-  const s = setup
+	error.value = null;
+	const s = setup;
 
-  if (s.confirm_password.length > 0 && s.confirm_password !== s.password) {
-    passnomatch.value = true
-  } else {
-    passnomatch.value = false
-  }
+	if (s.confirm_password.length > 0 && s.confirm_password !== s.password) {
+		passnomatch.value = true;
+	} else {
+		passnomatch.value = false;
+	}
 
-  if (s.password.length > 0) {
-    const hasUpper = /[A-Z]/.test(s.password)
-    const hasLower = /[a-z]/.test(s.password)
-    const hasDigit = /[0-9]/.test(s.password)
-    if (s.password.length < 30 || !hasUpper || !hasLower || !hasDigit) {
-      passTooWeak.value = true
-    } else {
-      passTooWeak.value = false
-    }
-  } else {
-    passTooWeak.value = false
-  }
+	if (s.password.length > 0) {
+		const hasUpper = /[A-Z]/.test(s.password);
+		const hasLower = /[a-z]/.test(s.password);
+		const hasDigit = /[0-9]/.test(s.password);
+		if (s.password.length < 30 || !hasUpper || !hasLower || !hasDigit) {
+			passTooWeak.value = true;
+		} else {
+			passTooWeak.value = false;
+		}
+	} else {
+		passTooWeak.value = false;
+	}
 
-  if (s.db_connection !== 'sqlite') {
-    if (!s.db_host || !s.db_port || !s.db_user || !s.db_password || !s.db_database) {
-      disabled.value = true
-      return
-    }
-  }
+	if (s.db_connection !== "sqlite") {
+		if (
+			!s.db_host ||
+			!s.db_port ||
+			!s.db_user ||
+			!s.db_password ||
+			!s.db_database
+		) {
+			disabled.value = true;
+			return;
+		}
+	}
 
-  if (!s.project || !s.domain || !s.username || !s.password || !s.confirm_password || !s.email || passTooWeak.value) {
-    disabled.value = true
-    return
-  }
+	if (
+		!s.project ||
+		!s.domain ||
+		!s.username ||
+		!s.password ||
+		!s.confirm_password ||
+		!s.email ||
+		passTooWeak.value
+	) {
+		disabled.value = true;
+		return;
+	}
 
-  if (s.password !== s.confirm_password) {
-    disabled.value = true
-    return
-  }
+	if (s.password !== s.confirm_password) {
+		disabled.value = true;
+		return;
+	}
 
-  disabled.value = false
+	disabled.value = false;
 }
 
 async function saveSetup() {
-  loading.value = true
-  let resp
-  try {
-    resp = await Api.setup_save(setup)
-  } catch (e) {
-    resp = { status: 'error', error: e.response?.data?.error || 'Setup failed' }
-  }
+	loading.value = true;
+	let resp;
+	try {
+		resp = await Api.setup_save(setup);
+	} catch (e) {
+		resp = {
+			status: "error",
+			error: e.response?.data?.error || "Setup failed",
+		};
+	}
 
-  if (resp.status === 'error') {
-    error.value = resp.error
-    loading.value = false
-    return
-  }
+	if (resp.status === "error") {
+		error.value = resp.error;
+		loading.value = false;
+		return;
+	}
 
-  generatedAdmin.value = resp.admin_password
-  generatedSamples.value = resp.sample_passwords
-  finished.value = true
+	generatedAdmin.value = resp.admin_password;
+	generatedSamples.value = resp.sample_passwords;
+	finished.value = true;
 
-  await store.loadCore()
-  await store.loadRequired()
+	await store.loadCore();
+	await store.loadRequired();
 
-  loading.value = false
+	loading.value = false;
 
-  if (!generatedAdmin.value && (!generatedSamples.value || Object.keys(generatedSamples.value).length === 0)) {
-    router.push('/')
-  }
+	if (
+		!generatedAdmin.value &&
+		(!generatedSamples.value ||
+			Object.keys(generatedSamples.value).length === 0)
+	) {
+		router.push("/");
+	}
 }
 
 function goToDashboard() {
-  router.push('/')
+	router.push("/");
 }
 </script>
 

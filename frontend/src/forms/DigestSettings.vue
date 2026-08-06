@@ -150,87 +150,93 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import Api from '@/API'
+import { onMounted, reactive, ref } from "vue";
+import Api from "@/API";
 
-const loading = ref(true)
-const saving = ref(false)
-const testing = ref(false)
-const testingSmtp = ref(false)
-const testResult = ref(null)
-const smtpResult = ref(null)
-const saveMessage = ref('')
-const saveSuccess = ref(false)
+const loading = ref(true);
+const saving = ref(false);
+const testing = ref(false);
+const testingSmtp = ref(false);
+const testResult = ref(null);
+const smtpResult = ref(null);
+const saveMessage = ref("");
+const saveSuccess = ref(false);
 
 const digest = reactive({
-  digest_enabled: false,
-  digest_emails: '',
-  digest_hour: 8
-})
+	digest_enabled: false,
+	digest_emails: "",
+	digest_hour: 8,
+});
 
 onMounted(async () => {
-  try {
-    const settings = await Api.digest()
-    Object.assign(digest, settings)
-  } catch (e) {
-    console.error('Failed to load digest settings:', e)
-  }
-  loading.value = false
-})
+	try {
+		const settings = await Api.digest();
+		Object.assign(digest, settings);
+	} catch (e) {
+		console.error("Failed to load digest settings:", e);
+	}
+	loading.value = false;
+});
 
 function formatHour(h) {
-  if (h === 0) return '12:00 AM (Midnight)'
-  if (h === 12) return '12:00 PM (Noon)'
-  if (h < 12) return `${h}:00 AM`
-  return `${h - 12}:00 PM`
+	if (h === 0) return "12:00 AM (Midnight)";
+	if (h === 12) return "12:00 PM (Noon)";
+	if (h < 12) return `${h}:00 AM`;
+	return `${h - 12}:00 PM`;
 }
 
 async function testDigest() {
-  testing.value = true
-  testResult.value = null
-  saveMessage.value = ''
+	testing.value = true;
+	testResult.value = null;
+	saveMessage.value = "";
 
-  try {
-    // Save first to ensure settings are current
-    await Api.digest_save(digest)
-    const result = await Api.digest_test()
-    testResult.value = result
-  } catch (e) {
-    testResult.value = { success: false, message: e.message || 'Failed to send test digest' }
-  }
+	try {
+		// Save first to ensure settings are current
+		await Api.digest_save(digest);
+		const result = await Api.digest_test();
+		testResult.value = result;
+	} catch (e) {
+		testResult.value = {
+			success: false,
+			message: e.message || "Failed to send test digest",
+		};
+	}
 
-  testing.value = false
+	testing.value = false;
 }
 
 async function save() {
-  saving.value = true
-  saveMessage.value = ''
-  testResult.value = null
+	saving.value = true;
+	saveMessage.value = "";
+	testResult.value = null;
 
-  try {
-    await Api.digest_save(digest)
-    saveMessage.value = 'Digest settings saved successfully'
-    saveSuccess.value = true
-  } catch (e) {
-    saveMessage.value = e.message || 'Failed to save settings'
-    saveSuccess.value = false
-  }
+	try {
+		await Api.digest_save(digest);
+		saveMessage.value = "Digest settings saved successfully";
+		saveSuccess.value = true;
+	} catch (e) {
+		saveMessage.value = e.message || "Failed to save settings";
+		saveSuccess.value = false;
+	}
 
-  saving.value = false
+	saving.value = false;
 }
 
 async function testSmtp() {
-  testingSmtp.value = true
-  smtpResult.value = null
-  testResult.value = null
-  saveMessage.value = ''
+	testingSmtp.value = true;
+	smtpResult.value = null;
+	testResult.value = null;
+	saveMessage.value = "";
 
-  try {
-    smtpResult.value = await Api.digest_smtp_test()
-  } catch (e) {
-    smtpResult.value = { connected: false, error: e.message || 'Failed to test SMTP' }
-  }
+	try {
+		smtpResult.value = await Api.digest_smtp_test();
+	} catch (e) {
+		smtpResult.value = {
+			connected: false,
+			error: e.message || "Failed to test SMTP",
+		};
+	}
 
-  testingSmtp.value = false
+	testingSmtp.value = false;
 }
 </script>

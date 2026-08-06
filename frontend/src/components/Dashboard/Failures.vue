@@ -174,198 +174,200 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import flatPickr from 'vue-flatpickr-component'
-import 'flatpickr/dist/flatpickr.css'
-import Api from '@/API'
+import { computed, onMounted, ref, watch } from "vue";
+import flatPickr from "vue-flatpickr-component";
+import { useRoute } from "vue-router";
+import { useMainStore } from "@/stores/main";
+import "flatpickr/dist/flatpickr.css";
+import Api from "@/API";
 
-const route = useRoute()
-const store = useMainStore()
+const route = useRoute();
+const store = useMainStore();
 
-const loading = ref(true)
-const search = ref('')
-const show_checkins = ref(false)
-const autoRefresh = ref(false)
-const allRecords = ref(false)
-const service = ref(null)
-const fails = ref([])
-const limit = ref(50)
-const offset = ref(0)
-const total = ref(0)
-const page = ref(1)
-const start_time = ref(nowSubtract(216000).toISOString())
-const end_time = ref(nowSubtract(0).toISOString())
+const loading = ref(true);
+const search = ref("");
+const show_checkins = ref(false);
+const autoRefresh = ref(false);
+const allRecords = ref(false);
+const service = ref(null);
+const fails = ref([]);
+const limit = ref(50);
+const offset = ref(0);
+const total = ref(0);
+const page = ref(1);
+const start_time = ref(nowSubtract(216000).toISOString());
+const end_time = ref(nowSubtract(0).toISOString());
 
 const dateConfig = {
-  wrap: true,
-  allowInput: false,
-  enableTime: true,
-  dateFormat: 'Z',
-  altInput: true,
-  altFormat: 'Y-m-d h:i K',
-  maxDate: new Date(),
-}
+	wrap: true,
+	allowInput: false,
+	enableTime: true,
+	dateFormat: "Z",
+	altInput: true,
+	altFormat: "Y-m-d h:i K",
+	maxDate: new Date(),
+};
 
 const failures = computed(() => {
-  let sorted = fails.value
-  if (allRecords.value) {
-    return sorted
-  }
-  if (show_checkins.value) {
-    sorted = sorted.filter((f) => f.method === 'checkin')
-  } else {
-    sorted = sorted.filter((f) => f.method !== 'checkin')
-  }
-  if (search.value !== '') {
-    sorted = sorted.filter((f) => f.issue.toLowerCase().includes(search.value.toLowerCase()))
-  }
-  return sorted
-})
+	let sorted = fails.value;
+	if (allRecords.value) {
+		return sorted;
+	}
+	if (show_checkins.value) {
+		sorted = sorted.filter((f) => f.method === "checkin");
+	} else {
+		sorted = sorted.filter((f) => f.method !== "checkin");
+	}
+	if (search.value !== "") {
+		sorted = sorted.filter((f) =>
+			f.issue.toLowerCase().includes(search.value.toLowerCase()),
+		);
+	}
+	return sorted;
+});
 
-const maxPages = computed(() => Math.ceil(total.value / limit.value))
+const maxPages = computed(() => Math.ceil(total.value / limit.value));
 
 const visiblePages = computed(() => {
-  const pages = []
-  const start = Math.max(1, page.value - 2)
-  const end = Math.min(maxPages.value, page.value + 2)
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-  return pages
-})
+	const pages = [];
+	const start = Math.max(1, page.value - 2);
+	const end = Math.min(maxPages.value, page.value + 2);
+	for (let i = start; i <= end; i++) {
+		pages.push(i);
+	}
+	return pages;
+});
 
-watch(() => route.params.id, reloadTimes)
+watch(() => route.params.id, reloadTimes);
 
 onMounted(async () => {
-  service.value = await Api.service(route.params.id)
-  total.value = service.value.stats?.failures || 0
-  await gotoPage(1)
-})
+	service.value = await Api.service(route.params.id);
+	total.value = service.value.stats?.failures || 0;
+	await gotoPage(1);
+});
 
 function nowSubtract(seconds) {
-  return new Date(Date.now() - seconds * 1000)
+	return new Date(Date.now() - seconds * 1000);
 }
 
 function toUnix(date) {
-  return Math.floor(date.getTime() / 1000)
+	return Math.floor(date.getTime() / 1000);
 }
 
 function parseISO(date) {
-  return new Date(date)
+	return new Date(date);
 }
 
 function humanTime(ms) {
-  if (!ms) return '0ms'
-  if (ms >= 10000) return `${Math.round(ms / 1000)} ms`
-  return `${ms} μs`
+	if (!ms) return "0ms";
+	if (ms >= 10000) return `${Math.round(ms / 1000)} ms`;
+	return `${ms} μs`;
 }
 
 function ago(date) {
-  if (!date) return 'never'
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000)
-  if (seconds < 60) return `${seconds} seconds ago`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minutes ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hours ago`
-  const days = Math.floor(hours / 24)
-  return `${days} days ago`
+	if (!date) return "never";
+	const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+	if (seconds < 60) return `${seconds} seconds ago`;
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes} minutes ago`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours} hours ago`;
+	const days = Math.floor(hours / 24);
+	return `${days} days ago`;
 }
 
 function formatDateTime(date) {
-  if (!date) return ''
-  const d = new Date(date)
-  return d.toLocaleString('en-US', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  })
+	if (!date) return "";
+	const d = new Date(date);
+	return d.toLocaleString("en-US", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false,
+	});
 }
 
 async function reloadTimes() {
-  if (route.params.id) {
-    service.value = await Api.service(route.params.id)
-    total.value = service.value.stats?.failures || 0
-    await gotoPage(1)
-  }
+	if (route.params.id) {
+		service.value = await Api.service(route.params.id);
+		total.value = service.value.stats?.failures || 0;
+		await gotoPage(1);
+	}
 }
 
 async function deleteConfirm() {
-  await Api.service_failures_delete(service.value)
-  service.value = await Api.service(service.value.id)
-  total.value = 0
-  await load()
+	await Api.service_failures_delete(service.value);
+	service.value = await Api.service(service.value.id);
+	total.value = 0;
+	await load();
 }
 
 function deleteFailures() {
-  store.setModal({
-    visible: true,
-    title: 'Delete All Failures',
-    body: `Are you sure you want to delete all Failures for service ${service.value.name}?`,
-    btnColor: 'btn-danger',
-    btnText: 'Delete Failures',
-    func: () => deleteConfirm(),
-  })
+	store.setModal({
+		visible: true,
+		title: "Delete All Failures",
+		body: `Are you sure you want to delete all Failures for service ${service.value.name}?`,
+		btnColor: "btn-danger",
+		btnText: "Delete Failures",
+		func: () => deleteConfirm(),
+	});
 }
 
 async function gotoPage(p) {
-  if (p < 1 || p > maxPages.value) return
-  page.value = p
-  offset.value = (p - 1) * limit.value
-  await load()
+	if (p < 1 || p > maxPages.value) return;
+	page.value = p;
+	offset.value = (p - 1) * limit.value;
+	await load();
 }
 
 async function load() {
-  loading.value = true
-  if (allRecords.value) {
-    fails.value = await Api.service_failures(
-      service.value.id,
-      0,
-      toUnix(new Date()),
-      limit.value,
-      offset.value
-    )
-  } else {
-    fails.value = await Api.service_failures(
-      service.value.id,
-      toUnix(parseISO(start_time.value)),
-      toUnix(parseISO(end_time.value)),
-      limit.value,
-      offset.value
-    )
-  }
-  loading.value = false
+	loading.value = true;
+	if (allRecords.value) {
+		fails.value = await Api.service_failures(
+			service.value.id,
+			0,
+			toUnix(new Date()),
+			limit.value,
+			offset.value,
+		);
+	} else {
+		fails.value = await Api.service_failures(
+			service.value.id,
+			toUnix(parseISO(start_time.value)),
+			toUnix(parseISO(end_time.value)),
+			limit.value,
+			offset.value,
+		);
+	}
+	loading.value = false;
 }
 
 async function searchFailures() {
-  page.value = 1
-  offset.value = 0
-  await load()
+	page.value = 1;
+	offset.value = 0;
+	await load();
 }
 
 async function onAllRecordsChange() {
-  page.value = 1
-  offset.value = 0
-  await load()
+	page.value = 1;
+	offset.value = 0;
+	await load();
 }
 
 async function onDateChange() {
-  if (autoRefresh.value) {
-    page.value = 1
-    offset.value = 0
-    await load()
-  }
+	if (autoRefresh.value) {
+		page.value = 1;
+		offset.value = 0;
+		await load();
+	}
 }
 
 async function onLimitChange() {
-  page.value = 1
-  offset.value = 0
-  await load()
+	page.value = 1;
+	offset.value = 0;
+	await load();
 }
 </script>

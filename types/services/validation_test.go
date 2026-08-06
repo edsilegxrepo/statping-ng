@@ -202,7 +202,7 @@ func TestServiceValidateEdgeCases(t *testing.T) {
 }
 
 func TestServiceTypes(t *testing.T) {
-	validTypes := []string{"http", "tcp", "udp", "icmp", "grpc", "static", "cmd"}
+	validTypes := []string{"http", "tcp", "udp", "icmp", "grpc", "static", "cmd", "database", "storage", "tls"}
 
 	for _, svcType := range validTypes {
 		t.Run("Type_"+svcType, func(t *testing.T) {
@@ -211,15 +211,94 @@ func TestServiceTypes(t *testing.T) {
 				Type:     svcType,
 				Interval: 30,
 			}
-			if svcType != "static" && svcType != "cmd" {
-				s.Domain = "example.com"
-			}
-			if svcType == "cmd" {
+			// Set required fields based on type
+			switch svcType {
+			case "static":
+				// No domain required
+			case "cmd":
 				s.PostData = null.NewNullString(`{"cmd": "echo"}`)
+			case "database":
+				s.Domain = "" // No domain required for database
+				s.DatabaseType = null.NewNullString("postgres")
+				s.DatabaseDSN = null.NewNullString("postgres://localhost/test")
+			case "storage":
+				s.Domain = "" // No domain required for storage
+				s.StorageBackend = null.NewNullString("gcs")
+				s.StorageBucket = null.NewNullString("my-bucket")
+			case "tls":
+				s.TLSTarget = null.NewNullString("example.com:443")
+			default:
+				s.Domain = "example.com"
 			}
 
 			err := s.Validate()
 			assert.NoError(t, err, "Type %s should be valid", svcType)
 		})
 	}
+}
+
+func TestMaskSecrets(t *testing.T) {
+	t.Run("MaskSecrets masks sensitive fields", func(t *testing.T) {
+		s := &Service{
+			Name:               "Test Service",
+			DatabaseDSN:        null.NewNullString("postgres://user:password@localhost/db"),
+			StorageCredentials: null.NewNullString(`{"type": "service_account", "private_key": "secret"}`),
+			TLSCertKey:         null.NewNullString("-----BEGIN PRIVATE KEY-----\nMIIE..."),
+		}
+
+		s.MaskSecrets()
+
+		assert.Equal(t, "********", s.DatabaseDSN.String)
+		assert.Equal(t, "********", s.StorageCredentials.String)
+		assert.Equal(t, "********", s.TLSCertKey.String)
+	})
+
+	t.Run("MaskSecrets ignores empty fields", func(t *testing.T) {
+		s := &Service{
+			Name: "Test Service",
+		}
+
+		s.MaskSecrets()
+
+		assert.False(t, s.DatabaseDSN.Valid)
+		assert.False(t, s.StorageCredentials.Valid)
+		assert.False(t, s.TLSCertKey.Valid)
+	})
+}
+
+func TestNewServiceTypeValidation(t *testing.T) {
+	t.Run("Database service without domain is valid", func(t *testing.T) {
+		s := &Service{
+			Name:         "DB Service",
+			Type:         "database",
+			Interval:     60,
+			DatabaseType: null.NewNullString("postgres"),
+			DatabaseDSN:  null.NewNullString("postgres://localhost/test"),
+		}
+		err := s.Validate()
+		assert.NoError(t, err)
+	})
+
+	t.Run("Storage service without domain is valid", func(t *testing.T) {
+		s := &Service{
+			Name:           "Storage Service",
+			Type:           "storage",
+			Interval:       60,
+			StorageBackend: null.NewNullString("gcs"),
+			StorageBucket:  null.NewNullString("my-bucket"),
+		}
+		err := s.Validate()
+		assert.NoError(t, err)
+	})
+
+	t.Run("TLS service with TLSTarget is valid", func(t *testing.T) {
+		s := &Service{
+			Name:      "TLS Service",
+			Type:      "tls",
+			Interval:  60,
+			TLSTarget: null.NewNullString("example.com:443"),
+		}
+		err := s.Validate()
+		assert.NoError(t, err)
+	})
 }

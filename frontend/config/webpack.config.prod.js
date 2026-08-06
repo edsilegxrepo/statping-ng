@@ -10,7 +10,7 @@ const helpers = require("./helpers");
 const commonConfig = require("./webpack.config.common");
 const isProd = process.env.NODE_ENV === "production";
 const environment = require("./prod.env");
-const VERSION = process.env.VERSION;
+const _VERSION = process.env.VERSION; // Reserved for future use in build metadata
 
 const webpackConfig = merge(commonConfig, {
 	mode: "production",

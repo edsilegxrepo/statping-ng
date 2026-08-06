@@ -55,55 +55,55 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { computed, reactive } from "vue";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  service: {
-    type: Object,
-    required: true,
-  },
-})
+	service: {
+		type: Object,
+		required: true,
+	},
+});
 
-const store = useMainStore()
+const store = useMainStore();
 
 const checkin = reactive({
-  name: '',
-  interval: 60,
-  service_id: props.service.id,
-})
+	name: "",
+	interval: 60,
+	service_id: props.service.id,
+});
 
-const checkins = computed(() => store.serviceCheckins(props.service.id))
-const coreData = computed(() => store.core)
+const checkins = computed(() => store.serviceCheckins(props.service.id));
+const coreData = computed(() => store.core);
 
 function ago(date) {
-  if (!date) return 'never'
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000)
-  if (seconds < 60) return `${seconds} seconds ago`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minutes ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hours ago`
-  const days = Math.floor(hours / 24)
-  return `${days} days ago`
+	if (!date) return "never";
+	const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+	if (seconds < 60) return `${seconds} seconds ago`;
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes} minutes ago`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours} hours ago`;
+	const days = Math.floor(hours / 24);
+	return `${days} days ago`;
 }
 
 async function saveCheckin() {
-  checkin.interval = parseInt(checkin.interval, 10)
-  checkin.grace = parseInt(checkin.grace || 0, 10)
-  await Api.checkin_create(checkin)
-  await updateCheckins()
+	checkin.interval = parseInt(checkin.interval, 10);
+	checkin.grace = parseInt(checkin.grace || 0, 10);
+	await Api.checkin_create(checkin);
+	await updateCheckins();
 }
 
 async function deleteCheckin(chk) {
-  await Api.checkin_delete(chk)
-  await updateCheckins()
+	await Api.checkin_delete(chk);
+	await updateCheckins();
 }
 
 async function updateCheckins() {
-  const chks = await Api.checkins()
-  store.setCheckins(chks)
+	const chks = await Api.checkins();
+	store.setCheckins(chks);
 }
 </script>
 

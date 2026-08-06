@@ -6,25 +6,25 @@ const SqliteFilename = "statping.db"
 
 // DbConfig struct is used for the Db connection and creates the 'config.yml' file
 type DbConfig struct {
-	DbConn            string `yaml:"connection,omitempty" json:"connection"`
-	DbHost            string `yaml:"host,omitempty" json:"-"`
-	DbUser            string `yaml:"user,omitempty" json:"-"`
-	DbPass            string `yaml:"password,omitempty" json:"-"`
-	DbData            string `yaml:"database,omitempty" json:"-"`
-	DbPort            int    `yaml:"port,omitempty" json:"-"`
-	ApiSecret         string `yaml:"api_secret,omitempty" json:"-"`
-	Language          string `yaml:"language,omitempty" json:"language"`
-	AllowReports      bool   `yaml:"allow_reports,omitempty" json:"allow_reports"`
-	Project           string `yaml:"-" json:"-"`
-	Description       string `yaml:"-" json:"-"`
-	Domain            string `yaml:"-" json:"-"`
-	Username          string `yaml:"-" json:"-"`
-	Password          string `yaml:"-" json:"-"`
-	Email             string `yaml:"-" json:"-"`
-	Error             error  `yaml:"-" json:"-"`
-	Location string `yaml:"location,omitempty" json:"-"`
-	SqlFile  string `yaml:"sqlfile,omitempty" json:"-"`
-	LocalIP  string `yaml:"-" json:"-"`
+	DbConn       string `yaml:"connection,omitempty" json:"connection"`
+	DbHost       string `yaml:"host,omitempty" json:"-"`
+	DbUser       string `yaml:"user,omitempty" json:"-"`
+	DbPass       string `yaml:"password,omitempty" json:"-"`
+	DbData       string `yaml:"database,omitempty" json:"-"`
+	DbPort       int    `yaml:"port,omitempty" json:"-"`
+	ApiSecret    string `yaml:"api_secret,omitempty" json:"-"`
+	Language     string `yaml:"language,omitempty" json:"language"`
+	AllowReports bool   `yaml:"allow_reports,omitempty" json:"allow_reports"`
+	Project      string `yaml:"-" json:"-"`
+	Description  string `yaml:"-" json:"-"`
+	Domain       string `yaml:"-" json:"-"`
+	Username     string `yaml:"-" json:"-"`
+	Password     string `yaml:"-" json:"-"`
+	Email        string `yaml:"-" json:"-"`
+	Error        error  `yaml:"-" json:"-"`
+	Location     string `yaml:"location,omitempty" json:"-"`
+	SqlFile      string `yaml:"sqlfile,omitempty" json:"-"`
+	LocalIP      string `yaml:"-" json:"-"`
 
 	DisableHTTP bool   `yaml:"disable_http" json:"disable_http"`
 	AdminLock   bool   `yaml:"admin_lock" json:"admin_lock"`

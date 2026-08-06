@@ -20,15 +20,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import DOMPurify from 'dompurify'
+import DOMPurify from "dompurify";
+import { computed } from "vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const core = computed(() => store.core)
-const admin = computed(() => store.admin)
-const sanitizedFooter = computed(() => DOMPurify.sanitize(core.value.footer || ''))
+const core = computed(() => store.core);
+const admin = computed(() => store.admin);
+const sanitizedFooter = computed(() =>
+	DOMPurify.sanitize(core.value.footer || ""),
+);
 </script>
 
 <style scoped>

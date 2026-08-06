@@ -116,60 +116,60 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import Api from '@/API'
+import { onMounted, reactive, ref } from "vue";
+import Api from "@/API";
 
-const loading = ref(false)
-const loadingStats = ref(false)
+const loading = ref(false);
+const loadingStats = ref(false);
 
 const settings = reactive({
-  polling_workers: 50,
-  polling_queue_size: 1000,
-  polling_rate_limit: 60,
-})
+	polling_workers: 50,
+	polling_queue_size: 1000,
+	polling_rate_limit: 60,
+});
 
-const stats = ref(null)
+const stats = ref(null);
 
 onMounted(async () => {
-  await loadSettings()
-  await loadStats()
-})
+	await loadSettings();
+	await loadStats();
+});
 
 async function loadSettings() {
-  try {
-    const resp = await Api.polling_settings()
-    settings.polling_workers = resp.polling_workers
-    settings.polling_queue_size = resp.polling_queue_size
-    settings.polling_rate_limit = resp.polling_rate_limit
-  } catch (e) {
-    console.error('Failed to load polling settings:', e)
-  }
+	try {
+		const resp = await Api.polling_settings();
+		settings.polling_workers = resp.polling_workers;
+		settings.polling_queue_size = resp.polling_queue_size;
+		settings.polling_rate_limit = resp.polling_rate_limit;
+	} catch (e) {
+		console.error("Failed to load polling settings:", e);
+	}
 }
 
 async function loadStats() {
-  loadingStats.value = true
-  try {
-    stats.value = await Api.polling_stats()
-  } catch (e) {
-    console.error('Failed to load polling stats:', e)
-  }
-  loadingStats.value = false
+	loadingStats.value = true;
+	try {
+		stats.value = await Api.polling_stats();
+	} catch (e) {
+		console.error("Failed to load polling stats:", e);
+	}
+	loadingStats.value = false;
 }
 
 async function saveSettings() {
-  loading.value = true
-  try {
-    await Api.polling_save(settings)
-  } catch (e) {
-    console.error('Failed to save polling settings:', e)
-  }
-  loading.value = false
+	loading.value = true;
+	try {
+		await Api.polling_save(settings);
+	} catch (e) {
+		console.error("Failed to save polling settings:", e);
+	}
+	loading.value = false;
 }
 
 function formatNumber(n) {
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
-  return n
+	if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+	if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+	return n;
 }
 </script>
 

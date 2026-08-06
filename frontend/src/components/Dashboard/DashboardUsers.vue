@@ -75,64 +75,64 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
-import FormUser from '@/forms/User.vue'
+import { computed, ref } from "vue";
+import Api from "@/API";
+import FormUser from "@/forms/User.vue";
+import { useMainStore } from "@/stores/main";
 
-const store = useMainStore()
+const store = useMainStore();
 
-const edit = ref(false)
-const user = ref({})
+const edit = ref(false);
+const user = ref({});
 
-const users = computed(() => store.users)
+const users = computed(() => store.users);
 
 function niceDate(date) {
-  if (!date) return '—'
-  return new Date(date).toLocaleDateString()
+	if (!date) return "—";
+	return new Date(date).toLocaleDateString();
 }
 
 function formatProvider(provider) {
-  const providers = {
-    local: 'Local',
-    ldap: 'LDAP',
-    oauth_google: 'Google',
-    oauth_github: 'GitHub',
-    oauth_slack: 'Slack',
-    oauth_custom: 'OAuth',
-    forward_auth: 'Forward Auth',
-  }
-  return providers[provider] || 'Local'
+	const providers = {
+		local: "Local",
+		ldap: "LDAP",
+		oauth_google: "Google",
+		oauth_github: "GitHub",
+		oauth_slack: "Slack",
+		oauth_custom: "OAuth",
+		forward_auth: "Forward Auth",
+	};
+	return providers[provider] || "Local";
 }
 
 function editChange(v) {
-  user.value = {}
-  edit.value = v
+	user.value = {};
+	edit.value = v;
 }
 
 function editUser(u) {
-  const userCopy = { ...u }
-  delete userCopy.password
-  delete userCopy.confirm_password
-  user.value = userCopy
-  edit.value = !edit.value
+	const userCopy = { ...u };
+	delete userCopy.password;
+	delete userCopy.confirm_password;
+	user.value = userCopy;
+	edit.value = !edit.value;
 }
 
 async function deleteUserConfirm(u) {
-  await Api.user_delete(u.id)
-  const usersData = await Api.users()
-  store.setUsers(usersData)
+	await Api.user_delete(u.id);
+	const usersData = await Api.users();
+	store.setUsers(usersData);
 }
 
 function deleteUser(u) {
-  store.setModal({
-    visible: true,
-    title: 'Delete User',
-    body: `Are you sure you want to delete user ${u.username}?`,
-    btnColor: 'btn-danger',
-    btnText: 'Delete User',
-    func: () => deleteUserConfirm(u),
-  })
+	store.setModal({
+		visible: true,
+		title: "Delete User",
+		body: `Are you sure you want to delete user ${u.username}?`,
+		btnColor: "btn-danger",
+		btnText: "Delete User",
+		func: () => deleteUserConfirm(u),
+	});
 }
 </script>
 

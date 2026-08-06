@@ -30,23 +30,23 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import GroupServiceFailures from './GroupServiceFailures.vue'
-import IncidentsBlock from './IncidentsBlock.vue'
-import MessagesIcon from '@/components/Index/MessagesIcon.vue'
+import { computed } from "vue";
+import MessagesIcon from "@/components/Index/MessagesIcon.vue";
+import { useMainStore } from "@/stores/main";
+import GroupServiceFailures from "./GroupServiceFailures.vue";
+import IncidentsBlock from "./IncidentsBlock.vue";
 
 const props = defineProps({
-  group: {
-    type: Object,
-    required: true,
-  },
-})
+	group: {
+		type: Object,
+		required: true,
+	},
+});
 
-const store = useMainStore()
-const services = computed(() => store.servicesInGroup(props.group.id))
+const store = useMainStore();
+const services = computed(() => store.servicesInGroup(props.group.id));
 
 function serviceLink(service) {
-  return `/service/${service.permalink || service.id}`
+	return `/service/${service.permalink || service.id}`;
 }
 </script>

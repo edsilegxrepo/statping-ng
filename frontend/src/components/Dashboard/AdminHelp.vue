@@ -320,19 +320,19 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-import { useMainStore } from '@/stores/main'
+import { computed } from "vue";
+import { useMainStore } from "@/stores/main";
 
 export default {
-  name: "AdminHelp",
-  setup() {
-    const store = useMainStore()
-    const firstServiceId = computed(() => {
-      const services = store.services || []
-      return services.length > 0 ? services[0].id : 1
-    })
-    return { firstServiceId }
-  }
+	name: "AdminHelp",
+	setup() {
+		const store = useMainStore();
+		const firstServiceId = computed(() => {
+			const services = store.services || [];
+			return services.length > 0 ? services[0].id : 1;
+		});
+		return { firstServiceId };
+	},
 };
 </script>
 

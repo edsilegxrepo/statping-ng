@@ -187,105 +187,108 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import Api from '@/API'
+import { onMounted, reactive, ref } from "vue";
+import Api from "@/API";
 
-const loading = ref(true)
-const saving = ref(false)
-const testing = ref(false)
-const testResult = ref(null)
-const saveMessage = ref('')
-const saveSuccess = ref(false)
+const loading = ref(true);
+const saving = ref(false);
+const testing = ref(false);
+const testResult = ref(null);
+const saveMessage = ref("");
+const saveSuccess = ref(false);
 
 const ldap = reactive({
-  ldap_enabled: false,
-  ldap_host: '',
-  ldap_port: 636,
-  ldap_start_tls: false,
-  ldap_skip_verify: false,
-  ldap_bind_dn: '',
-  ldap_bind_password: '',
-  ldap_base_dn: '',
-  ldap_user_filter: '',
-  ldap_username_attr: '',
-  ldap_email_attr: '',
-  ldap_authorized_group_enabled: false,
-  ldap_authorized_group: '',
-  ldap_template: ''
-})
+	ldap_enabled: false,
+	ldap_host: "",
+	ldap_port: 636,
+	ldap_start_tls: false,
+	ldap_skip_verify: false,
+	ldap_bind_dn: "",
+	ldap_bind_password: "",
+	ldap_base_dn: "",
+	ldap_user_filter: "",
+	ldap_username_attr: "",
+	ldap_email_attr: "",
+	ldap_authorized_group_enabled: false,
+	ldap_authorized_group: "",
+	ldap_template: "",
+});
 
 const templates = {
-  openldap: {
-    ldap_user_filter: '(&(objectClass=inetOrgPerson)(uid=%s))',
-    ldap_username_attr: 'uid',
-    ldap_email_attr: 'mail'
-  },
-  activedirectory: {
-    ldap_user_filter: '(&(objectClass=user)(sAMAccountName=%s))',
-    ldap_username_attr: 'sAMAccountName',
-    ldap_email_attr: 'mail'
-  },
-  freeipa: {
-    ldap_user_filter: '(&(objectClass=person)(uid=%s))',
-    ldap_username_attr: 'uid',
-    ldap_email_attr: 'mail'
-  }
-}
+	openldap: {
+		ldap_user_filter: "(&(objectClass=inetOrgPerson)(uid=%s))",
+		ldap_username_attr: "uid",
+		ldap_email_attr: "mail",
+	},
+	activedirectory: {
+		ldap_user_filter: "(&(objectClass=user)(sAMAccountName=%s))",
+		ldap_username_attr: "sAMAccountName",
+		ldap_email_attr: "mail",
+	},
+	freeipa: {
+		ldap_user_filter: "(&(objectClass=person)(uid=%s))",
+		ldap_username_attr: "uid",
+		ldap_email_attr: "mail",
+	},
+};
 
 onMounted(async () => {
-  try {
-    const settings = await Api.ldap()
-    Object.assign(ldap, settings)
-  } catch (e) {
-    console.error('Failed to load LDAP settings:', e)
-  }
-  loading.value = false
-})
+	try {
+		const settings = await Api.ldap();
+		Object.assign(ldap, settings);
+	} catch (e) {
+		console.error("Failed to load LDAP settings:", e);
+	}
+	loading.value = false;
+});
 
 function applyTemplate() {
-  const template = templates[ldap.ldap_template]
-  if (template) {
-    Object.assign(ldap, template)
-  }
+	const template = templates[ldap.ldap_template];
+	if (template) {
+		Object.assign(ldap, template);
+	}
 }
 
 async function testConnection() {
-  testing.value = true
-  testResult.value = null
-  saveMessage.value = ''
+	testing.value = true;
+	testResult.value = null;
+	saveMessage.value = "";
 
-  try {
-    const result = await Api.ldap_test({
-      ldap_host: ldap.ldap_host,
-      ldap_port: ldap.ldap_port,
-      ldap_start_tls: ldap.ldap_start_tls,
-      ldap_skip_verify: ldap.ldap_skip_verify,
-      ldap_bind_dn: ldap.ldap_bind_dn,
-      ldap_bind_password: ldap.ldap_bind_password,
-      ldap_base_dn: ldap.ldap_base_dn
-    })
-    testResult.value = result
-  } catch (e) {
-    testResult.value = { success: false, message: e.message || 'Connection test failed' }
-  }
+	try {
+		const result = await Api.ldap_test({
+			ldap_host: ldap.ldap_host,
+			ldap_port: ldap.ldap_port,
+			ldap_start_tls: ldap.ldap_start_tls,
+			ldap_skip_verify: ldap.ldap_skip_verify,
+			ldap_bind_dn: ldap.ldap_bind_dn,
+			ldap_bind_password: ldap.ldap_bind_password,
+			ldap_base_dn: ldap.ldap_base_dn,
+		});
+		testResult.value = result;
+	} catch (e) {
+		testResult.value = {
+			success: false,
+			message: e.message || "Connection test failed",
+		};
+	}
 
-  testing.value = false
+	testing.value = false;
 }
 
 async function save() {
-  saving.value = true
-  saveMessage.value = ''
-  testResult.value = null
+	saving.value = true;
+	saveMessage.value = "";
+	testResult.value = null;
 
-  try {
-    await Api.ldap_save(ldap)
-    saveMessage.value = 'LDAP settings saved successfully'
-    saveSuccess.value = true
-  } catch (e) {
-    saveMessage.value = e.message || 'Failed to save settings'
-    saveSuccess.value = false
-  }
+	try {
+		await Api.ldap_save(ldap);
+		saveMessage.value = "LDAP settings saved successfully";
+		saveSuccess.value = true;
+	} catch (e) {
+		saveMessage.value = e.message || "Failed to save settings";
+		saveSuccess.value = false;
+	}
 
-  saving.value = false
+	saving.value = false;
 }
 </script>

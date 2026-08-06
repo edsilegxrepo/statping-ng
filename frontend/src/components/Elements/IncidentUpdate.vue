@@ -20,39 +20,39 @@
 </template>
 
 <script setup>
-import Api from '@/API'
+import Api from "@/API";
 
 const props = defineProps({
-  update: {
-    type: Object,
-    required: true,
-  },
-  admin: {
-    type: Boolean,
-    required: true,
-  },
-  onUpdate: {
-    type: Function,
-    required: false,
-  },
-})
+	update: {
+		type: Object,
+		required: true,
+	},
+	admin: {
+		type: Boolean,
+		required: true,
+	},
+	onUpdate: {
+		type: Function,
+		required: false,
+	},
+});
 
 function timeAgo(date) {
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000)
-  if (seconds < 60) return `${seconds} seconds`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minutes`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hours`
-  const days = Math.floor(hours / 24)
-  return `${days} days`
+	const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+	if (seconds < 60) return `${seconds} seconds`;
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes} minutes`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours} hours`;
+	const days = Math.floor(hours / 24);
+	return `${days} days`;
 }
 
 async function deleteUpdate(update) {
-  const res = await Api.incident_update_delete(update)
-  if (res.status === 'success' && props.onUpdate) {
-    props.onUpdate()
-  }
+	const res = await Api.incident_update_delete(update);
+	if (res.status === "success" && props.onUpdate) {
+		props.onUpdate();
+	}
 }
 </script>
 

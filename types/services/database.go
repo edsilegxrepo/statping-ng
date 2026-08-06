@@ -24,7 +24,7 @@ var (
 func (s *Service) Validate() error {
 	if s.Name == "" {
 		return errors.ServiceNameMissing
-	} else if s.Domain == "" && s.Type != "cmd" && s.Type != "static" {
+	} else if s.Domain == "" && s.Type != "cmd" && s.Type != "static" && s.Type != "database" && s.Type != "storage" && s.Type != "tls" {
 		return errors.DomainNameMissing
 	} else if s.Type == "" {
 		return errors.ServiceTypeMissing

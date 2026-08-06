@@ -84,151 +84,167 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import Api from '../API'
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import Api from "../API";
 
-const logs = ref([])
-const loading = ref(true)
-const search = ref('')
-const dateFrom = ref('')
-const dateTo = ref('')
-const currentPage = ref(1)
-const pageSize = ref(50)
-let lastLogId = ''
-let pollInterval = null
-let logIdCounter = 0
+const logs = ref([]);
+const loading = ref(true);
+const search = ref("");
+const dateFrom = ref("");
+const dateTo = ref("");
+const currentPage = ref(1);
+const pageSize = ref(50);
+let lastLogId = "";
+let pollInterval = null;
+let logIdCounter = 0;
 
 function parseLog(line) {
-  if (!line || typeof line !== 'string') return null
-  const trimmed = line.trim()
-  if (!trimmed) return null
+	if (!line || typeof line !== "string") return null;
+	const trimmed = line.trim();
+	if (!trimmed) return null;
 
-  // Format: "2026-08-03 23:31:58: message here"
-  const colonIdx = trimmed.indexOf(': ')
-  if (colonIdx < 19) return null // timestamp is 19 chars
+	// Format: "2026-08-03 23:31:58: message here"
+	const colonIdx = trimmed.indexOf(": ");
+	if (colonIdx < 19) return null; // timestamp is 19 chars
 
-  const time = trimmed.substring(0, 19)
-  const message = trimmed.substring(21)
-  if (!message) return null
+	const time = trimmed.substring(0, 19);
+	const message = trimmed.substring(21);
+	if (!message) return null;
 
-  let level = ''
-  const lower = message.toLowerCase()
-  if (lower.includes('error') || lower.includes('fatal')) level = 'log-error'
-  else if (lower.includes('warn')) level = 'log-warning'
-  else if (lower.includes('debug')) level = 'log-debug'
+	let level = "";
+	const lower = message.toLowerCase();
+	if (lower.includes("error") || lower.includes("fatal")) level = "log-error";
+	else if (lower.includes("warn")) level = "log-warning";
+	else if (lower.includes("debug")) level = "log-debug";
 
-  return { id: ++logIdCounter, time, message, level }
+	return { id: ++logIdCounter, time, message, level };
 }
 
 const filteredLogs = computed(() => {
-  let result = logs.value
+	let result = logs.value;
 
-  if (search.value) {
-    const term = search.value.toLowerCase()
-    result = result.filter(log => log.message.toLowerCase().includes(term))
-  }
+	if (search.value) {
+		const term = search.value.toLowerCase();
+		result = result.filter((log) => log.message.toLowerCase().includes(term));
+	}
 
-  if (dateFrom.value) {
-    result = result.filter(log => log.time >= dateFrom.value)
-  }
+	if (dateFrom.value) {
+		result = result.filter((log) => log.time >= dateFrom.value);
+	}
 
-  if (dateTo.value) {
-    const endDate = dateTo.value + ' 23:59:59'
-    result = result.filter(log => log.time <= endDate)
-  }
+	if (dateTo.value) {
+		const endDate = dateTo.value + " 23:59:59";
+		result = result.filter((log) => log.time <= endDate);
+	}
 
-  return result
-})
+	return result;
+});
 
-const totalPages = computed(() => Math.ceil(filteredLogs.value.length / pageSize.value) || 1)
-const paginationStart = computed(() => (currentPage.value - 1) * pageSize.value)
-const paginationEnd = computed(() => Math.min(currentPage.value * pageSize.value, filteredLogs.value.length))
-const paginatedLogs = computed(() => filteredLogs.value.slice(paginationStart.value, paginationEnd.value))
+const totalPages = computed(
+	() => Math.ceil(filteredLogs.value.length / pageSize.value) || 1,
+);
+const paginationStart = computed(
+	() => (currentPage.value - 1) * pageSize.value,
+);
+const paginationEnd = computed(() =>
+	Math.min(currentPage.value * pageSize.value, filteredLogs.value.length),
+);
+const paginatedLogs = computed(() =>
+	filteredLogs.value.slice(paginationStart.value, paginationEnd.value),
+);
 
 function resetPage() {
-  currentPage.value = 1
+	currentPage.value = 1;
 }
 
 async function loadLogs() {
-  try {
-    const data = await Api.logs()
-    if (!Array.isArray(data)) return
+	try {
+		const data = await Api.logs();
+		if (!Array.isArray(data)) return;
 
-    // Backend already returns newest-first, just parse in order
-    const parsed = []
-    for (const line of data) {
-      const log = parseLog(line)
-      if (log) parsed.push(log)
-    }
-    logs.value = parsed
-    if (parsed.length > 0) {
-      lastLogId = parsed[0].time + parsed[0].message
-    }
-  } catch (e) {
-    console.error('Failed to load logs:', e)
-  } finally {
-    loading.value = false
-  }
+		// Backend already returns newest-first, just parse in order
+		const parsed = [];
+		for (const line of data) {
+			const log = parseLog(line);
+			if (log) parsed.push(log);
+		}
+		logs.value = parsed;
+		if (parsed.length > 0) {
+			lastLogId = parsed[0].time + parsed[0].message;
+		}
+	} catch (e) {
+		console.error("Failed to load logs:", e);
+	} finally {
+		loading.value = false;
+	}
 }
 
 async function pollLastLog() {
-  try {
-    const data = await Api.logs_last()
-    const log = parseLog(data)
-    if (!log) return
+	try {
+		const data = await Api.logs_last();
+		const log = parseLog(data);
+		if (!log) return;
 
-    const logId = log.time + log.message
-    if (logId !== lastLogId) {
-      lastLogId = logId
-      logs.value.unshift(log)
-    }
-  } catch (e) {
-    // Silently ignore polling errors
-  }
+		const logId = log.time + log.message;
+		if (logId !== lastLogId) {
+			lastLogId = logId;
+			logs.value.unshift(log);
+		}
+	} catch (e) {
+		// Silently ignore polling errors
+	}
 }
 
-
 function clearDates() {
-  dateFrom.value = ''
-  dateTo.value = ''
+	dateFrom.value = "";
+	dateTo.value = "";
 }
 
 function exportLogs(format) {
-  const data = filteredLogs.value
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+	const data = filteredLogs.value;
+	const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 
-  let content, filename, mimeType
-  if (format === 'json') {
-    content = JSON.stringify(data.map(log => ({ time: log.time, message: log.message })), null, 2)
-    filename = `logs-${timestamp}.json`
-    mimeType = 'application/json'
-  } else {
-    content = 'Time\tMessage\n' + data.map(log => `${log.time}\t${log.message.replace(/\t/g, ' ')}`).join('\n')
-    filename = `logs-${timestamp}.tsv`
-    mimeType = 'text/tab-separated-values'
-  }
+	let content, filename, mimeType;
+	if (format === "json") {
+		content = JSON.stringify(
+			data.map((log) => ({ time: log.time, message: log.message })),
+			null,
+			2,
+		);
+		filename = `logs-${timestamp}.json`;
+		mimeType = "application/json";
+	} else {
+		content =
+			"Time\tMessage\n" +
+			data
+				.map((log) => `${log.time}\t${log.message.replace(/\t/g, " ")}`)
+				.join("\n");
+		filename = `logs-${timestamp}.tsv`;
+		mimeType = "text/tab-separated-values";
+	}
 
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+	const blob = new Blob([content], { type: mimeType });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = filename;
+	a.click();
+	URL.revokeObjectURL(url);
 }
 
 // Watch for filter changes to reset page
-import { watch } from 'vue'
-watch([search, dateFrom, dateTo, pageSize], resetPage)
+import { watch } from "vue";
+
+watch([search, dateFrom, dateTo, pageSize], resetPage);
 
 onMounted(async () => {
-  await loadLogs()
-  pollInterval = setInterval(pollLastLog, 2000)
-})
+	await loadLogs();
+	pollInterval = setInterval(pollLastLog, 2000);
+});
 
 onBeforeUnmount(() => {
-  if (pollInterval) clearInterval(pollInterval)
-})
+	if (pollInterval) clearInterval(pollInterval);
+});
 </script>
 
 <style scoped>

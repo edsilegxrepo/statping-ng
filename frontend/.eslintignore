@@ -1,0 +1,10 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+
+# Third-party/vendor scripts (not maintained by this project)
+public/js/codemirror.js
+public/js/rangePlugin.js
+src/assets/js/rangePlugin.js

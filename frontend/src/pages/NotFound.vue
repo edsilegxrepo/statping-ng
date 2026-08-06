@@ -16,8 +16,8 @@
 </template>
 
 <script setup>
-import TopNav from '@/components/Index/TopNav.vue'
-import PageHeader from '@/components/Elements/PageHeader.vue'
+import PageHeader from "@/components/Elements/PageHeader.vue";
+import TopNav from "@/components/Index/TopNav.vue";
 </script>
 
 <style scoped>

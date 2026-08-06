@@ -102,94 +102,115 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Api from '@/API'
+import { computed, onMounted, ref } from "vue";
+import Api from "@/API";
 
-const loading = ref(true)
-const saving = ref(false)
-const testing = ref(false)
-const testResult = ref(null)
+const loading = ref(true);
+const saving = ref(false);
+const testing = ref(false);
+const testResult = ref(null);
 const settings = ref({
-  log_ship_enabled: false,
-  log_ship_type: '',
-  log_ship_endpoint: '',
-  log_ship_token: '',
-  log_ship_index: '',
-  log_ship_sourcetype: '',
-  log_ship_labels: '',
-  env_override: false,
-  types: []
-})
+	log_ship_enabled: false,
+	log_ship_type: "",
+	log_ship_endpoint: "",
+	log_ship_token: "",
+	log_ship_index: "",
+	log_ship_sourcetype: "",
+	log_ship_labels: "",
+	env_override: false,
+	types: [],
+});
 
-const showSplunkFields = computed(() => settings.value.log_ship_type === 'splunk')
-const showSourcetypeField = computed(() => ['splunk', 'cribl'].includes(settings.value.log_ship_type))
+const showSplunkFields = computed(
+	() => settings.value.log_ship_type === "splunk",
+);
+const showSourcetypeField = computed(() =>
+	["splunk", "cribl"].includes(settings.value.log_ship_type),
+);
 
 const endpointPlaceholder = computed(() => {
-  switch (settings.value.log_ship_type) {
-    case 'loki': return 'http://loki:3100'
-    case 'elasticsearch': return 'http://elasticsearch:9200'
-    case 'splunk': return 'https://splunk:8088'
-    case 'cribl': return 'http://cribl:10080/api/v1/http'
-    case 'webhook': return 'https://your-webhook-endpoint.com/logs'
-    default: return 'https://...'
-  }
-})
+	switch (settings.value.log_ship_type) {
+		case "loki":
+			return "http://loki:3100";
+		case "elasticsearch":
+			return "http://elasticsearch:9200";
+		case "splunk":
+			return "https://splunk:8088";
+		case "cribl":
+			return "http://cribl:10080/api/v1/http";
+		case "webhook":
+			return "https://your-webhook-endpoint.com/logs";
+		default:
+			return "https://...";
+	}
+});
 
 const endpointHelp = computed(() => {
-  switch (settings.value.log_ship_type) {
-    case 'loki': return 'Loki push API (path /loki/api/v1/push is added automatically)'
-    case 'elasticsearch': return 'Elasticsearch base URL (bulk API is used)'
-    case 'splunk': return 'Splunk HEC endpoint (path /services/collector/event is added automatically)'
-    case 'cribl': return 'Cribl HTTP source endpoint'
-    case 'webhook': return 'Any endpoint accepting JSON POST requests'
-    default: return ''
-  }
-})
+	switch (settings.value.log_ship_type) {
+		case "loki":
+			return "Loki push API (path /loki/api/v1/push is added automatically)";
+		case "elasticsearch":
+			return "Elasticsearch base URL (bulk API is used)";
+		case "splunk":
+			return "Splunk HEC endpoint (path /services/collector/event is added automatically)";
+		case "cribl":
+			return "Cribl HTTP source endpoint";
+		case "webhook":
+			return "Any endpoint accepting JSON POST requests";
+		default:
+			return "";
+	}
+});
 
 const tokenHelp = computed(() => {
-  switch (settings.value.log_ship_type) {
-    case 'splunk': return 'Splunk HEC token (from Settings > Data Inputs > HTTP Event Collector)'
-    default: return 'Bearer token for authentication (optional)'
-  }
-})
+	switch (settings.value.log_ship_type) {
+		case "splunk":
+			return "Splunk HEC token (from Settings > Data Inputs > HTTP Event Collector)";
+		default:
+			return "Bearer token for authentication (optional)";
+	}
+});
 
 onMounted(async () => {
-  try {
-    const data = await Api.logship_get()
-    settings.value = { ...settings.value, ...data }
-  } catch (e) {
-    console.error('Failed to load log shipping settings:', e)
-  }
-  loading.value = false
-})
+	try {
+		const data = await Api.logship_get();
+		settings.value = { ...settings.value, ...data };
+	} catch (e) {
+		console.error("Failed to load log shipping settings:", e);
+	}
+	loading.value = false;
+});
 
 async function save() {
-  saving.value = true
-  testResult.value = null
-  try {
-    await Api.logship_save(settings.value)
-    testResult.value = { success: true, message: 'Settings saved successfully' }
-  } catch (e) {
-    testResult.value = { success: false, message: 'Failed to save settings' }
-  }
-  saving.value = false
+	saving.value = true;
+	testResult.value = null;
+	try {
+		await Api.logship_save(settings.value);
+		testResult.value = {
+			success: true,
+			message: "Settings saved successfully",
+		};
+	} catch (e) {
+		testResult.value = { success: false, message: "Failed to save settings" };
+	}
+	saving.value = false;
 }
 
 async function testConnection() {
-  testing.value = true
-  testResult.value = null
-  try {
-    const result = await Api.logship_test({
-      type: settings.value.log_ship_type,
-      endpoint: settings.value.log_ship_endpoint,
-      token: settings.value.log_ship_token,
-      index: settings.value.log_ship_index,
-      sourcetype: settings.value.log_ship_sourcetype
-    })
-    testResult.value = result
-  } catch (e) {
-    testResult.value = { success: false, message: 'Connection test failed' }
-  }
-  testing.value = false
+	testing.value = true;
+	testResult.value = null;
+	try {
+		const result = await Api.logship_test({
+			type: settings.value.log_ship_type,
+			endpoint: settings.value.log_ship_endpoint,
+			token: settings.value.log_ship_token,
+			index: settings.value.log_ship_index,
+			sourcetype: settings.value.log_ship_sourcetype,
+		});
+		testResult.value = result;
+	} catch (e) {
+		testResult.value = { success: false, message: "Connection test failed" };
+	}
+	testing.value = false;
 }
 </script>

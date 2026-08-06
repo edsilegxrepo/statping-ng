@@ -38,122 +38,137 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useIntersectionObserver } from '@vueuse/core'
-import Api from '@/API'
+import { useIntersectionObserver } from "@vueuse/core";
+import { computed, onMounted, ref } from "vue";
+import Api from "@/API";
 
 const props = defineProps({
-  service: {
-    type: Object,
-    required: true,
-  },
-})
+	service: {
+		type: Object,
+		required: true,
+	},
+});
 
-const failureData = ref([])
-const hover_text = ref('')
-const loaded = ref(false)
-const visible = ref(false)
-const days_to_show = 90
+const failureData = ref([]);
+const hover_text = ref("");
+const loaded = ref(false);
+const visible = ref(false);
+const days_to_show = 90;
 
 const outageSeverity = {
-  minor: { start: 1, end: 30 },
-  moderate: { start: 30, end: 120 },
-  major: { start: 120, end: 240 },
-  critical: { start: 240 },
-}
+	minor: { start: 1, end: 30 },
+	moderate: { start: 30, end: 120 },
+	major: { start: 120, end: 240 },
+	critical: { start: 240 },
+};
 
-const serviceTxt = computed(() => smallText(props.service))
+const serviceTxt = computed(() => smallText(props.service));
 
-const target = ref(null)
+const target = ref(null);
 
 onMounted(() => {
-  visibleChart()
-})
+	visibleChart();
+});
 
 function visibleChart() {
-  if (!visible.value) {
-    visible.value = true
-    lastDaysFailures().then(() => (loaded.value = true))
-  }
+	if (!visible.value) {
+		visible.value = true;
+		lastDaysFailures().then(() => (loaded.value = true));
+	}
 }
 
 function mouseout() {
-  hover_text.value = ''
+	hover_text.value = "";
 }
 
 function mouseover(e) {
-  let txt = `${e.amount} Failures`
-  if (e.amount === 0 && e.hits === 0) {
-    txt = `No Data`
-  } else if (e.amount === 0) {
-    txt = `No Issues`
-  }
-  hover_text.value = `${e.date.toUTCString().replace(' 00:00:00 GMT', '')} - ${txt}`
+	let txt = `${e.amount} Failures`;
+	if (e.amount === 0 && e.hits === 0) {
+		txt = `No Data`;
+	} else if (e.amount === 0) {
+		txt = `No Issues`;
+	}
+	hover_text.value = `${e.date.toUTCString().replace(" 00:00:00 GMT", "")} - ${txt}`;
 }
 
 function nowSubtract(seconds) {
-  return new Date(Date.now() - seconds * 1000)
+	return new Date(Date.now() - seconds * 1000);
 }
 
 function beginningOf(unit, date) {
-  const d = new Date(date)
-  d.setUTCHours(0, 0, 0, 0)
-  return d
+	const d = new Date(date);
+	d.setUTCHours(0, 0, 0, 0);
+	return d;
 }
 
 function endOf(unit) {
-  const d = new Date()
-  d.setUTCHours(23, 59, 59, 999)
-  return d
+	const d = new Date();
+	d.setUTCHours(23, 59, 59, 999);
+	return d;
 }
 
 function toUnix(date) {
-  return Math.floor(date.getTime() / 1000)
+	return Math.floor(date.getTime() / 1000);
 }
 
 function parseISO(str) {
-  return new Date(str)
+	return new Date(str);
 }
 
 function smallText(service) {
-  if (service.online) {
-    return 'Operational'
-  }
-  return 'Degraded'
+	if (service.online) {
+		return "Operational";
+	}
+	return "Degraded";
 }
 
 async function lastDaysFailures() {
-  const start = beginningOf('day', nowSubtract(86400 * days_to_show))
-  const end = endOf('today')
+	const start = beginningOf("day", nowSubtract(86400 * days_to_show));
+	const end = endOf("today");
 
-  const data = await Api.service_failures_data(props.service.id, toUnix(start), toUnix(end), '24h', true)
+	const data = await Api.service_failures_data(
+		props.service.id,
+		toUnix(start),
+		toUnix(end),
+		"24h",
+		true,
+	);
 
-  failureData.value = []
-  data.forEach((d) => {
-    const date = new Date(d.timeframe)
-    failureData.value.push({
-      month: date.getMonth(),
-      day: date.getDate(),
-      date: date,
-      amount: d.amount,
-    })
-  })
+	failureData.value = [];
+	data.forEach((d) => {
+		const date = new Date(d.timeframe);
+		failureData.value.push({
+			month: date.getMonth(),
+			day: date.getDate(),
+			date: date,
+			amount: d.amount,
+		});
+	});
 }
 
 function getDayClass(data) {
-  if (data.amount === 0) {
-    return 'day-success'
-  }
-  const severity = data.amount
-  if (severity >= outageSeverity.minor.start && severity < outageSeverity.minor.end) {
-    return 'day-minor-outage'
-  } else if (severity >= outageSeverity.moderate.start && severity < outageSeverity.moderate.end) {
-    return 'day-moderate-outage'
-  } else if (severity >= outageSeverity.major.start && severity < outageSeverity.major.end) {
-    return 'day-major-outage'
-  } else if (severity >= outageSeverity.critical.start) {
-    return 'day-critical-outage'
-  }
-  return 'day-success'
+	if (data.amount === 0) {
+		return "day-success";
+	}
+	const severity = data.amount;
+	if (
+		severity >= outageSeverity.minor.start &&
+		severity < outageSeverity.minor.end
+	) {
+		return "day-minor-outage";
+	} else if (
+		severity >= outageSeverity.moderate.start &&
+		severity < outageSeverity.moderate.end
+	) {
+		return "day-moderate-outage";
+	} else if (
+		severity >= outageSeverity.major.start &&
+		severity < outageSeverity.major.end
+	) {
+		return "day-major-outage";
+	} else if (severity >= outageSeverity.critical.start) {
+		return "day-critical-outage";
+	}
+	return "day-success";
 }
 </script>

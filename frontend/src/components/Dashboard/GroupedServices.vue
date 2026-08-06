@@ -14,25 +14,29 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useMainStore } from '@/stores/main'
-import ServiceInfo from '@/components/Dashboard/ServiceInfo.vue'
+import { computed, ref } from "vue";
+import ServiceInfo from "@/components/Dashboard/ServiceInfo.vue";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  group: {
-    required: true,
-    type: Object,
-  },
-})
+	group: {
+		required: true,
+		type: Object,
+	},
+});
 
-const store = useMainStore()
-const expanded = ref(true)
+const store = useMainStore();
+const expanded = ref(true);
 
-const groupServices = computed(() => store.servicesInGroup(props.group.id))
-const servicesOnline = computed(() => groupServices.value.filter((s) => s.online))
-const servicesOffline = computed(() => groupServices.value.filter((s) => !s.online))
+const groupServices = computed(() => store.servicesInGroup(props.group.id));
+const servicesOnline = computed(() =>
+	groupServices.value.filter((s) => s.online),
+);
+const servicesOffline = computed(() =>
+	groupServices.value.filter((s) => !s.online),
+);
 
 function toggle() {
-  expanded.value = !expanded.value
+	expanded.value = !expanded.value;
 }
 </script>

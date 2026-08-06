@@ -89,48 +89,48 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useCookies } from 'vue3-cookies'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
+import { useCookies } from "vue3-cookies";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
 defineProps({
-  admin: {
-    type: Boolean,
-    default: false,
-  },
-})
+	admin: {
+		type: Boolean,
+		default: false,
+	},
+});
 
-const router = useRouter()
-const store = useMainStore()
-const { cookies } = useCookies()
+const router = useRouter();
+const store = useMainStore();
+const { cookies } = useCookies();
 
-const navopen = ref(false)
-const core = computed(() => store.core)
+const navopen = ref(false);
+const core = computed(() => store.core);
 
 async function logout() {
-  let redirectUrl = null
-  try {
-    const response = await Api.logout()
-    if (response.redirect) {
-      redirectUrl = response.redirect
-    }
-  } catch (e) {
-    console.error('Backend logout failed', e)
-  }
-  store.hasAllData = false
-  store.token = null
-  store.admin = false
-  store.user = false
-  store.loggedIn = false
-  cookies.remove('statping_auth')
+	let redirectUrl = null;
+	try {
+		const response = await Api.logout();
+		if (response.redirect) {
+			redirectUrl = response.redirect;
+		}
+	} catch (e) {
+		console.error("Backend logout failed", e);
+	}
+	store.hasAllData = false;
+	store.token = null;
+	store.admin = false;
+	store.user = false;
+	store.loggedIn = false;
+	cookies.remove("statping_auth");
 
-  if (redirectUrl) {
-    window.location.href = redirectUrl
-  } else {
-    await router.push('/logout')
-  }
+	if (redirectUrl) {
+		window.location.href = redirectUrl;
+	} else {
+		await router.push("/logout");
+	}
 }
 </script>
 

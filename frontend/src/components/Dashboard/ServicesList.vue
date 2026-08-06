@@ -124,116 +124,119 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useMainStore } from '@/stores/main'
-import draggable from 'vuedraggable'
-import Api from '@/API'
-import ServiceSparkList from '@/components/Service/ServiceSparkList.vue'
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
+import draggable from "vuedraggable";
+import Api from "@/API";
+import ServiceSparkList from "@/components/Service/ServiceSparkList.vue";
+import { useMainStore } from "@/stores/main";
 
-const router = useRouter()
-const store = useMainStore()
+const router = useRouter();
+const store = useMainStore();
 
-const loading = ref(false)
-const list_timeframe = ref('12h')
-const testingService = ref(null)
+const loading = ref(false);
+const list_timeframe = ref("12h");
+const testingService = ref(null);
 
 const servicesList = computed({
-  get() {
-    return store.servicesInOrder
-  },
-  set(value) {
-    updateOrder(value)
-  },
-})
+	get() {
+		return store.servicesInOrder;
+	},
+	set(value) {
+		updateOrder(value);
+	},
+});
 
 function gotoEdit(service) {
-  router.push({ path: `/dashboard/edit_service/${service.id}` })
+	router.push({ path: `/dashboard/edit_service/${service.id}` });
 }
 
 function gotoService(service) {
-  router.push({ path: `/service/${service.permalink || service.id}`, query: { from: 'dashboard' } })
+	router.push({
+		path: `/service/${service.permalink || service.id}`,
+		query: { from: "dashboard" },
+	});
 }
 
 async function updateOrder(value) {
-  const data = value.map((s, k) => ({ service: s.id, order: k + 1 }))
-  await Api.services_reorder(data)
-  await update()
+	const data = value.map((s, k) => ({ service: s.id, order: k + 1 }));
+	await Api.services_reorder(data);
+	await update();
 }
 
 async function deleteServiceConfirm(s) {
-  loading.value = true
-  await Api.service_delete(s.id)
-  await update()
-  loading.value = false
+	loading.value = true;
+	await Api.service_delete(s.id);
+	await update();
+	loading.value = false;
 }
 
 function deleteService(s) {
-  store.setModal({
-    visible: true,
-    title: 'Delete Service',
-    body: `Are you sure you want to delete service ${s.name}? This will also delete all failures, checkins, and incidents for this service.`,
-    btnColor: 'btn-danger',
-    btnText: 'Delete Service',
-    func: () => deleteServiceConfirm(s),
-  })
+	store.setModal({
+		visible: true,
+		title: "Delete Service",
+		body: `Are you sure you want to delete service ${s.name}? This will also delete all failures, checkins, and incidents for this service.`,
+		btnColor: "btn-danger",
+		btnText: "Delete Service",
+		func: () => deleteServiceConfirm(s),
+	});
 }
 
 function serviceGroup(s) {
-  const group = store.groupById(s.group_id)
-  return group ? group.name : ''
+	const group = store.groupById(s.group_id);
+	return group ? group.name : "";
 }
 
 async function update() {
-  const services = await Api.services()
-  store.setServices(services)
+	const services = await Api.services();
+	store.setServices(services);
 }
 
 function formatLatency(microseconds) {
-  if (!microseconds) return ''
-  const ms = Math.round(microseconds / 1000)
-  return ` (${ms}ms)`
+	if (!microseconds) return "";
+	const ms = Math.round(microseconds / 1000);
+	return ` (${ms}ms)`;
 }
 
 function formatInfoKey(key) {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+	return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 async function testService(service) {
-  testingService.value = service.id
-  try {
-    const result = await Api.service_test(service)
-    const lines = [`${result.message}${formatLatency(result.latency)}`]
-    if (result.info) {
-      for (const [k, v] of Object.entries(result.info)) {
-        lines.push(`${formatInfoKey(k)}: ${v}`)
-      }
-    }
-    if (result.details && !result.success) {
-      lines.push(`Error: ${result.details}`)
-    }
-    store.setModal({
-      visible: true,
-      title: result.success ? 'Connection Successful' : 'Connection Failed',
-      body: lines.join('\n'),
-      btnColor: result.success ? 'btn-success' : 'btn-danger',
-      btnText: 'Close',
-      hideCancel: true,
-      func: () => {},
-    })
-  } catch (err) {
-    store.setModal({
-      visible: true,
-      title: 'Test Failed',
-      body: err.message || 'An error occurred while testing the connection',
-      btnColor: 'btn-danger',
-      btnText: 'Close',
-      hideCancel: true,
-      func: () => {},
-    })
-  } finally {
-    testingService.value = null
-  }
+	testingService.value = service.id;
+	try {
+		const result = await Api.service_test(service);
+		const lines = [`${result.message}${formatLatency(result.latency)}`];
+		if (result.info) {
+			for (const [k, v] of Object.entries(result.info)) {
+				lines.push(`${formatInfoKey(k)}: ${v}`);
+			}
+		}
+		if (result.details && !result.success) {
+			lines.push(`Error: ${result.details}`);
+		}
+		store.setModal({
+			visible: true,
+			title: result.success ? "Connection Successful" : "Connection Failed",
+			body: lines.join("\n"),
+			btnColor: result.success ? "btn-success" : "btn-danger",
+			btnText: "Close",
+			hideCancel: true,
+			func: () => {},
+		});
+	} catch (err) {
+		store.setModal({
+			visible: true,
+			title: "Test Failed",
+			body: err.message || "An error occurred while testing the connection",
+			btnColor: "btn-danger",
+			btnText: "Close",
+			hideCancel: true,
+			func: () => {},
+		});
+	} finally {
+		testingService.value = null;
+	}
 }
 </script>
 

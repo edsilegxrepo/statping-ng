@@ -245,8 +245,8 @@
 </template>
 
 <script>
-import TopNav from '@/components/Index/TopNav.vue'
-import PageHeader from '@/components/Elements/PageHeader.vue'
+import PageHeader from "@/components/Elements/PageHeader.vue";
+import TopNav from "@/components/Index/TopNav.vue";
 
 export default {
 	name: "Help",

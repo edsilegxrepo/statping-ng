@@ -33,89 +33,95 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import Api from '@/API'
-import IncidentUpdate from '@/components/Elements/IncidentUpdate.vue'
+import { computed, onMounted, reactive, ref } from "vue";
+import Api from "@/API";
+import IncidentUpdate from "@/components/Elements/IncidentUpdate.vue";
 
 const props = defineProps({
-  incident: {
-    type: Object,
-    required: true,
-  },
-})
+	incident: {
+		type: Object,
+		required: true,
+	},
+});
 
-const updates = ref([])
-const submitting = ref(false)
-const errorMessage = ref('')
+const updates = ref([]);
+const submitting = ref(false);
+const errorMessage = ref("");
 const incident_update = reactive({
-  incident: props.incident.id,
-  message: '',
-  type: 'Investigating',
-})
+	incident: props.incident.id,
+	message: "",
+	type: "Investigating",
+});
 
 const canSubmit = computed(() => {
-  return incident_update.message.trim().length > 0
-})
+	return incident_update.message.trim().length > 0;
+});
 
 onMounted(async () => {
-  await loadUpdates()
-})
+	await loadUpdates();
+});
 
 function extractErrorMessage(error, fallback) {
-  const responseData = error?.response?.data || error
-  if (typeof responseData === 'string' && responseData.trim()) {
-    return responseData.trim()
-  }
-  if (typeof responseData?.error === 'string' && responseData.error.trim()) {
-    return responseData.error
-  }
-  if (responseData?.error?.message) {
-    return responseData.error.message
-  }
-  if (responseData?.message) {
-    return responseData.message
-  }
-  if (error?.message) {
-    return error.message
-  }
-  return fallback
+	const responseData = error?.response?.data || error;
+	if (typeof responseData === "string" && responseData.trim()) {
+		return responseData.trim();
+	}
+	if (typeof responseData?.error === "string" && responseData.error.trim()) {
+		return responseData.error;
+	}
+	if (responseData?.error?.message) {
+		return responseData.error.message;
+	}
+	if (responseData?.message) {
+		return responseData.message;
+	}
+	if (error?.message) {
+		return error.message;
+	}
+	return fallback;
 }
 
 async function createIncidentUpdate() {
-  if (submitting.value) return
+	if (submitting.value) return;
 
-  const message = incident_update.message.trim()
-  if (!message) {
-    errorMessage.value = 'Incident update message is required.'
-    return
-  }
+	const message = incident_update.message.trim();
+	if (!message) {
+		errorMessage.value = "Incident update message is required.";
+		return;
+	}
 
-  submitting.value = true
-  errorMessage.value = ''
+	submitting.value = true;
+	errorMessage.value = "";
 
-  try {
-    const response = await Api.incident_update_create({
-      ...incident_update,
-      message,
-    })
+	try {
+		const response = await Api.incident_update_create({
+			...incident_update,
+			message,
+		});
 
-    if (response?.status === 'success' && response.output) {
-      updates.value.push(response.output)
-      incident_update.message = ''
-      incident_update.type = 'Investigating'
-      return
-    }
+		if (response?.status === "success" && response.output) {
+			updates.value.push(response.output);
+			incident_update.message = "";
+			incident_update.type = "Investigating";
+			return;
+		}
 
-    errorMessage.value = extractErrorMessage(response, 'Unable to add the incident update right now.')
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Unable to add the incident update right now.')
-  } finally {
-    submitting.value = false
-  }
+		errorMessage.value = extractErrorMessage(
+			response,
+			"Unable to add the incident update right now.",
+		);
+	} catch (error) {
+		errorMessage.value = extractErrorMessage(
+			error,
+			"Unable to add the incident update right now.",
+		);
+	} finally {
+		submitting.value = false;
+	}
 }
 
 async function loadUpdates() {
-  updates.value = await Api.incident_updates(props.incident)
+	updates.value = await Api.incident_updates(props.incident);
 }
 </script>
 

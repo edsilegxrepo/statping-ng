@@ -56,81 +56,81 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useMainStore } from '@/stores/main'
-import Api from '@/API'
+import { ref, watch } from "vue";
+import Api from "@/API";
+import { useMainStore } from "@/stores/main";
 
 const props = defineProps({
-  in_group: {
-    type: Object,
-    default: () => ({}),
-  },
-  edit: {
-    type: Function,
-    default: () => {},
-  },
-})
+	in_group: {
+		type: Object,
+		default: () => ({}),
+	},
+	edit: {
+		type: Function,
+		default: () => {},
+	},
+});
 
-const emit = defineEmits(['cancel'])
+const emit = defineEmits(["cancel"]);
 
-const store = useMainStore()
-const loading = ref(false)
+const store = useMainStore();
+const loading = ref(false);
 const group = ref({
-  name: '',
-  public: true,
-})
+	name: "",
+	public: true,
+});
 
 watch(
-  () => props.in_group,
-  (val) => {
-    if (val && Object.keys(val).length > 0) {
-      group.value = { ...val }
-    }
-  },
-  { immediate: true }
-)
+	() => props.in_group,
+	(val) => {
+		if (val && Object.keys(val).length > 0) {
+			group.value = { ...val };
+		}
+	},
+	{ immediate: true },
+);
 
 function removeEdit() {
-  group.value = { name: '', public: true }
-  props.edit(false)
+	group.value = { name: "", public: true };
+	props.edit(false);
 }
 
 function cancelEdit() {
-  group.value = { name: '', public: true }
-  props.edit(false)
-  emit('cancel')
+	group.value = { name: "", public: true };
+	props.edit(false);
+	emit("cancel");
 }
 
 async function saveGroup() {
-  loading.value = true
-  if (group.value.id) {
-    await updateGroup()
-  } else {
-    await createGroup()
-  }
-  loading.value = false
+	loading.value = true;
+	if (group.value.id) {
+		await updateGroup();
+	} else {
+		await createGroup();
+	}
+	loading.value = false;
 }
 
 async function createGroup() {
-  const g = group.value
-  const data = { name: g.name, public: g.public }
-  await Api.group_create(data)
-  await update()
-  group.value = { name: '', public: true }
-  emit('cancel')
+	const g = group.value;
+	const data = { name: g.name, public: g.public };
+	await Api.group_create(data);
+	await update();
+	group.value = { name: "", public: true };
+	emit("cancel");
 }
 
 async function updateGroup() {
-  const g = group.value
-  const data = { id: g.id, name: g.name, public: g.public }
-  await Api.group_update(data)
-  await update()
-  props.edit(false)
+	const g = group.value;
+	const data = { id: g.id, name: g.name, public: g.public };
+	await Api.group_update(data);
+	await update();
+	props.edit(false);
 }
 
 async function update() {
-  const groups = await Api.groups()
-  store.setGroups(groups)
+	const groups = await Api.groups();
+	store.setGroups(groups);
 }
 </script>
 
