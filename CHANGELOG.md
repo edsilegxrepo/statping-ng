@@ -1,3 +1,23 @@
+# 0.97.6 (08-05-2026)
+- **Healthchecker Integration Refactored**:
+  - Updated healthchecker dependency to v0.6.2 (from v0.6.0)
+  - Updated dbchecker to v1.0.8, secretprotector to v0.0.4
+  - **CheckDatabase**: Now delegates password decryption to healthchecker instead of double-decrypting
+  - **CheckTLS**: Refactored to use healthchecker's TLSChecker with full feature support:
+    - OCSP revocation checking (`tls_check_ocsp` field)
+    - Certificate Transparency SCT verification (`tls_require_sct` field)
+    - SAN hostname validation (`tls_expected_san` field)
+    - Removed ~50 lines of manual TLS handshake code
+  - **CheckStorage**: Added proper `Close()` call for GCSChecker
+  - Fixed NewDBChecker signature (was missing logger argument)
+- **New Service Fields**:
+  - `tls_expected_san`: Expected SAN hostname for TLS certificate validation
+  - `tls_check_ocsp`: Enable OCSP revocation checking (default: false)
+  - `tls_require_sct`: Require Certificate Transparency SCTs (default: false)
+- **Security**:
+  - Added `utils.GetMasterKey()` to safely expose master key to healthchecker probes
+  - Master key is copied (not referenced) to prevent external mutation
+
 # 0.97.5 (08-04-2026)
 - **UI Enhancements**:
   - **Logs page redesign**:

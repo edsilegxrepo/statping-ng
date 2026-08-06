@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/edsilegxrepo/healthchecker/probes"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/statping-ng/statping-ng/types/checkins"
 	"github.com/statping-ng/statping-ng/types/metrics"
@@ -906,5 +907,244 @@ func (s *Service) CheckService(record bool) {
 		_, _ = CheckSmtp(s, record)
 	case "imap":
 		_, _ = CheckImap(s, record)
+	case "database":
+		_, _ = CheckDatabase(s, record)
+	case "storage":
+		_, _ = CheckStorage(s, record)
+	case "tls":
+		_, _ = CheckTLS(s, record)
 	}
+}
+
+// CheckDatabase tests database connectivity using healthchecker DBChecker probe.
+// Supports: postgres, mysql, sqlite, sqlserver, mongodb, oracle.
+// Delegates decryption to healthchecker - pass encrypted DSN directly.
+func CheckDatabase(s *Service, record bool) (*Service, error) {
+	defer s.updateLastCheck()
+	timer := prometheus.NewTimer(metrics.ServiceTimer(s.Name))
+	defer timer.ObserveDuration()
+
+	if !s.DatabaseType.Valid || s.DatabaseType.String == "" {
+		err := errors.New("database type not configured")
+		if record {
+			RecordFailure(s, err.Error(), "config")
+		}
+		return s, err
+	}
+
+	if !s.DatabaseDSN.Valid || s.DatabaseDSN.String == "" {
+		err := errors.New("database DSN not configured")
+		if record {
+			RecordFailure(s, err.Error(), "config")
+		}
+		return s, err
+	}
+
+	timeout := s.Timeout
+	if timeout == 0 {
+		timeout = 10
+	}
+
+	// Build healthchecker DbCheck config with encrypted DSN
+	// Healthchecker handles decryption internally via secretKey
+	dbCheck := probes.DbCheck{
+		Type:    s.DatabaseType.String,
+		Dsn:     s.DatabaseDSN.String, // Pass encrypted DSN directly
+		Timeout: timeout,
+	}
+	if s.DatabaseQuery.Valid && s.DatabaseQuery.String != "" {
+		dbCheck.Query = s.DatabaseQuery.String
+	}
+
+	// Get master key for healthchecker to decrypt password
+	secretKey := utils.GetMasterKey()
+
+	// Create and run the probe - healthchecker handles decryption
+	checker := probes.NewDBChecker(dbCheck, secretKey, nil)
+	defer func() { _ = checker.Close() }()
+
+	timeoutDuration := time.Duration(timeout) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
+	defer cancel()
+
+	t1 := utils.Now()
+
+	if err := checker.Check(ctx); err != nil {
+		if record {
+			RecordFailure(s, fmt.Sprintf("database check failed: %v", err), "database")
+		}
+		return s, err
+	}
+
+	s.Latency = utils.Now().Sub(t1).Microseconds()
+	s.Online = true
+	if record {
+		RecordSuccess(s)
+	}
+	return s, nil
+}
+
+// CheckStorage tests cloud storage connectivity using healthchecker GCSChecker probe.
+// Currently supports: GCS (S3 support pending).
+// GCSChecker handles credential decryption via SECRETPROTECTOR_MASTER_KEY env var.
+func CheckStorage(s *Service, record bool) (*Service, error) {
+	defer s.updateLastCheck()
+	timer := prometheus.NewTimer(metrics.ServiceTimer(s.Name))
+	defer timer.ObserveDuration()
+
+	if !s.StorageBackend.Valid || s.StorageBackend.String == "" {
+		err := errors.New("storage backend not configured")
+		if record {
+			RecordFailure(s, err.Error(), "config")
+		}
+		return s, err
+	}
+
+	if !s.StorageBucket.Valid || s.StorageBucket.String == "" {
+		err := errors.New("storage bucket not configured")
+		if record {
+			RecordFailure(s, err.Error(), "config")
+		}
+		return s, err
+	}
+
+	timeout := s.Timeout
+	if timeout == 0 {
+		timeout = 10
+	}
+
+	timeoutDuration := time.Duration(timeout) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
+	defer cancel()
+
+	t1 := utils.Now()
+
+	switch s.StorageBackend.String {
+	case "gcs":
+		// Decrypt credentials path if encrypted (the path itself may be encrypted)
+		credFile := ""
+		if s.StorageCredentials.Valid && s.StorageCredentials.String != "" {
+			decrypted, err := utils.Decrypt(s.StorageCredentials.String)
+			if err != nil {
+				if record {
+					RecordFailure(s, fmt.Sprintf("failed to decrypt credentials path: %v", err), "decrypt")
+				}
+				return s, err
+			}
+			credFile = decrypted
+		}
+
+		gcsCheck := probes.GcsCheck{
+			BucketName: s.StorageBucket.String,
+			CredFile:   credFile,
+			AllowADC:   credFile == "",
+			TimeoutSec: timeout,
+		}
+
+		checker := probes.NewGCSChecker(gcsCheck, nil)
+		defer func() { _ = checker.Close() }()
+
+		if err := checker.Check(ctx); err != nil {
+			if record {
+				RecordFailure(s, fmt.Sprintf("GCS check failed: %v", err), "gcs")
+			}
+			return s, err
+		}
+
+	case "s3":
+		err := errors.New("S3 storage backend not yet implemented")
+		if record {
+			RecordFailure(s, err.Error(), "config")
+		}
+		return s, err
+
+	default:
+		err := fmt.Errorf("unsupported storage backend: %s", s.StorageBackend.String)
+		if record {
+			RecordFailure(s, err.Error(), "config")
+		}
+		return s, err
+	}
+
+	s.Latency = utils.Now().Sub(t1).Microseconds()
+	s.Online = true
+	if record {
+		RecordSuccess(s)
+	}
+	return s, nil
+}
+
+// CheckTLS performs TLS certificate inspection using healthchecker TLSChecker.
+// Supports: certificate expiration, SAN validation, OCSP revocation, SCT verification.
+func CheckTLS(s *Service, record bool) (*Service, error) {
+	defer s.updateLastCheck()
+	timer := prometheus.NewTimer(metrics.ServiceTimer(s.Name))
+	defer timer.ObserveDuration()
+
+	target := s.TLSTarget.String
+	if target == "" {
+		target = s.Domain
+	}
+	if target == "" {
+		err := errors.New("TLS target not configured")
+		if record {
+			RecordFailure(s, err.Error(), "config")
+		}
+		return s, err
+	}
+
+	// Add default port if not specified
+	if _, _, err := net.SplitHostPort(target); err != nil {
+		target = net.JoinHostPort(target, "443")
+	}
+
+	timeout := s.Timeout
+	if timeout == 0 {
+		timeout = 10
+	}
+
+	minDays := s.TLSMinDays
+	if minDays == 0 {
+		minDays = 30
+	}
+
+	// Build healthchecker TlsCheck config
+	tlsCheck := probes.TlsCheck{
+		Target:      target,
+		MinDays:     minDays,
+		ExpectedSan: s.TLSExpectedSAN.String,
+		CheckOCSP:   s.TLSCheckOCSP.Bool,
+		RequireSCT:  s.TLSRequireSCT.Bool,
+	}
+
+	// Create TLSChecker - delegates all TLS logic to healthchecker
+	checker := probes.NewTLSChecker(tlsCheck, timeout, false, nil)
+	defer func() { _ = checker.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	t1 := utils.Now()
+
+	if err := checker.Check(ctx); err != nil {
+		if record {
+			RecordFailure(s, fmt.Sprintf("TLS check failed: %v", err), "tls")
+		}
+		return s, err
+	}
+
+	// Extract detailed results from healthchecker
+	result := checker.Result()
+	if result != nil {
+		s.TLSExpiry = &result.LeafNotAfter
+		s.TLSIssuer = result.LeafIssuer
+		s.TLSDaysRemaining = result.LeafDaysRemaining
+	}
+
+	s.Latency = utils.Now().Sub(t1).Microseconds()
+	s.Online = true
+	if record {
+		RecordSuccess(s)
+	}
+	return s, nil
 }

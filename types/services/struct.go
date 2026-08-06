@@ -13,25 +13,42 @@ import (
 
 // Service is the main struct for Services
 type Service struct {
-	Id                  int64                 `gorm:"primary_key;column:id" json:"id" yaml:"id"`
-	Name                string                `gorm:"column:name" json:"name" yaml:"name"`
-	Domain              string                `gorm:"column:domain" json:"domain" yaml:"domain" private:"true" scope:"user,admin"`
-	Expected            null.NullString       `gorm:"column:expected" json:"expected" yaml:"expected" scope:"user,admin"`
-	ExpectedStatus      int                   `gorm:"default:200;column:expected_status" json:"expected_status" yaml:"expected_status" scope:"user,admin"`
-	Interval            int                   `gorm:"default:30;column:check_interval" json:"check_interval" yaml:"check_interval"`
-	Type                string                `gorm:"column:check_type" json:"type" scope:"user,admin" yaml:"type"`
-	Method              string                `gorm:"column:method" json:"method" scope:"user,admin" yaml:"method"`
-	PostData            null.NullString       `gorm:"column:post_data" json:"post_data" scope:"user,admin" yaml:"post_data"`
-	Port                int                   `gorm:"not null;column:port" json:"port" scope:"user,admin" yaml:"port"`
-	Timeout             int                   `gorm:"default:30;column:timeout" json:"timeout" scope:"user,admin" yaml:"timeout"`
-	Order               int                   `gorm:"default:0;column:order_id" json:"order_id" yaml:"order_id"`
-	VerifySSL           null.NullBool         `gorm:"default:false;column:verify_ssl" json:"verify_ssl" scope:"user,admin" yaml:"verify_ssl"`
-	GrpcHealthCheck     null.NullBool         `gorm:"default:false;column:grpc_health_check" json:"grpc_health_check" scope:"user,admin" yaml:"grpc_health_check"`
-	Public              null.NullBool         `gorm:"default:true;column:public" json:"public" yaml:"public"`
-	GroupId             int                   `gorm:"index;default:0;column:group_id" json:"group_id" yaml:"group_id"`
-	TLSCert             null.NullString       `gorm:"column:tls_cert" json:"tls_cert" scope:"user,admin" yaml:"tls_cert"`
-	TLSCertKey          null.NullString       `gorm:"column:tls_cert_key" json:"tls_cert_key" scope:"user,admin" yaml:"tls_cert_key"`
-	TLSCertRoot         null.NullString       `gorm:"column:tls_cert_root" json:"tls_cert_root" scope:"user,admin" yaml:"tls_cert_root"`
+	Id              int64           `gorm:"primary_key;column:id" json:"id" yaml:"id"`
+	Name            string          `gorm:"column:name" json:"name" yaml:"name"`
+	Domain          string          `gorm:"column:domain" json:"domain" yaml:"domain" private:"true" scope:"user,admin"`
+	Expected        null.NullString `gorm:"column:expected" json:"expected" yaml:"expected" scope:"user,admin"`
+	ExpectedStatus  int             `gorm:"default:200;column:expected_status" json:"expected_status" yaml:"expected_status" scope:"user,admin"`
+	Interval        int             `gorm:"default:30;column:check_interval" json:"check_interval" yaml:"check_interval"`
+	Type            string          `gorm:"column:check_type" json:"type" scope:"user,admin" yaml:"type"`
+	Method          string          `gorm:"column:method" json:"method" scope:"user,admin" yaml:"method"`
+	PostData        null.NullString `gorm:"column:post_data" json:"post_data" scope:"user,admin" yaml:"post_data"`
+	Port            int             `gorm:"not null;column:port" json:"port" scope:"user,admin" yaml:"port"`
+	Timeout         int             `gorm:"default:30;column:timeout" json:"timeout" scope:"user,admin" yaml:"timeout"`
+	Order           int             `gorm:"default:0;column:order_id" json:"order_id" yaml:"order_id"`
+	VerifySSL       null.NullBool   `gorm:"default:false;column:verify_ssl" json:"verify_ssl" scope:"user,admin" yaml:"verify_ssl"`
+	GrpcHealthCheck null.NullBool   `gorm:"default:false;column:grpc_health_check" json:"grpc_health_check" scope:"user,admin" yaml:"grpc_health_check"`
+	Public          null.NullBool   `gorm:"default:true;column:public" json:"public" yaml:"public"`
+	GroupId         int             `gorm:"index;default:0;column:group_id" json:"group_id" yaml:"group_id"`
+	TLSCert         null.NullString `gorm:"column:tls_cert" json:"tls_cert" scope:"user,admin" yaml:"tls_cert"`
+	TLSCertKey      null.NullString `gorm:"column:tls_cert_key" json:"tls_cert_key" scope:"user,admin" yaml:"tls_cert_key"`
+	TLSCertRoot     null.NullString `gorm:"column:tls_cert_root" json:"tls_cert_root" scope:"user,admin" yaml:"tls_cert_root"`
+	// Database service fields
+	DatabaseType  null.NullString `gorm:"column:database_type" json:"database_type" scope:"user,admin" yaml:"database_type"`        // postgres, mysql, sqlite, sqlserver, mongodb
+	DatabaseDSN   null.NullString `gorm:"column:database_dsn" json:"database_dsn" scope:"admin" yaml:"database_dsn" private:"true"` // connection string (encrypted)
+	DatabaseQuery null.NullString `gorm:"column:database_query" json:"database_query" scope:"user,admin" yaml:"database_query"`     // optional query to execute
+	// Storage service fields
+	StorageBackend     null.NullString `gorm:"column:storage_backend" json:"storage_backend" scope:"user,admin" yaml:"storage_backend"` // gcs, s3, azure
+	StorageBucket      null.NullString `gorm:"column:storage_bucket" json:"storage_bucket" scope:"user,admin" yaml:"storage_bucket"`
+	StorageCredentials null.NullString `gorm:"column:storage_credentials" json:"storage_credentials" scope:"admin" yaml:"storage_credentials" private:"true"` // service account JSON (encrypted)
+	// TLS certificate monitoring fields
+	TLSTarget        null.NullString `gorm:"column:tls_target" json:"tls_target" scope:"user,admin" yaml:"tls_target"`                  // host:port to check
+	TLSMinDays       int             `gorm:"column:tls_min_days;default:30" json:"tls_min_days" scope:"user,admin" yaml:"tls_min_days"` // alert if cert expires within N days
+	TLSExpectedSAN   null.NullString `gorm:"column:tls_expected_san" json:"tls_expected_san" scope:"user,admin" yaml:"tls_expected_san"`
+	TLSCheckOCSP     null.NullBool   `gorm:"default:false;column:tls_check_ocsp" json:"tls_check_ocsp" scope:"user,admin" yaml:"tls_check_ocsp"`
+	TLSRequireSCT    null.NullBool   `gorm:"default:false;column:tls_require_sct" json:"tls_require_sct" scope:"user,admin" yaml:"tls_require_sct"`
+	TLSExpiry        *time.Time      `gorm:"-" json:"tls_expiry,omitempty" yaml:"-"`         // certificate expiry date (runtime)
+	TLSIssuer        string          `gorm:"-" json:"tls_issuer,omitempty" yaml:"-"`         // certificate issuer (runtime)
+	TLSDaysRemaining int             `gorm:"-" json:"tls_days_remaining,omitempty" yaml:"-"` // days until expiry (runtime)
 	Headers             null.NullString       `gorm:"column:headers" json:"headers" scope:"user,admin" yaml:"headers"`
 	Permalink           null.NullString       `gorm:"index;column:permalink" json:"permalink" yaml:"permalink"`
 	Redirect            null.NullBool         `gorm:"default:false;column:redirect" json:"redirect" scope:"user,admin" yaml:"redirect"`

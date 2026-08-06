@@ -12,7 +12,7 @@ import (
 	"sync"
 	"unicode"
 
-	"criticalsys.net/secretprotector/pkg/libsecsecrets"
+	"github.com/edsilegxrepo/secretprotector/pkg/libsecsecrets"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -76,6 +76,19 @@ func MasterKeyInitialized() bool {
 	masterKeyMu.RLock()
 	defer masterKeyMu.RUnlock()
 	return masterKey != nil
+}
+
+// GetMasterKey returns a copy of the master key for use by healthchecker probes.
+// Returns nil if master key is not initialized.
+func GetMasterKey() []byte {
+	masterKeyMu.RLock()
+	defer masterKeyMu.RUnlock()
+	if masterKey == nil {
+		return nil
+	}
+	keyCopy := make([]byte, len(masterKey))
+	copy(keyCopy, masterKey)
+	return keyCopy
 }
 
 // ZeroMasterKey clears the master key from memory (call on shutdown)
