@@ -16,8 +16,8 @@ func Example() *Core {
 		MigrationId: utils.Now().Unix(),
 		Language:    "en",
 	}
-	App = core
-	return App
+	SetApp(core)
+	return GetApp()
 }
 
 func Samples() error {

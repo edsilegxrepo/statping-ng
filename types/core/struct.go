@@ -1,15 +1,37 @@
 package core
 
 import (
+	"sync"
 	"time"
 
 	"github.com/statping-ng/statping-ng/types/null"
 	"github.com/statping-ng/statping-ng/utils"
 )
 
-var App *Core
+var (
+	App   *Core
+	appMu sync.RWMutex
+)
+
+// SetApp sets the global App variable with write lock protection.
+func SetApp(c *Core) {
+	appMu.Lock()
+	defer appMu.Unlock()
+	App = c
+}
+
+// GetApp returns the global App variable with read lock protection.
+// Note: Most code still accesses App directly for performance.
+// Use this only in test setup where races with Example() occur.
+func GetApp() *Core {
+	appMu.RLock()
+	defer appMu.RUnlock()
+	return App
+}
 
 func New(version, commit string) {
+	appMu.Lock()
+	defer appMu.Unlock()
 	App = new(Core)
 	App.Version = version
 	App.Commit = commit

@@ -1,13 +1,26 @@
 package notifications
 
 import (
+	"sync"
+
 	"github.com/statping-ng/statping-ng/database"
 )
 
-var db database.Database
+var (
+	db   database.Database
+	dbMu sync.RWMutex
+)
 
 func SetDB(database database.Database) {
+	dbMu.Lock()
+	defer dbMu.Unlock()
 	db = database
+}
+
+func getDB() database.Database {
+	dbMu.RLock()
+	defer dbMu.RUnlock()
+	return db
 }
 
 func (n *Notification) Values() Values {
@@ -25,7 +38,7 @@ func (n *Notification) Values() Values {
 
 func All() []*Notification {
 	var n []*Notification
-	q := db.Find(&n)
+	q := getDB().Find(&n)
 	if q.Error() != nil {
 		return nil
 	}
@@ -34,7 +47,7 @@ func All() []*Notification {
 
 func Find(method string) (*Notification, error) {
 	var n Notification
-	q := db.Where("method = ?", method).First(&n)
+	q := getDB().Where("method = ?", method).First(&n)
 	if q.Error() != nil {
 		return nil, q.Error()
 	}
@@ -43,10 +56,10 @@ func Find(method string) (*Notification, error) {
 
 func (n *Notification) Create() error {
 	var p Notification
-	q := db.Where("method = ?", n.Method).First(&p)
+	q := getDB().Where("method = ?", n.Method).First(&p)
 	if q.RecordNotFound() {
 		log.Infof("Notifier '%s' was not found, adding into database...\n", n.Method)
-		if err := db.Create(n).Error(); err != nil {
+		if err := getDB().Create(n).Error(); err != nil {
 			return err
 		}
 		return nil
@@ -84,7 +97,7 @@ func (n *Notification) UpdateFields(notif *Notification) *Notification {
 }
 
 func (n *Notification) Update() error {
-	if err := db.Update(n).Error(); err != nil {
+	if err := getDB().Update(n).Error(); err != nil {
 		return err
 	}
 	return nil
