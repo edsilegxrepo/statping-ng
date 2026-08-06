@@ -729,9 +729,12 @@ func TestRandomString(t *testing.T) {
 }
 
 func TestDeleteDirectory(t *testing.T) {
-	// Close log file handles before deleting logs directory (required on Windows)
-	CloseLogs()
-	assert.Nil(t, DeleteDirectory(Directory+"/logs"))
+	// Create a test-specific directory instead of using logs (which may be in use)
+	testDir := Directory + "/test_delete_dir"
+	require.Nil(t, CreateDirectory(testDir))
+	require.DirExists(t, testDir)
+	assert.Nil(t, DeleteDirectory(testDir))
+	assert.NoDirExists(t, testDir)
 }
 
 func TestRenameDirectory(t *testing.T) {

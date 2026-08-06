@@ -693,41 +693,29 @@ func TestServiceDeleteOperations(t *testing.T) {
 }
 
 func TestReorderServiceHandler(t *testing.T) {
-	ensureHandlerSetup(t)
-
-	// Get existing services dynamically, filtering out any with empty names (corrupted by prior tests)
-	allSvcs := services.AllInOrder()
-	var validSvcs []*services.Service
-	for _, s := range allSvcs {
-		if s.Name != "" {
-			validSvcs = append(validSvcs, s)
-		}
-	}
-	if len(validSvcs) < 2 {
-		t.Skip("Need at least 2 valid services for reorder tests")
-	}
-
-	svc1 := validSvcs[0]
-	svc2 := validSvcs[1]
+	// Ensure we have at least 2 services, creating them if needed
+	svcIds := ensureMinServices(t, 2)
+	svc1Id := svcIds[0]
+	svc2Id := svcIds[1]
 
 	tests := []HTTPTest{
 		{
 			Name:           "Reorder Services - Valid Order",
 			URL:            "/api/reorder/services",
 			Method:         "POST",
-			Body:           fmt.Sprintf(`[{"service":%d,"order":1},{"service":%d,"order":2}]`, svc1.Id, svc2.Id),
+			Body:           fmt.Sprintf(`[{"service":%d,"order":1},{"service":%d,"order":2}]`, svc1Id, svc2Id),
 			ExpectedStatus: 200,
 			HttpHeaders:    []string{"Content-Type=application/json"},
 			FuncTest: func(t *testing.T) error {
-				srv, err := services.Find(svc1.Id)
+				srv, err := services.Find(svc1Id)
 				require.Nil(t, err)
 				if srv.Order != 1 {
-					return errors.Errorf("service %d order incorrect: %d, expected 1", svc1.Id, srv.Order)
+					return errors.Errorf("service %d order incorrect: %d, expected 1", svc1Id, srv.Order)
 				}
-				srv, err = services.Find(svc2.Id)
+				srv, err = services.Find(svc2Id)
 				require.Nil(t, err)
 				if srv.Order != 2 {
-					return errors.Errorf("service %d order incorrect: %d, expected 2", svc2.Id, srv.Order)
+					return errors.Errorf("service %d order incorrect: %d, expected 2", svc2Id, srv.Order)
 				}
 				return nil
 			},
@@ -765,14 +753,14 @@ func TestReorderServiceHandler(t *testing.T) {
 			Name:           "Reorder Services - Single Service",
 			URL:            "/api/reorder/services",
 			Method:         "POST",
-			Body:           fmt.Sprintf(`[{"service":%d,"order":5}]`, svc1.Id),
+			Body:           fmt.Sprintf(`[{"service":%d,"order":5}]`, svc1Id),
 			ExpectedStatus: 200,
 			HttpHeaders:    []string{"Content-Type=application/json"},
 			FuncTest: func(t *testing.T) error {
-				srv, err := services.Find(svc1.Id)
+				srv, err := services.Find(svc1Id)
 				require.Nil(t, err)
 				if srv.Order != 5 {
-					return errors.Errorf("service %d order incorrect: %d, expected 5", svc1.Id, srv.Order)
+					return errors.Errorf("service %d order incorrect: %d, expected 5", svc1Id, srv.Order)
 				}
 				return nil
 			},

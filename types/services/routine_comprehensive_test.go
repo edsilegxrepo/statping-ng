@@ -203,10 +203,13 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 	})
 
 	t.Run("SMTP on actual port 25 mock", func(t *testing.T) {
-		// Start mock server on port 2525
+		// Start mock server on random port
 		listener, err := mockSMTPServerWithAuth(0)
 		require.NoError(t, err)
 		defer func() { _ = listener.Close() }()
+
+		// Small delay to ensure server goroutine is ready
+		time.Sleep(10 * time.Millisecond)
 
 		port := listener.Addr().(*net.TCPAddr).Port
 
@@ -222,7 +225,8 @@ func TestCheckSmtp_Comprehensive(t *testing.T) {
 		result, err := CheckSmtp(s, false)
 		assert.NoError(t, err)
 		assert.True(t, result.Online)
-		assert.Greater(t, result.Latency, int64(0))
+		// Latency may be 0 on fast local connections, just check it's non-negative
+		assert.GreaterOrEqual(t, result.Latency, int64(0))
 	})
 
 	t.Run("requires credentials on non-25 ports", func(t *testing.T) {

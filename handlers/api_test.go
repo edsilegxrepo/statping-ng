@@ -478,15 +478,23 @@ func ensureHandlerSetup(t *testing.T) {
 	testSetupMutex.Lock()
 	defer testSetupMutex.Unlock()
 
-	// If already set up (e.g., by TestSetupRoutes), skip
+	// If already set up with enough services, skip
 	if core.App != nil && core.App.Setup && len(services.Services()) >= 6 {
 		return
 	}
 
-	// Use sync.Once to ensure setup runs exactly once per test run
+	// Run setup (may be first time, or recovery after state corruption)
 	setupOnce.Do(func() {
 		setupErr = doHandlerSetup(t)
 	})
+
+	// If sync.Once already fired but we still don't have services, reset and try again
+	if setupErr == nil && len(services.Services()) < 6 {
+		setupOnce = sync.Once{} // Reset for retry
+		setupOnce.Do(func() {
+			setupErr = doHandlerSetup(t)
+		})
+	}
 
 	if setupErr != nil {
 		t.Fatalf("handler setup failed: %v", setupErr)
@@ -546,6 +554,44 @@ func StopServices(t *testing.T) error {
 		s.Close()
 	}
 	return nil
+}
+
+// ensureMinServices ensures at least n valid services exist for testing.
+// Creates additional services if needed. Returns the service IDs.
+func ensureMinServices(t *testing.T, n int) []int64 {
+	t.Helper()
+	ensureHandlerSetup(t)
+
+	// Get valid services (non-empty name)
+	var validSvcs []*services.Service
+	for _, s := range services.AllInOrder() {
+		if s.Name != "" {
+			validSvcs = append(validSvcs, s)
+		}
+	}
+
+	// Create more if needed
+	for i := len(validSvcs); i < n; i++ {
+		svc := &services.Service{
+			Name:     fmt.Sprintf("Test Service %d", i+1),
+			Domain:   fmt.Sprintf("https://test%d.example.com", i+1),
+			Type:     "http",
+			Method:   "GET",
+			Interval: 60,
+			Timeout:  30,
+			Order:    i + 1,
+		}
+		if err := svc.Create(); err != nil {
+			t.Fatalf("failed to create test service: %v", err)
+		}
+		validSvcs = append(validSvcs, svc)
+	}
+
+	ids := make([]int64, len(validSvcs))
+	for i, s := range validSvcs {
+		ids[i] = s.Id
+	}
+	return ids[:n]
 }
 
 var (
