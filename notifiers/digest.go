@@ -159,9 +159,6 @@ func StartDigestScheduler() {
 func StopDigestScheduler() {
 	digestResetMu.Lock()
 	stoppedChan := digestStopped
-	digestResetMu.Unlock()
-
-	digestResetMu.Lock()
 	digestStopOnce.Do(func() {
 		if stopDigest != nil {
 			close(stopDigest)
@@ -171,7 +168,7 @@ func StopDigestScheduler() {
 	})
 	digestResetMu.Unlock()
 
-	// Wait for scheduler to actually exit
+	// Wait for scheduler to actually exit (nil check prevents deadlock if never started)
 	if stoppedChan != nil {
 		<-stoppedChan
 	}
@@ -205,7 +202,8 @@ func calculateNextDigestTime(now time.Time) time.Time {
 	if c == nil {
 		return now.Add(time.Hour)
 	}
-	hour := c.DigestHour
+	ds := c.GetDigestSettings()
+	hour := ds.Hour
 	if hour < 0 || hour > 23 {
 		hour = 8
 	}
@@ -222,7 +220,11 @@ type digestData = notifier.DigestData
 
 func sendDailyDigest() {
 	c := core.GetApp()
-	if c == nil || !c.DigestEnabled.Bool {
+	if c == nil {
+		return
+	}
+	ds := c.GetDigestSettings()
+	if !ds.Enabled {
 		return
 	}
 
@@ -230,7 +232,7 @@ func sendDailyDigest() {
 	data := generateDigestData()
 
 	// Send to email recipients (legacy behavior)
-	emails := strings.TrimSpace(c.DigestEmails)
+	emails := strings.TrimSpace(ds.Emails)
 	if emails != "" && email.Host.String != "" {
 		htmlContent := renderDigestEmail(data)
 		recipients := parseEmails(emails)
@@ -325,8 +327,8 @@ func generateDigestData() digestData {
 	appName := ""
 	domain := ""
 	if c != nil {
-		appName = c.Name
-		domain = c.Domain
+		appName = c.GetName()
+		domain = c.GetDomain()
 	}
 
 	return digestData{
@@ -407,7 +409,7 @@ func sendDigestEmail(to, htmlContent string) error {
 	c := core.GetApp()
 	appName := "Statping"
 	if c != nil {
-		appName = c.Name
+		appName = c.GetName()
 	}
 
 	m := mail.NewMessage()
@@ -425,7 +427,8 @@ func SendTestDigest() error {
 	if c == nil {
 		return fmt.Errorf("core not initialized")
 	}
-	emails := strings.TrimSpace(c.DigestEmails)
+	ds := c.GetDigestSettings()
+	emails := strings.TrimSpace(ds.Emails)
 	if emails == "" {
 		return fmt.Errorf("no email addresses configured")
 	}

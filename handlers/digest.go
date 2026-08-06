@@ -14,10 +14,11 @@ func apiDigestSettingsHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(errors.New("core not initialized"), w, r)
 		return
 	}
+	ds := c.GetDigestSettings()
 	settings := map[string]interface{}{
-		"digest_enabled": c.DigestEnabled.Bool,
-		"digest_emails":  c.DigestEmails,
-		"digest_hour":    c.DigestHour,
+		"digest_enabled": ds.Enabled,
+		"digest_emails":  ds.Emails,
+		"digest_hour":    ds.Hour,
 	}
 	returnJson(settings, w, r)
 }
@@ -46,10 +47,9 @@ func apiDigestSaveHandler(w http.ResponseWriter, r *http.Request) {
 		sendErrorJson(errors.New("core not initialized"), w, r)
 		return
 	}
-	c.DigestEnabled.Bool = req.DigestEnabled
-	c.DigestEnabled.Valid = true
-	c.DigestEmails = req.DigestEmails
-	c.DigestHour = req.DigestHour
+
+	// Use thread-safe setter
+	c.SetDigestSettings(req.DigestEnabled, req.DigestEmails, req.DigestHour)
 
 	if err := c.Update(); err != nil {
 		sendErrorJson(err, w, r)

@@ -126,11 +126,18 @@ func Add(notifs ...services.ServiceNotifier) {
 
 // makeReplacer creates a safe replacer from service and failure data
 func makeReplacer(s *services.Service, f failures.Failure) replacer {
+	c := core.GetApp()
+	var coreName, coreDesc, coreDomain string
+	if c != nil {
+		coreName = c.GetName()
+		coreDesc = c.Description // read-only after init
+		coreDomain = c.GetDomain()
+	}
 	data := replacer{
 		Core: coreInfo{
-			Name:        core.App.Name,
-			Description: core.App.Description,
-			Domain:      core.App.Domain,
+			Name:        coreName,
+			Description: coreDesc,
+			Domain:      coreDomain,
 		},
 		Service: serviceInfo{
 			Id:             s.Id,

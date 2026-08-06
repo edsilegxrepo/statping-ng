@@ -21,8 +21,6 @@ func SetApp(c *Core) {
 }
 
 // GetApp returns the global App variable with read lock protection.
-// Note: Most code still accesses App directly for performance.
-// Use this only in test setup where races with Example() occur.
 func GetApp() *Core {
 	appMu.RLock()
 	defer appMu.RUnlock()
@@ -38,10 +36,53 @@ func New(version, commit string) {
 	App.Started = utils.Now()
 }
 
+// DigestSettings holds digest configuration for thread-safe access
+type DigestSettings struct {
+	Enabled bool
+	Emails  string
+	Hour    int
+}
+
+// GetDigestSettings returns digest settings with read lock protection
+func (c *Core) GetDigestSettings() DigestSettings {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return DigestSettings{
+		Enabled: c.DigestEnabled.Bool,
+		Emails:  c.DigestEmails,
+		Hour:    c.DigestHour,
+	}
+}
+
+// SetDigestSettings updates digest settings with write lock protection
+func (c *Core) SetDigestSettings(enabled bool, emails string, hour int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.DigestEnabled.Bool = enabled
+	c.DigestEnabled.Valid = true
+	c.DigestEmails = emails
+	c.DigestHour = hour
+}
+
+// GetName returns the app name with read lock protection
+func (c *Core) GetName() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.Name
+}
+
+// GetDomain returns the domain with read lock protection
+func (c *Core) GetDomain() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.Domain
+}
+
 // Core struct contains all the required fields for Statping. All application settings
 // will be saved into 1 row in the 'core' table. You can use the core.CoreApp
 // global variable to interact with the attributes to the application, such as services.
 type Core struct {
+	mu             sync.RWMutex    `gorm:"-" json:"-"` // protects field access
 	Name           string          `gorm:"not null;column:name" json:"name,omitempty"`
 	Description    string          `gorm:"not null;column:description" json:"description,omitempty"`
 	ConfigFile     string          `gorm:"column:config" json:"-"`

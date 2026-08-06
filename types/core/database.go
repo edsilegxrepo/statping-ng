@@ -195,23 +195,29 @@ func Select() (*Core, error) {
 	if q.Error() != nil {
 		return nil, q.Error()
 	}
-	App = &c
 
 	// ALLOW_REPORTS controls digest feature availability (default: true)
-	App.AllowReports = null.NewNullBool(utils.Params.GetBool("ALLOW_REPORTS"))
+	c.AllowReports = null.NewNullBool(utils.Params.GetBool("ALLOW_REPORTS"))
 	if utils.Params.GetString("LANGUAGE") != "" {
-		App.Language = utils.Params.GetString("LANGUAGE")
+		c.Language = utils.Params.GetString("LANGUAGE")
 	}
 	if utils.Params.GetString("API_SECRET") != "" {
-		App.ApiSecret = utils.Params.GetString("API_SECRET")
+		c.ApiSecret = utils.Params.GetString("API_SECRET")
 	}
-	App.Version = utils.Params.GetString("VERSION")
-	App.Commit = utils.Params.GetString("COMMIT")
-	App.Environment = utils.Params.GetString("STATPING_ENV")
-	return App, q.Error()
+	c.Version = utils.Params.GetString("VERSION")
+	c.Commit = utils.Params.GetString("COMMIT")
+	c.Environment = utils.Params.GetString("STATPING_ENV")
+
+	// Use thread-safe setter for global App
+	SetApp(&c)
+	return GetApp(), q.Error()
 }
 
 func (c *Core) Create() error {
+	d := getDB()
+	if d == nil {
+		return errors.New("database has not been initiated yet.")
+	}
 	if c.ApiSecret == "" {
 		c.ApiSecret = utils.RandomString(32)
 		apiEnv := utils.Params.GetString("API_SECRET")
@@ -221,7 +227,7 @@ func (c *Core) Create() error {
 	}
 	// Note: EncryptionKey field is deprecated - external master key is now used
 	// Field kept for backward compatibility with existing databases
-	q := getDB().Create(c)
+	q := d.Create(c)
 	utils.Log.Infof("API Key created: %s", c.ApiSecret)
 	return q.Error()
 }

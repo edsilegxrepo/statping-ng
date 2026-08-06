@@ -141,7 +141,7 @@ func (t *teams) OnTest() (string, error) {
 			{
 				"type":  "Action.OpenUrl",
 				"title": "Open Statping",
-				"url":   core.App.Domain,
+				"url":   core.GetApp().GetDomain(),
 			},
 		},
 	)
@@ -149,6 +149,7 @@ func (t *teams) OnTest() (string, error) {
 }
 
 func (t *teams) OnFailure(srv *services.Service, f failures.Failure) (string, error) {
+	domain := core.GetApp().GetDomain()
 	card := t.buildCard(
 		fmt.Sprintf("🔴 Service Offline: %s", srv.Name),
 		fmt.Sprintf("The service **%s** is currently **offline** and not responding.", srv.Name),
@@ -165,7 +166,7 @@ func (t *teams) OnFailure(srv *services.Service, f failures.Failure) (string, er
 			{
 				"type":  "Action.OpenUrl",
 				"title": "View Service",
-				"url":   fmt.Sprintf("%s/service/%d", core.App.Domain, srv.Id),
+				"url":   fmt.Sprintf("%s/service/%d", domain, srv.Id),
 			},
 		},
 	)
@@ -173,6 +174,7 @@ func (t *teams) OnFailure(srv *services.Service, f failures.Failure) (string, er
 }
 
 func (t *teams) OnSuccess(srv *services.Service) (string, error) {
+	domain := core.GetApp().GetDomain()
 	card := t.buildCard(
 		fmt.Sprintf("🟢 Service Online: %s", srv.Name),
 		fmt.Sprintf("The service **%s** is back **online** and responding normally.", srv.Name),
@@ -187,7 +189,7 @@ func (t *teams) OnSuccess(srv *services.Service) (string, error) {
 			{
 				"type":  "Action.OpenUrl",
 				"title": "View Service",
-				"url":   fmt.Sprintf("%s/service/%d", core.App.Domain, srv.Id),
+				"url":   fmt.Sprintf("%s/service/%d", domain, srv.Id),
 			},
 		},
 	)
