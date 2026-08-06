@@ -2,6 +2,7 @@ package users
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/metrics"
@@ -10,12 +11,21 @@ import (
 )
 
 var (
-	db  database.Database
-	log = utils.Log.WithField("type", "user")
+	db   database.Database
+	dbMu sync.RWMutex
+	log  = utils.Log.WithField("type", "user")
 )
 
 func SetDB(database database.Database) {
+	dbMu.Lock()
+	defer dbMu.Unlock()
 	db = database
+}
+
+func getDB() database.Database {
+	dbMu.RLock()
+	defer dbMu.RUnlock()
+	return db
 }
 
 func (u *User) AfterFind(tx *gorm.DB) (err error) {
@@ -40,7 +50,7 @@ func (u *User) AfterDelete(tx *gorm.DB) (err error) {
 
 func Find(id int64) (*User, error) {
 	var user User
-	q := db.Where("id = ?", id).First(&user)
+	q := getDB().Where("id = ?", id).First(&user)
 	return &user, q.Error()
 }
 
@@ -48,13 +58,13 @@ func Find(id int64) (*User, error) {
 // Normalizes input to lowercase since usernames are stored lowercase.
 func FindByUsername(username string) (*User, error) {
 	var user User
-	q := db.Where("username = ?", strings.ToLower(username)).First(&user)
+	q := getDB().Where("username = ?", strings.ToLower(username)).First(&user)
 	return &user, q.Error()
 }
 
 func FindByAPIKey(key string) (*User, error) {
 	var user User
-	q := db.Where("api_key = ?", key).First(&user)
+	q := getDB().Where("api_key = ?", key).First(&user)
 	return &user, q.Error()
 }
 
@@ -62,20 +72,20 @@ func FindByAPIKey(key string) (*User, error) {
 // Normalizes input to lowercase since emails are stored lowercase.
 func FindByEmail(email string) (*User, error) {
 	var user User
-	q := db.Where("email = ?", strings.ToLower(email)).First(&user)
+	q := getDB().Where("email = ?", strings.ToLower(email)).First(&user)
 	return &user, q.Error()
 }
 
 func All() []*User {
 	var users []*User
-	db.Find(&users)
+	getDB().Find(&users)
 	return users
 }
 
 // CountEnabledAdmins returns the number of enabled admin users
 func CountEnabledAdmins() int {
 	var count int64
-	db.Model(&User{}).Where("administrator = ?", true).Where("enabled = ?", true).Count(&count)
+	getDB().Model(&User{}).Where("administrator = ?", true).Where("enabled = ?", true).Count(&count)
 	return int(count)
 }
 
@@ -92,18 +102,19 @@ func IsLastEnabledAdmin(userID int64) bool {
 }
 
 func (u *User) Create() error {
-	q := db.Create(u)
+	q := getDB().Create(u)
 	return q.Error()
 }
 
 func (u *User) Update() error {
-	q := db.Update(u)
+	q := getDB().Update(u)
 	return q.Error()
 }
 
 func (u *User) Delete() error {
-	q := db.Delete(u)
-	if db.Error() == nil {
+	d := getDB()
+	q := d.Delete(u)
+	if d.Error() == nil {
 		log.Warnf("User #%d (%s) has been deleted", u.Id, u.Username)
 	}
 	return q.Error()

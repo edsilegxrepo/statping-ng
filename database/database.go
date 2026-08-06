@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/statping-ng/statping-ng/types/metrics"
@@ -17,7 +18,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var database Database
+var (
+	database   Database
+	databaseMu sync.RWMutex
+)
 
 // Database is an interface which DB implements
 type Database interface {
@@ -113,7 +117,12 @@ func (it *Db) ChunkSize() int {
 
 func Routine() {
 	for {
-		sqlDB, err := database.DB()
+		db := Get()
+		if db == nil {
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		sqlDB, err := db.DB()
 		if err != nil || sqlDB == nil {
 			time.Sleep(5 * time.Second)
 			continue
@@ -132,7 +141,11 @@ func (it *Db) DbType() string {
 }
 
 func DbType() string {
-	return database.DbType()
+	db := Get()
+	if db == nil {
+		return ""
+	}
+	return db.DbType()
 }
 
 func (it *Db) Db() Database {
@@ -211,16 +224,20 @@ func Openw(dialect string, args ...interface{}) (db Database, err error) {
 	if err != nil {
 		return nil, err
 	}
-	database = Wrap(gormdb)
+	Set(Wrap(gormdb))
 	go Routine()
-	return database, err
+	return Get(), err
 }
 
 func Get() Database {
+	databaseMu.RLock()
+	defer databaseMu.RUnlock()
 	return database
 }
 
 func Set(db Database) {
+	databaseMu.Lock()
+	defer databaseMu.Unlock()
 	database = db
 }
 
