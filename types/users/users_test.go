@@ -13,118 +13,132 @@ import (
 
 const testPassword = "Password123456789012345678901234567890"
 
-var example = &User{
-	Username: "example_user",
-	Email:    "info@example.com",
-	Password: testPassword,
-	Admin:    null.NewNullBool(true),
-}
+// setupTestDB creates an isolated in-memory SQLite database for testing.
+// Each workflow gets its own database - no shared state between workflows.
+// The database is automatically closed when the test completes.
+// Note: This modifies the package-level db, so workflows must run sequentially.
+func setupTestDB(t *testing.T) {
+	t.Helper()
 
-func TestInit(t *testing.T) {
-	// DB setup moved to TestMain in main_test.go
-	// This test now just creates the example user
-	err := example.Create()
-	require.Nil(t, err)
-}
-
-func TestFind(t *testing.T) {
-	item, err := Find(example.Id)
-	require.Nil(t, err)
-	assert.Equal(t, "example_user", item.Username)
-	assert.NotEmpty(t, item.ApiKey)
-	assert.NotEqual(t, testPassword, item.Password)
-	assert.True(t, item.Admin.Bool)
-}
-
-func TestFindByUsername(t *testing.T) {
-	item, err := FindByUsername("example_user")
-	require.Nil(t, err)
-	assert.Equal(t, "example_user", item.Username)
-	assert.NotEmpty(t, item.ApiKey)
-	assert.NotEqual(t, testPassword, item.Password)
-	assert.True(t, item.Admin.Bool)
-}
-
-func TestAll(t *testing.T) {
-	items := All()
-	assert.Len(t, items, 1)
-}
-
-func TestCreate(t *testing.T) {
-	example := &User{
-		Username: "exampleuser2",
-		Password: testPassword,
-		Email:    "info@yahoo.com",
-	}
-	err := example.Create()
-	require.Nil(t, err)
-	assert.NotZero(t, example.Id)
-	assert.Equal(t, "exampleuser2", example.Username)
-	assert.NotEqual(t, testPassword, example.Password)
-	assert.NotZero(t, example.CreatedAt)
-	assert.NotEmpty(t, example.ApiKey)
-}
-
-func TestAuthUser(t *testing.T) {
-	t.SkipNow()
-	u, ok := AuthUser("exampleuser2", utils.HashPassword("password12345"))
-	require.True(t, ok)
-	assert.Equal(t, "exampleuser2", u.Username)
-
-	u, ok = AuthUser("exampleuser2", "wrongpass")
-	assert.False(t, ok)
-	assert.Nil(t, u)
-}
-
-func TestUpdate(t *testing.T) {
-	item, err := Find(example.Id)
-	require.Nil(t, err)
-	item.Username = "updated_user"
-	err = item.Update()
-	require.Nil(t, err)
-	assert.Equal(t, "updated_user", item.Username)
-}
-
-func TestDelete(t *testing.T) {
-	all := All()
-	assert.Len(t, all, 2)
-
-	item, err := Find(example.Id)
-	require.Nil(t, err)
-
-	err = item.Delete()
-	require.Nil(t, err)
-
-	all = All()
-	assert.Len(t, all, 1)
-}
-
-func TestSamples(t *testing.T) {
-	_, err := Samples()
-	require.Nil(t, err)
-	assert.Len(t, All(), 3)
-}
-
-func TestClose(t *testing.T) {
-	assert.Nil(t, db.Close())
-}
-
-// ============================================================================
-// Additional comprehensive tests for database.go functions
-// ============================================================================
-
-func TestDatabaseFunctions(t *testing.T) {
-	// Setup fresh database for these tests
 	err := utils.InitLogs()
 	require.Nil(t, err)
+
 	testDb, err := database.OpenTester()
 	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
 
-	t.Run("SetDB", func(t *testing.T) {
-		// Verify SetDB was successful by performing an operation
+	testDb.CreateTable(&User{})
+
+	// Save original db and restore on cleanup
+	origDb := db
+	SetDB(testDb)
+
+	t.Cleanup(func() {
+		_ = testDb.Close()
+		// Restore original db (may be nil)
+		db = origDb
+	})
+}
+
+// ============================================================================
+// Workflow 1: Core CRUD Chain
+// Tests basic Create, Read, Update, Delete operations in sequence
+// ============================================================================
+
+func TestWorkflow1_CoreCRUD(t *testing.T) {
+	setupTestDB(t)
+
+	var exampleUserID int64
+
+	t.Run("Init_CreateUser", func(t *testing.T) {
+		user := &User{
+			Username: "example_user",
+			Email:    "info@example.com",
+			Password: testPassword,
+			Admin:    null.NewNullBool(true),
+		}
+		err := user.Create()
+		require.Nil(t, err)
+		require.NotZero(t, user.Id)
+		exampleUserID = user.Id
+	})
+
+	t.Run("Find", func(t *testing.T) {
+		item, err := Find(exampleUserID)
+		require.Nil(t, err)
+		assert.Equal(t, "example_user", item.Username)
+		assert.NotEmpty(t, item.ApiKey)
+		assert.NotEqual(t, testPassword, item.Password)
+		assert.True(t, item.Admin.Bool)
+	})
+
+	t.Run("FindByUsername", func(t *testing.T) {
+		item, err := FindByUsername("example_user")
+		require.Nil(t, err)
+		assert.Equal(t, "example_user", item.Username)
+		assert.NotEmpty(t, item.ApiKey)
+		assert.NotEqual(t, testPassword, item.Password)
+		assert.True(t, item.Admin.Bool)
+	})
+
+	t.Run("All", func(t *testing.T) {
+		items := All()
+		assert.Len(t, items, 1)
+	})
+
+	t.Run("Create_SecondUser", func(t *testing.T) {
+		user := &User{
+			Username: "exampleuser2",
+			Password: testPassword,
+			Email:    "info@yahoo.com",
+		}
+		err := user.Create()
+		require.Nil(t, err)
+		assert.NotZero(t, user.Id)
+		assert.Equal(t, "exampleuser2", user.Username)
+		assert.NotEqual(t, testPassword, user.Password)
+		assert.NotZero(t, user.CreatedAt)
+		assert.NotEmpty(t, user.ApiKey)
+	})
+
+	t.Run("Update", func(t *testing.T) {
+		item, err := Find(exampleUserID)
+		require.Nil(t, err)
+		item.Username = "updated_user"
+		err = item.Update()
+		require.Nil(t, err)
+		assert.Equal(t, "updated_user", item.Username)
+	})
+
+	t.Run("Delete", func(t *testing.T) {
+		all := All()
+		assert.Len(t, all, 2)
+
+		item, err := Find(exampleUserID)
+		require.Nil(t, err)
+
+		err = item.Delete()
+		require.Nil(t, err)
+
+		all = All()
+		assert.Len(t, all, 1)
+	})
+
+	t.Run("Samples", func(t *testing.T) {
+		_, err := Samples()
+		require.Nil(t, err)
+		assert.Len(t, All(), 3)
+	})
+}
+
+// ============================================================================
+// Workflow 2: Database Functions
+// Comprehensive tests for all database.go functions
+// ============================================================================
+
+func TestWorkflow2_DatabaseFunctions(t *testing.T) {
+	setupTestDB(t)
+
+	t.Run("SetDB_Verify", func(t *testing.T) {
 		users := All()
 		assert.NotNil(t, users)
 		assert.Len(t, users, 0)
@@ -246,17 +260,12 @@ func TestDatabaseFunctions(t *testing.T) {
 }
 
 // ============================================================================
+// Workflow 3: Validation
 // Tests for hooks.go - Validation and BeforeCreate/BeforeUpdate hooks
 // ============================================================================
 
-func TestValidation(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow3_Validation(t *testing.T) {
+	setupTestDB(t)
 
 	t.Run("ValidateEmptyUsername", func(t *testing.T) {
 		user := &User{
@@ -343,7 +352,6 @@ func TestValidation(t *testing.T) {
 	})
 
 	t.Run("ValidateHashedPasswordSkipsComplexityCheck", func(t *testing.T) {
-		// If password is already hashed, complexity check is skipped
 		hashedPassword := utils.HashPassword(testPassword)
 		user := &User{
 			Username: "hasheduser",
@@ -366,17 +374,12 @@ func TestValidation(t *testing.T) {
 }
 
 // ============================================================================
+// Workflow 4: Password Hashing
 // Tests for password hashing (BeforeCreate hook)
 // ============================================================================
 
-func TestPasswordHashing(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow4_PasswordHashing(t *testing.T) {
+	setupTestDB(t)
 
 	t.Run("PasswordIsHashedOnCreate", func(t *testing.T) {
 		user := &User{
@@ -404,17 +407,14 @@ func TestPasswordHashing(t *testing.T) {
 }
 
 // ============================================================================
+// Workflow 5: API Key Generation
 // Tests for API key generation (BeforeCreate hook)
 // ============================================================================
 
-func TestAPIKeyGeneration(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow5_APIKeyGeneration(t *testing.T) {
+	setupTestDB(t)
+
+	var user1ApiKey, user2ApiKey string
 
 	t.Run("APIKeyGeneratedOnCreate", func(t *testing.T) {
 		user := &User{
@@ -429,59 +429,45 @@ func TestAPIKeyGeneration(t *testing.T) {
 
 		assert.NotEmpty(t, user.ApiKey)
 		assert.Len(t, user.ApiKey, 64) // SHA256 hex is 64 chars
+		user1ApiKey = user.ApiKey
 	})
 
 	t.Run("APIKeyIsUnique", func(t *testing.T) {
-		user1 := &User{
-			Username: "apiuser1",
-			Password: testPassword,
-			Email:    "apiuser1@example.com",
-		}
-		user2 := &User{
+		user := &User{
 			Username: "apiuser2",
 			Password: testPassword,
 			Email:    "apiuser2@example.com",
 		}
-
-		err := user1.Create()
+		err := user.Create()
 		require.Nil(t, err)
-		err = user2.Create()
-		require.Nil(t, err)
+		user2ApiKey = user.ApiKey
 
-		assert.NotEqual(t, user1.ApiKey, user2.ApiKey)
+		assert.NotEqual(t, user1ApiKey, user2ApiKey)
 	})
 
 	t.Run("CanFindUserByAPIKey", func(t *testing.T) {
-		user, err := FindByUsername("apikeytest")
+		found, err := FindByAPIKey(user1ApiKey)
 		require.Nil(t, err)
-
-		found, err := FindByAPIKey(user.ApiKey)
-		require.Nil(t, err)
-		assert.Equal(t, user.Id, found.Id)
+		assert.Equal(t, "apikeytest", found.Username)
 	})
 }
 
 // ============================================================================
+// Workflow 6: Auth User Function
 // Tests for auth.go - AuthUser function
 // ============================================================================
 
-func TestAuthUserFunction(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow6_AuthUserFunction(t *testing.T) {
+	setupTestDB(t)
 
-	// Create a test user first
+	// Create test user first
 	user := &User{
 		Username: "authuser",
 		Password: testPassword,
 		Email:    "authuser@example.com",
 		Admin:    null.NewNullBool(true),
 	}
-	err = user.Create()
+	err := user.Create()
 	require.Nil(t, err)
 
 	t.Run("AuthUserSuccess", func(t *testing.T) {
@@ -517,10 +503,11 @@ func TestAuthUserFunction(t *testing.T) {
 }
 
 // ============================================================================
-// Tests for scopes.go - User scopes
+// Workflow 7: User Scopes
+// Tests for scopes.go - User scopes (no DB needed)
 // ============================================================================
 
-func TestUserScopes(t *testing.T) {
+func TestWorkflow7_UserScopes(t *testing.T) {
 	t.Run("AllScopesEmpty", func(t *testing.T) {
 		user := &User{Scopes: ""}
 		scopes := user.AllScopes()
@@ -567,17 +554,12 @@ func TestUserScopes(t *testing.T) {
 }
 
 // ============================================================================
-// Tests for admin user operations
+// Workflow 8: Admin User Operations
+// Tests for admin user create, promote, demote
 // ============================================================================
 
-func TestAdminUserOperations(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow8_AdminUserOperations(t *testing.T) {
+	setupTestDB(t)
 
 	t.Run("CreateAdminUser", func(t *testing.T) {
 		admin := &User{
@@ -637,19 +619,16 @@ func TestAdminUserOperations(t *testing.T) {
 }
 
 // ============================================================================
-// Tests for GORM hooks (AfterFind, AfterCreate, AfterUpdate, AfterDelete)
+// Workflow 9: GORM Hooks
+// Tests for AfterFind, AfterCreate, AfterUpdate, AfterDelete hooks
 // ============================================================================
 
-func TestGormHooks(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow9_GormHooks(t *testing.T) {
+	setupTestDB(t)
 
-	t.Run("AfterFindHook", func(t *testing.T) {
+	var hookTestUserID int64
+
+	t.Run("AfterCreateHook", func(t *testing.T) {
 		user := &User{
 			Username: "hooktest",
 			Password: testPassword,
@@ -657,57 +636,47 @@ func TestGormHooks(t *testing.T) {
 		}
 		err := user.Create()
 		require.Nil(t, err)
+		assert.NotZero(t, user.Id)
+		hookTestUserID = user.Id
+	})
 
-		// AfterFind is called during Find operations
-		found, err := Find(user.Id)
+	t.Run("AfterFindHook", func(t *testing.T) {
+		found, err := Find(hookTestUserID)
 		require.Nil(t, err)
 		assert.NotNil(t, found)
 	})
 
-	t.Run("AfterCreateHook", func(t *testing.T) {
-		user := &User{
-			Username: "createhook",
-			Password: testPassword,
-			Email:    "createhook@example.com",
-		}
-		// AfterCreate is called during Create
-		err := user.Create()
-		require.Nil(t, err)
-		assert.NotZero(t, user.Id)
-	})
-
 	t.Run("AfterUpdateHook", func(t *testing.T) {
-		user, err := FindByUsername("hooktest")
+		user, err := Find(hookTestUserID)
 		require.Nil(t, err)
 
 		user.Email = "updated_hook@example.com"
-		// AfterUpdate is called during Update
 		err = user.Update()
 		require.Nil(t, err)
 	})
 
 	t.Run("AfterDeleteHook", func(t *testing.T) {
-		user, err := FindByUsername("createhook")
+		// Create a user to delete
+		user := &User{
+			Username: "createhook",
+			Password: testPassword,
+			Email:    "createhook@example.com",
+		}
+		err := user.Create()
 		require.Nil(t, err)
 
-		// AfterDelete is called during Delete
 		err = user.Delete()
 		require.Nil(t, err)
 	})
 }
 
 // ============================================================================
+// Workflow 10: Edge Cases
 // Tests for edge cases and error handling
 // ============================================================================
 
-func TestEdgeCases(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow10_EdgeCases(t *testing.T) {
+	setupTestDB(t)
 
 	t.Run("CreateUserWithSpecialCharactersInUsername", func(t *testing.T) {
 		user := &User{
@@ -740,14 +709,11 @@ func TestEdgeCases(t *testing.T) {
 			Email:    "nonexistent@example.com",
 		}
 		_ = user.Update()
-		// Update on non-existent user may not error in all cases
-		// but the user should not exist in DB
 		_, findErr := Find(99999)
 		assert.NotNil(t, findErr)
 	})
 
 	t.Run("AllUsersEmptyDatabase", func(t *testing.T) {
-		// Delete all users
 		users := All()
 		for _, u := range users {
 			_ = u.Delete()
@@ -759,17 +725,12 @@ func TestEdgeCases(t *testing.T) {
 }
 
 // ============================================================================
+// Workflow 11: Samples Function
 // Tests for sample.go - Samples function
 // ============================================================================
 
-func TestSamplesFunction(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow11_SamplesFunction(t *testing.T) {
+	setupTestDB(t)
 
 	t.Run("SamplesCreatesUsers", func(t *testing.T) {
 		passwords, err := Samples()
@@ -801,17 +762,14 @@ func TestSamplesFunction(t *testing.T) {
 }
 
 // ============================================================================
-// Tests for timestamps (CreatedAt, UpdatedAt)
+// Workflow 12: Timestamps
+// Tests for CreatedAt, UpdatedAt timestamps
 // ============================================================================
 
-func TestTimestamps(t *testing.T) {
-	err := utils.InitLogs()
-	require.Nil(t, err)
-	testDb, err := database.OpenTester()
-	require.Nil(t, err)
-	testDb.CreateTable(&User{})
-	SetDB(testDb)
-	defer func() { _ = testDb.Close() }()
+func TestWorkflow12_Timestamps(t *testing.T) {
+	setupTestDB(t)
+
+	var timestampUserID int64
 
 	t.Run("CreatedAtIsSet", func(t *testing.T) {
 		user := &User{
@@ -821,6 +779,7 @@ func TestTimestamps(t *testing.T) {
 		}
 		err := user.Create()
 		require.Nil(t, err)
+		timestampUserID = user.Id
 
 		found, err := Find(user.Id)
 		require.Nil(t, err)
@@ -828,25 +787,28 @@ func TestTimestamps(t *testing.T) {
 	})
 
 	t.Run("UpdatedAtIsSet", func(t *testing.T) {
-		user, err := FindByUsername("timestamps")
+		user, err := Find(timestampUserID)
 		require.Nil(t, err)
-		originalUpdatedAt := user.UpdatedAt
 
 		user.Email = "newtimestamps@example.com"
 		err = user.Update()
 		require.Nil(t, err)
 
-		updated, err := Find(user.Id)
+		updated, err := Find(timestampUserID)
 		require.Nil(t, err)
-		// UpdatedAt should be set (may or may not change depending on GORM auto-update)
 		assert.False(t, updated.UpdatedAt.IsZero())
-		_ = originalUpdatedAt // avoid unused variable warning
 	})
 }
 
-func TestCaseInsensitiveLookups(t *testing.T) {
+// ============================================================================
+// Workflow 13: Case Insensitive Lookups
+// Tests for case-insensitive username/email lookups
+// ============================================================================
+
+func TestWorkflow13_CaseInsensitiveLookups(t *testing.T) {
+	setupTestDB(t)
+
 	t.Run("FindByUsernameCaseInsensitive", func(t *testing.T) {
-		// Create user with lowercase username
 		user := &User{
 			Username: "casetestuser",
 			Password: testPassword,
@@ -892,7 +854,6 @@ func TestCaseInsensitiveLookups(t *testing.T) {
 		err := user.Create()
 		require.Nil(t, err)
 
-		// Username should be stored lowercase
 		found, err := Find(user.Id)
 		require.Nil(t, err)
 		assert.Equal(t, "mixedcaseuser", found.Username)
@@ -900,12 +861,17 @@ func TestCaseInsensitiveLookups(t *testing.T) {
 	})
 }
 
-func TestLastAdminProtection(t *testing.T) {
+// ============================================================================
+// Workflow 14: Last Admin Protection
+// Tests for last admin protection logic
+// ============================================================================
+
+func TestWorkflow14_LastAdminProtection(t *testing.T) {
+	setupTestDB(t)
+
 	t.Run("CountEnabledAdminsWithNewAdmins", func(t *testing.T) {
-		// Get initial count
 		initialCount := CountEnabledAdmins()
 
-		// Create an enabled admin
 		admin := &User{
 			Username: "countadmintest",
 			Password: testPassword,
@@ -916,22 +882,18 @@ func TestLastAdminProtection(t *testing.T) {
 		err := admin.Create()
 		require.Nil(t, err)
 
-		// Count should increase by 1
 		newCount := CountEnabledAdmins()
 		assert.Equal(t, initialCount+1, newCount)
 
-		// Disable the admin
 		admin.Enabled = null.NewNullBool(false)
 		err = admin.Update()
 		require.Nil(t, err)
 
-		// Count should decrease back
 		afterDisable := CountEnabledAdmins()
 		assert.Equal(t, initialCount, afterDisable)
 	})
 
 	t.Run("IsLastEnabledAdminWithMultipleAdmins", func(t *testing.T) {
-		// Create two enabled admins
 		admin1 := &User{
 			Username: "lastadmintest1",
 			Password: testPassword,
@@ -952,7 +914,6 @@ func TestLastAdminProtection(t *testing.T) {
 		err = admin2.Create()
 		require.Nil(t, err)
 
-		// Neither should be the last admin (there are at least 2)
 		assert.False(t, IsLastEnabledAdmin(admin1.Id))
 		assert.False(t, IsLastEnabledAdmin(admin2.Id))
 	})
@@ -968,7 +929,6 @@ func TestLastAdminProtection(t *testing.T) {
 		err := user.Create()
 		require.Nil(t, err)
 
-		// Non-admin user should never be "last enabled admin"
 		assert.False(t, IsLastEnabledAdmin(user.Id))
 	})
 
@@ -983,7 +943,6 @@ func TestLastAdminProtection(t *testing.T) {
 		err := user.Create()
 		require.Nil(t, err)
 
-		// Disabled admin should never be "last enabled admin"
 		assert.False(t, IsLastEnabledAdmin(user.Id))
 	})
 }
