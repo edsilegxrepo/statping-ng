@@ -16,6 +16,7 @@ import (
 
 var (
 	db           database.Database
+	dbMu         sync.RWMutex
 	log          = utils.Log.WithField("type", "service")
 	allServices  map[int64]*Service
 	servicesLock sync.RWMutex
@@ -126,7 +127,15 @@ func Services() map[int64]*Service {
 }
 
 func SetDB(database database.Database) {
+	dbMu.Lock()
+	defer dbMu.Unlock()
 	db = database
+}
+
+func getDB() database.Database {
+	dbMu.RLock()
+	defer dbMu.RUnlock()
+	return db
 }
 
 func Find(id int64) (*Service, error) {
@@ -134,11 +143,10 @@ func Find(id int64) (*Service, error) {
 	srv := allServices[id]
 	servicesLock.RUnlock()
 	if srv != nil {
-		db.First(&srv, id)
 		return srv, nil
 	}
 	var service Service
-	if err := db.First(&service, id).Error(); err != nil {
+	if err := getDB().First(&service, id).Error(); err != nil {
 		return nil, errors.Missing(&Service{}, id)
 	}
 	servicesLock.Lock()
@@ -149,7 +157,7 @@ func Find(id int64) (*Service, error) {
 
 func all() []*Service {
 	var services []*Service
-	db.Find(&services)
+	getDB().Find(&services)
 	return services
 }
 
@@ -157,14 +165,14 @@ func all() []*Service {
 // This avoids N+1 query problems by batching related data queries
 func allWithRelations() []*Service {
 	var services []*Service
-	db.Preload("Incidents").Preload("Messages").Preload("Checkins").Find(&services)
+	getDB().Preload("Incidents").Preload("Messages").Preload("Checkins").Find(&services)
 	return services
 }
 
 // FindWithRelations finds a service by ID with all related data preloaded
 func FindWithRelations(id int64) (*Service, error) {
 	var service Service
-	if err := db.Preload("Incidents").Preload("Messages").Preload("Checkins").First(&service, id).Error(); err != nil {
+	if err := getDB().Preload("Incidents").Preload("Messages").Preload("Checkins").First(&service, id).Error(); err != nil {
 		return nil, errors.Missing(&Service{}, id)
 	}
 	servicesLock.Lock()
@@ -190,7 +198,7 @@ func AllInOrder() []*Service {
 }
 
 func (s *Service) Create() error {
-	err := db.Create(s)
+	err := getDB().Create(s)
 	if err.Error() != nil {
 		log.Errorln(fmt.Sprintf("Failed to create service %v #%v: %v", s.Name, s.Id, err))
 		return err.Error()
@@ -199,7 +207,7 @@ func (s *Service) Create() error {
 }
 
 func (s *Service) Update() error {
-	q := db.Update(s)
+	q := getDB().Update(s)
 	s.Close()
 	servicesLock.Lock()
 	allServices[s.Id] = s
@@ -233,7 +241,7 @@ func (s *Service) Delete() error {
 	servicesLock.Lock()
 	delete(allServices, s.Id)
 	servicesLock.Unlock()
-	q := db.Model(&Service{}).Delete(s)
+	q := getDB().Model(&Service{}).Delete(s)
 	return q.Error()
 }
 

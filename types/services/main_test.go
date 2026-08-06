@@ -34,7 +34,6 @@ func TestMain(m *testing.M) {
 	}
 
 	// Set package-level db for all packages that need it
-	db = testDb
 	SetDB(testDb)
 	hits.SetDB(testDb)
 	failures.SetDB(testDb)
@@ -44,15 +43,16 @@ func TestMain(m *testing.M) {
 	notifications.SetDB(testDb)
 
 	// Run migrations for all required tables
-	_ = db.AutoMigrate(&Service{})
-	_ = db.AutoMigrate(&hits.Hit{})
-	_ = db.AutoMigrate(&failures.Failure{})
-	_ = db.AutoMigrate(&checkins.Checkin{})
-	_ = db.AutoMigrate(&checkins.CheckinHit{})
-	_ = db.AutoMigrate(&incidents.Incident{})
-	_ = db.AutoMigrate(&incidents.IncidentUpdate{})
-	_ = db.AutoMigrate(&messages.Message{})
-	_ = db.AutoMigrate(&notifications.Notification{})
+	testDbRef := getDB()
+	_ = testDbRef.AutoMigrate(&Service{})
+	_ = testDbRef.AutoMigrate(&hits.Hit{})
+	_ = testDbRef.AutoMigrate(&failures.Failure{})
+	_ = testDbRef.AutoMigrate(&checkins.Checkin{})
+	_ = testDbRef.AutoMigrate(&checkins.CheckinHit{})
+	_ = testDbRef.AutoMigrate(&incidents.Incident{})
+	_ = testDbRef.AutoMigrate(&incidents.IncidentUpdate{})
+	_ = testDbRef.AutoMigrate(&messages.Message{})
+	_ = testDbRef.AutoMigrate(&notifications.Notification{})
 
 	// Initialize allServices map
 	allServices = make(map[int64]*Service)
@@ -61,7 +61,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	// Cleanup
-	if sqlDB, err := db.DB(); err == nil {
+	if sqlDB, err := getDB().DB(); err == nil {
 		_ = sqlDB.Close()
 	}
 	_ = os.RemoveAll(tmpDir)
