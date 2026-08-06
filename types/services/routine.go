@@ -180,6 +180,9 @@ func CheckCmd(s *Service, record bool) (*Service, error) {
 		return s, err
 	}
 
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.Latency = utils.Now().Sub(startTime).Microseconds()
 	s.LastResponse = string(cmdResultBytes[:])
 	s.LastStatusCode = cmdResult.ExitCode
@@ -292,6 +295,9 @@ func CheckIcmp(s *Service, record bool) (*Service, error) {
 		return s, err
 	}
 
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.PingTime = dur
 	s.Latency = dur
 	s.LastResponse = ""
@@ -343,6 +349,9 @@ func CheckGrpc(s *Service, record bool) (*Service, error) {
 		grpcOption = grpc.WithTransportCredentials(h2creds)
 	}
 
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.PingTime = dnsLookup
 	t1 := utils.Now()
 	domain := fmt.Sprintf("%v", s.Domain)
@@ -433,6 +442,9 @@ func CheckTcp(s *Service, record bool) (*Service, error) {
 		}
 		return s, err
 	}
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.PingTime = dnsLookup
 	t1 := utils.Now()
 	domain := fmt.Sprintf("%v", s.Domain)
@@ -496,6 +508,9 @@ func CheckSmtp(s *Service, record bool) (*Service, error) {
 		}
 		return s, err
 	}
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.PingTime = dnsLookup
 	t1 := utils.Now()
 	domain := fmt.Sprintf("%v", s.Domain)
@@ -612,6 +627,9 @@ func CheckImap(s *Service, record bool) (*Service, error) {
 		}
 		return s, err
 	}
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.PingTime = dnsLookup
 	t1 := utils.Now()
 	domain := fmt.Sprintf("%v", s.Domain)
@@ -733,6 +751,9 @@ func CheckHttp(s *Service, record bool) (*Service, error) {
 		}
 		return s, err
 	}
+	// Lock for field updates - unlocked at function end or early return
+	s.Lock()
+	defer s.Unlock()
 	s.PingTime = dnsLookup
 	t1 := utils.Now()
 
@@ -976,6 +997,9 @@ func CheckDatabase(s *Service, record bool) (*Service, error) {
 		return s, err
 	}
 
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.Latency = utils.Now().Sub(t1).Microseconds()
 	s.Online = true
 	if record {
@@ -1066,6 +1090,9 @@ func CheckStorage(s *Service, record bool) (*Service, error) {
 		return s, err
 	}
 
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 	s.Latency = utils.Now().Sub(t1).Microseconds()
 	s.Online = true
 	if record {
@@ -1132,6 +1159,10 @@ func CheckTLS(s *Service, record bool) (*Service, error) {
 		}
 		return s, err
 	}
+
+	// Lock for field updates
+	s.Lock()
+	defer s.Unlock()
 
 	// Extract detailed results from healthchecker
 	result := checker.Result()

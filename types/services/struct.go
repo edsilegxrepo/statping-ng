@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 
@@ -66,6 +67,7 @@ type Service struct {
 	FailuresLast24Hours int                   `gorm:"-" json:"failures_24_hours" yaml:"-"`
 	Running             chan bool             `gorm:"-" json:"-" yaml:"-"`
 	runningMu           sync.Mutex            `gorm:"-" json:"-" yaml:"-"`
+	fieldsMu            sync.RWMutex          `gorm:"-" json:"-" yaml:"-"` // protects runtime fields during JSON serialization
 	checkpoint          time.Time             `gorm:"-" json:"-" yaml:"-"`
 	sleepDuration       time.Duration         `gorm:"-" json:"-" yaml:"-"`
 	LastResponse        string                `gorm:"-" json:"-" yaml:"-"`
@@ -87,6 +89,39 @@ type Service struct {
 
 	notifyAfterCount int64 `gorm:"-" json:"-" yaml:"-"`
 	prevOnline       bool  `gorm:"-" json:"-" yaml:"-"`
+}
+
+// RLock acquires a read lock on the service's runtime fields.
+// Use this before reading fields that workers may be updating.
+func (s *Service) RLock() {
+	s.fieldsMu.RLock()
+}
+
+// RUnlock releases the read lock on the service's runtime fields.
+func (s *Service) RUnlock() {
+	s.fieldsMu.RUnlock()
+}
+
+// Lock acquires a write lock on the service's runtime fields.
+// Use this before updating fields that may be read concurrently.
+func (s *Service) Lock() {
+	s.fieldsMu.Lock()
+}
+
+// Unlock releases the write lock on the service's runtime fields.
+func (s *Service) Unlock() {
+	s.fieldsMu.Unlock()
+}
+
+// serviceAlias is used by MarshalJSON to avoid infinite recursion
+type serviceAlias Service
+
+// MarshalJSON implements json.Marshaler with read lock protection.
+// This prevents races between JSON serialization and worker updates.
+func (s *Service) MarshalJSON() ([]byte, error) {
+	s.fieldsMu.RLock()
+	defer s.fieldsMu.RUnlock()
+	return json.Marshal((*serviceAlias)(s))
 }
 
 // ServicePtrOrder sorts service pointers by Order field without copying mutex
