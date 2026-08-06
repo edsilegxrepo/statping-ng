@@ -3,12 +3,17 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/notifiers"
 	"github.com/statping-ng/statping-ng/types/core"
 )
 
 func apiDigestSettingsHandler(w http.ResponseWriter, r *http.Request) {
-	c := core.App
+	c := core.GetApp()
+	if c == nil {
+		sendErrorJson(errors.New("core not initialized"), w, r)
+		return
+	}
 	settings := map[string]interface{}{
 		"digest_enabled": c.DigestEnabled.Bool,
 		"digest_emails":  c.DigestEmails,
@@ -33,7 +38,14 @@ func apiDigestSaveHandler(w http.ResponseWriter, r *http.Request) {
 		req.DigestHour = 8 // default to 8 AM
 	}
 
-	c := core.App
+	// Stop scheduler BEFORE updating fields to prevent race
+	notifiers.StopDigestScheduler()
+
+	c := core.GetApp()
+	if c == nil {
+		sendErrorJson(errors.New("core not initialized"), w, r)
+		return
+	}
 	c.DigestEnabled.Bool = req.DigestEnabled
 	c.DigestEnabled.Valid = true
 	c.DigestEmails = req.DigestEmails
@@ -44,8 +56,7 @@ func apiDigestSaveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Restart scheduler if settings changed
-	notifiers.StopDigestScheduler()
+	// Restart scheduler if enabled
 	if req.DigestEnabled {
 		notifiers.StartDigestScheduler()
 	}

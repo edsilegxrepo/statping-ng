@@ -1,6 +1,8 @@
 package core
 
 import (
+	"sync"
+
 	"github.com/pkg/errors"
 	"github.com/statping-ng/statping-ng/database"
 	"github.com/statping-ng/statping-ng/types/metrics"
@@ -9,10 +11,21 @@ import (
 	"gorm.io/gorm"
 )
 
-var db database.Database
+var (
+	db   database.Database
+	dbMu sync.RWMutex
+)
+
+func getDB() database.Database {
+	dbMu.RLock()
+	defer dbMu.RUnlock()
+	return db
+}
 
 func SetDB(database database.Database) {
+	dbMu.Lock()
 	db = database
+	dbMu.Unlock()
 	c, err := Select()
 	if err != nil {
 		utils.Log.Errorln(err)
@@ -166,15 +179,19 @@ func (c *Core) decryptSecrets() {
 
 func Select() (*Core, error) {
 	var c Core
-	sqlDB, err := db.DB()
+	d := getDB()
+	if d == nil {
+		return nil, errors.New("database has not been initiated yet.")
+	}
+	sqlDB, err := d.DB()
 	if err != nil || sqlDB.Ping() != nil {
 		return nil, errors.New("database has not been initiated yet.")
 	}
-	exists := db.HasTable("core")
+	exists := d.HasTable("core")
 	if !exists {
 		return nil, errors.New("core database has not been setup yet.")
 	}
-	q := db.First(&c)
+	q := d.First(&c)
 	if q.Error() != nil {
 		return nil, q.Error()
 	}
@@ -204,13 +221,17 @@ func (c *Core) Create() error {
 	}
 	// Note: EncryptionKey field is deprecated - external master key is now used
 	// Field kept for backward compatibility with existing databases
-	q := db.Create(c)
+	q := getDB().Create(c)
 	utils.Log.Infof("API Key created: %s", c.ApiSecret)
 	return q.Error()
 }
 
 func (c *Core) Update() error {
-	q := db.Model(&Core{}).Where("1 = 1").UpdateColumns(c)
+	d := getDB()
+	if d == nil {
+		return errors.New("database has not been initiated yet.")
+	}
+	q := d.Model(&Core{}).Where("1 = 1").UpdateColumns(c)
 	return q.Error()
 }
 

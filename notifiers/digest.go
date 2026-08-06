@@ -136,6 +136,7 @@ var (
 	digestOnce     sync.Once
 	digestStopOnce sync.Once
 	stopDigest     chan struct{}
+	digestStopped  chan struct{}
 	digestResetMu  sync.Mutex
 )
 
@@ -149,15 +150,18 @@ func StartDigestScheduler() {
 
 	digestOnce.Do(func() {
 		stopDigest = make(chan struct{})
+		digestStopped = make(chan struct{})
 		go runDigestScheduler()
 	})
 }
 
-// StopDigestScheduler stops the daily digest scheduler
+// StopDigestScheduler stops the daily digest scheduler and waits for it to exit
 func StopDigestScheduler() {
 	digestResetMu.Lock()
-	defer digestResetMu.Unlock()
+	stoppedChan := digestStopped
+	digestResetMu.Unlock()
 
+	digestResetMu.Lock()
 	digestStopOnce.Do(func() {
 		if stopDigest != nil {
 			close(stopDigest)
@@ -165,10 +169,20 @@ func StopDigestScheduler() {
 		// Reset the start once so we can start again
 		digestOnce = sync.Once{}
 	})
+	digestResetMu.Unlock()
+
+	// Wait for scheduler to actually exit
+	if stoppedChan != nil {
+		<-stoppedChan
+	}
 }
 
 func runDigestScheduler() {
 	digestLog.Infoln("Daily digest scheduler started")
+	defer func() {
+		digestLog.Infoln("Daily digest scheduler stopped")
+		close(digestStopped)
+	}()
 
 	for {
 		now := time.Now()
@@ -181,14 +195,17 @@ func runDigestScheduler() {
 		case <-time.After(waitDuration):
 			sendDailyDigest()
 		case <-stopDigest:
-			digestLog.Infoln("Daily digest scheduler stopped")
 			return
 		}
 	}
 }
 
 func calculateNextDigestTime(now time.Time) time.Time {
-	hour := core.App.DigestHour
+	c := core.GetApp()
+	if c == nil {
+		return now.Add(time.Hour)
+	}
+	hour := c.DigestHour
 	if hour < 0 || hour > 23 {
 		hour = 8
 	}
@@ -204,8 +221,8 @@ func calculateNextDigestTime(now time.Time) time.Time {
 type digestData = notifier.DigestData
 
 func sendDailyDigest() {
-	c := core.App
-	if !c.DigestEnabled.Bool {
+	c := core.GetApp()
+	if c == nil || !c.DigestEnabled.Bool {
 		return
 	}
 
@@ -304,9 +321,17 @@ func generateDigestData() digestData {
 	// Get application errors from logs (last 24h)
 	appErrors := getRecentAppErrors(yesterday)
 
+	c := core.GetApp()
+	appName := ""
+	domain := ""
+	if c != nil {
+		appName = c.Name
+		domain = c.Domain
+	}
+
 	return digestData{
-		AppName:         core.App.Name,
-		Domain:          core.App.Domain,
+		AppName:         appName,
+		Domain:          domain,
 		GeneratedAt:     now.Format("2006-01-02 15:04 MST"),
 		Period:          fmt.Sprintf("%s to %s", yesterday.Format("2006-01-02 15:04"), now.Format("15:04")),
 		TotalServices:   len(allServices),
@@ -379,10 +404,16 @@ func sendDigestEmail(to, htmlContent string) error {
 	mailer.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	mailer.Timeout = 30 * time.Second // Explicit connection timeout
 
+	c := core.GetApp()
+	appName := "Statping"
+	if c != nil {
+		appName = c.Name
+	}
+
 	m := mail.NewMessage()
-	m.SetAddressHeader("From", email.Var1.String, fmt.Sprintf("%s Monitoring", core.App.Name))
+	m.SetAddressHeader("From", email.Var1.String, fmt.Sprintf("%s Monitoring", appName))
 	m.SetHeader("To", to)
-	m.SetHeader("Subject", fmt.Sprintf("[%s] Daily Status Digest - %s", core.App.Name, time.Now().Format("2006-01-02")))
+	m.SetHeader("Subject", fmt.Sprintf("[%s] Daily Status Digest - %s", appName, time.Now().Format("2006-01-02")))
 	m.SetBody("text/html", htmlContent)
 
 	return mailer.DialAndSend(m)
@@ -390,7 +421,10 @@ func sendDigestEmail(to, htmlContent string) error {
 
 // SendTestDigest sends a test digest email immediately
 func SendTestDigest() error {
-	c := core.App
+	c := core.GetApp()
+	if c == nil {
+		return fmt.Errorf("core not initialized")
+	}
 	emails := strings.TrimSpace(c.DigestEmails)
 	if emails == "" {
 		return fmt.Errorf("no email addresses configured")
