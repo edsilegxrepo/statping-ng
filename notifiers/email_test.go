@@ -41,6 +41,7 @@ func TestEmailNotifier(t *testing.T) {
 
 	db, err := database.OpenTester()
 	require.Nil(t, err)
+	t.Cleanup(func() { _ = db.Close() })
 	db.AutoMigrate(&notifications.Notification{})
 	notifications.SetDB(db)
 	core.Example()
@@ -106,6 +107,7 @@ func TestEmailNotifierMock(t *testing.T) {
 
 	db, err := database.OpenTester()
 	require.Nil(t, err)
+	t.Cleanup(func() { _ = db.Close() })
 	db.AutoMigrate(&notifications.Notification{})
 	notifications.SetDB(db)
 	core.Example()
@@ -156,6 +158,7 @@ func TestEmailWithMockSMTPServer(t *testing.T) {
 
 	db, err := database.OpenTester()
 	require.Nil(t, err)
+	t.Cleanup(func() { _ = db.Close() })
 	db.AutoMigrate(&notifications.Notification{})
 	notifications.SetDB(db)
 	core.Example()

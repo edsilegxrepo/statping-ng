@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/statping-ng/statping-ng/source"
+	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/services"
 	"github.com/statping-ng/statping-ng/utils"
 )
@@ -24,6 +26,10 @@ func TestMain(m *testing.M) {
 	utils.InitEnvs()
 	utils.Params.Set("STATPING_DIR", tmpDir)
 	_ = utils.InitLogs()
+
+	// Initialize assets and core (moved from init() in api_test.go)
+	_ = source.Assets()
+	core.New("test", "testcommithere")
 
 	// Run all tests
 	code := m.Run()

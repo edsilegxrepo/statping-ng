@@ -14,7 +14,6 @@ import (
 
 	"github.com/pkg/errors"
 	_ "github.com/statping-ng/statping-ng/notifiers"
-	"github.com/statping-ng/statping-ng/source"
 	"github.com/statping-ng/statping-ng/types/checkins"
 	"github.com/statping-ng/statping-ng/types/core"
 	"github.com/statping-ng/statping-ng/types/groups"
@@ -32,11 +31,8 @@ var (
 	testSetupMutex sync.Mutex
 )
 
-func init() {
-	_ = utils.InitLogs()
-	_ = source.Assets()
-	core.New("test", "testcommithere")
-}
+// Package-level initialization is now done in TestMain (main_test.go)
+// to avoid setting global state before temp directory is configured.
 
 func TestFailedHTTPServer(t *testing.T) {
 	var err error

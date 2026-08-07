@@ -12,7 +12,7 @@
 # OPTIONS:
 #   (no args)              Quick build: frontend + Go binary
 #   --audit                Run full code quality & security audit (8 checks)
-#   --test                 Run Go tests with full isolation (serial, no cache)
+#   --test                 Run Go tests with full isolation (parallel, no cache)
 #   --all                  Build + audit combined
 #   --clean                Remove build artifacts (binaries, dist, test data)
 #   --clean-all            Full reset including node_modules
@@ -126,7 +126,7 @@ for arg in "$@"; do
       echo "Usage: ./tools/build.sh [options]"
       echo "  (no args)       Quick build only"
       echo "  --audit         Run code quality & security checks"
-      echo "  --test          Run tests with full isolation (serial, no cache, pollution check)"
+      echo "  --test          Run tests with full isolation (parallel, no cache, pollution check)"
       echo "  --all           Build + audit"
       echo "  --clean         Remove build artifacts and data for fresh start"
       echo "  --clean-all     Full reset (includes node_modules)"
@@ -290,8 +290,8 @@ if $DO_TEST; then
   # Clean any stale test artifacts from repo root
   rm -f statping.db statping.log config.yml statping_config.yml 2> /dev/null || true
 
-  # Run tests: serial packages (-p=1), no cache (-count=1), extended timeout
-  go test ./... -p=1 -count=1 -timeout=600s
+  # Run tests: parallel packages (-p=8), no cache (-count=1), extended timeout
+  go test ./... -p=8 -count=1 -timeout=600s
 
   # Verify no pollution
   if ls statping.db statping.log config.yml statping_config.yml 2> /dev/null; then
@@ -350,7 +350,7 @@ if $DO_AUDIT; then
 
   # 6. Go Tests
   log_step "6/8" "Go unit & integration tests..."
-  go test -p=1 ./...
+  go test -p=8 ./...
   log_success "Go tests OK"
 
   # 7. Frontend Linter
