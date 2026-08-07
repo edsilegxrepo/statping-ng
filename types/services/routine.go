@@ -1062,6 +1062,7 @@ func CheckStorage(s *Service, record bool) (*Service, error) {
 			BucketName: s.StorageBucket.String,
 			CredFile:   credFile,
 			AllowADC:   credFile == "",
+			ProjectID:  s.StorageProjectID.String,
 			TimeoutSec: timeout,
 		}
 

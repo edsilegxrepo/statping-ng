@@ -17,6 +17,7 @@ package integration
 
 import (
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -340,20 +341,50 @@ func TestTLSServiceType_Errors(t *testing.T) {
 const gcsEmulatorPort = "4443"
 
 func TestGCSServiceType_FakeServer(t *testing.T) {
-	// NOTE: GCS integration testing requires:
-	// 1. A GCS project ID (not currently exposed in Service struct)
-	// 2. Either real GCS credentials or STORAGE_EMULATOR_HOST with fake-gcs-server
+	// NOTE: The gcsconntest library (used by healthchecker) doesn't support
+	// STORAGE_EMULATOR_HOST - it always tries to authenticate with real GCS.
+	// This test is skipped until gcsconntest adds emulator support.
 	//
-	// The healthchecker gcsconntest library requires project ID, which statping-ng
-	// doesn't currently have a field for. This test is skipped until that's added.
-	//
-	// To test GCS manually:
-	// 1. docker run -d -p 4443:4443 fsouza/fake-gcs-server -scheme http
-	// 2. Set STORAGE_EMULATOR_HOST=http://localhost:4443
-	// 3. Add StorageProjectID field to Service struct
-	// 4. Update CheckStorage to pass ProjectID to GcsCheck
+	// To test GCS manually with real credentials:
+	// 1. Set GOOGLE_APPLICATION_CREDENTIALS to a service account JSON file
+	// 2. Create a test bucket in your GCS project
+	// 3. Run with: go test -tags=integration -run TestGCSServiceType_RealGCS
 
-	t.Skip("GCS integration test requires StorageProjectID field in Service struct (not yet implemented)")
+	t.Skip("GCS integration test requires gcsconntest emulator support (not yet implemented)")
+}
+
+// TestGCSServiceType_RealGCS tests against real GCS (requires credentials).
+// Run with: GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json go test -tags=integration -run TestGCSServiceType_RealGCS
+func TestGCSServiceType_RealGCS(t *testing.T) {
+	credFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if credFile == "" {
+		t.Skip("Skipping: GOOGLE_APPLICATION_CREDENTIALS not set")
+	}
+
+	bucket := os.Getenv("GCS_TEST_BUCKET")
+	if bucket == "" {
+		t.Skip("Skipping: GCS_TEST_BUCKET not set")
+	}
+
+	project := os.Getenv("GCS_TEST_PROJECT")
+	if project == "" {
+		t.Skip("Skipping: GCS_TEST_PROJECT not set")
+	}
+
+	svc := &services.Service{
+		Name:               "Test Real GCS Bucket",
+		Type:               "storage",
+		Timeout:            10,
+		StorageBackend:     null.NewNullString("gcs"),
+		StorageBucket:      null.NewNullString(bucket),
+		StorageProjectID:   null.NewNullString(project),
+		StorageCredentials: null.NewNullString(credFile),
+	}
+
+	result, err := services.CheckStorage(svc, false)
+	require.NoError(t, err)
+	assert.True(t, result.Online)
+	assert.Greater(t, result.Latency, int64(0))
 }
 
 func TestGCSServiceType_Errors(t *testing.T) {
@@ -402,6 +433,7 @@ func TestGCSServiceType_Errors(t *testing.T) {
 func isDockerAvailable() bool {
 	return testutil.IsDockerAvailable()
 }
+
 
 // Compile-time check that handlers.Router exists
 var _ = handlers.Router

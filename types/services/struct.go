@@ -40,6 +40,7 @@ type Service struct {
 	// Storage service fields
 	StorageBackend     null.NullString `gorm:"column:storage_backend" json:"storage_backend" scope:"user,admin" yaml:"storage_backend"` // gcs, s3, azure
 	StorageBucket      null.NullString `gorm:"column:storage_bucket" json:"storage_bucket" scope:"user,admin" yaml:"storage_bucket"`
+	StorageProjectID   null.NullString `gorm:"column:storage_project_id" json:"storage_project_id" scope:"user,admin" yaml:"storage_project_id"` // GCS project ID
 	StorageCredentials null.NullString `gorm:"column:storage_credentials" json:"storage_credentials" scope:"admin" yaml:"storage_credentials" private:"true"` // service account JSON (encrypted)
 	// TLS certificate monitoring fields
 	TLSTarget        null.NullString `gorm:"column:tls_target" json:"tls_target" scope:"user,admin" yaml:"tls_target"`                  // host:port to check
