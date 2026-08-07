@@ -414,12 +414,13 @@ func TestFullCRUDLifecycleIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	var respObj struct {
-		Status string           `json:"status"`
-		Output services.Service `json:"output"`
+		Status string            `json:"status"`
+		Output *services.Service `json:"output"`
 	}
 	err = json.Unmarshal(body, &respObj)
 	require.NoError(t, err)
 	createdSvc := respObj.Output
+	require.NotNil(t, createdSvc, "Created service should not be nil")
 	assert.True(t, createdSvc.Id > 0, "Created service should have valid ID")
 	assert.Equal(t, "Integration Test Service", createdSvc.Name)
 
