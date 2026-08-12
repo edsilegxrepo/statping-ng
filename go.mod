@@ -31,11 +31,12 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.33
 	github.com/aws/aws-sdk-go-v2/service/sns v1.42.3
 	github.com/coreos/go-oidc/v3 v3.10.0
+	github.com/edsilegxrepo/dbchecker v1.0.8
 	github.com/edsilegxrepo/healthchecker v0.6.2
 	github.com/go-ldap/ldap/v3 v3.4.14
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gomarkdown/markdown v0.0.0-20260725000948-8435af3f5984
-	github.com/tdewolff/minify/v2 v2.24.14
+	github.com/tdewolff/minify/v2 v2.24.16
 	google.golang.org/grpc/examples v0.0.0-20260513170209-fd8a1060a84d
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.2
@@ -76,7 +77,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/edsilegxrepo/dbchecker v1.0.8 // indirect
 	github.com/edsilegxrepo/gcsconntest v1.0.1 // indirect
 	github.com/edsilegxrepo/tlstester v1.1.0 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
@@ -120,7 +120,7 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/tdewolff/parse/v2 v2.8.14 // indirect
+	github.com/tdewolff/parse/v2 v2.8.15 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.2.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
